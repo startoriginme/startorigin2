@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo, Profile } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate, Link } from 'react-router-dom';
+import PhotoViewer from '../components/PhotoViewer';
 
 type SearchCategory = 'photos' | 'users';
 
@@ -12,6 +14,8 @@ export default function Search() {
   const [category, setCategory] = useState<SearchCategory>('photos');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -71,7 +75,16 @@ export default function Search() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {results.map((item, i) => (
-              <SearchResultCard key={item.id} item={item} category={category} index={i} />
+              <SearchResultCard 
+                key={item.id} 
+                item={item} 
+                category={category} 
+                index={i} 
+                onClick={() => {
+                  if (category === 'photos') setSelectedPhoto(item);
+                  else navigate(`/profile/${item.username}`);
+                }}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -80,6 +93,13 @@ export default function Search() {
            <p className="text-center text-slate-400 font-medium font-italic italic">No matches found for "{query}"</p>
         )}
       </div>
+
+      {selectedPhoto && (
+        <PhotoViewer 
+          photo={selectedPhoto} 
+          onClose={() => setSelectedPhoto(null)} 
+        />
+      )}
     </div>
   );
 }
@@ -100,12 +120,13 @@ function CategoryTab({ active, onClick, label, icon: Icon }: any) {
   );
 }
 
-function SearchResultCard({ item, category, index }: any) {
+function SearchResultCard({ item, category, index, onClick }: any) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
+      onClick={onClick}
       className="glass-card overflow-hidden group cursor-pointer border border-black/5 hover:scale-[1.05] transition-all duration-300"
     >
       {category === 'photos' && (

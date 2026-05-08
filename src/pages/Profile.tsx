@@ -34,7 +34,6 @@ interface UserPet {
 
 // РАСШИРЕННАЯ КОНФИГУРАЦИЯ ЗНАЧКОВ
 const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  verified: { icon: BadgeCheck, color: 'text-blue-500', label: 'Verified' },
   snowflake: { icon: Snowflake, color: 'text-cyan-400', label: 'Snowflake' },
   computer: { icon: Monitor, color: 'text-violet-500', label: 'Computer' },
   star: { icon: Star, color: 'text-amber-400', label: 'Star' },
@@ -168,7 +167,7 @@ export default function Profile({ user }: { user: any }) {
   
   // Badge settings
   const [hiddenBadges, setHiddenBadges] = useState<string[]>([]);
-  const [badgesOrder, setBadgesOrder] = useState<string[]>(['star', 'computer', 'snowflake', 'verified', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
+  const [badgesOrder, setBadgesOrder] = useState<string[]>(['star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
   
   // Decoration state
   const [themePreference, setThemePreference] = useState<string>('default');
@@ -267,7 +266,7 @@ export default function Profile({ user }: { user: any }) {
     const { data } = await supabase.from('profiles').select('hidden_badges, badges_order').eq('id', profile.id).single();
     if (data) {
       setHiddenBadges(data.hidden_badges || []);
-      setBadgesOrder(data.badges_order || ['star', 'computer', 'snowflake', 'verified', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
+      setBadgesOrder(data.badges_order || ['star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
     }
   }
 
@@ -413,7 +412,6 @@ export default function Profile({ user }: { user: any }) {
   
   if (profile.username === 'winterwastaken' && !allAvailableBadges.includes('snowflake' as any)) allAvailableBadges.push('snowflake' as any);
   if (['viscaelbarca', 'camilakiriek'].includes(profile.username) && !allAvailableBadges.includes('star' as any)) allAvailableBadges.push('star' as any);
-  if (profile.username === 'mavebo' && !allAvailableBadges.includes('verified' as any)) allAvailableBadges.push('verified' as any);
   if (profile.username === 'zaharques') {
     if (!allAvailableBadges.includes('computer' as any)) allAvailableBadges.push('computer' as any);
     if (!allAvailableBadges.includes('star' as any)) allAvailableBadges.push('star' as any);

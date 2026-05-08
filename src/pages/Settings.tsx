@@ -31,7 +31,6 @@ import { useNavigate } from 'react-router-dom';
 
 // BASE CONSTANTS
 const BADGE_PRICES: Record<string, number> = {
-  verified: 500,
   snowflake: 300,
   computer: 300,
   star: 200,
@@ -95,7 +94,6 @@ const SHOP_ACHIEVEMENTS = [
 ];
 
 const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  verified: { icon: Shield, color: 'text-blue-500', label: 'Verified' },
   snowflake: { icon: Sparkles, color: 'text-cyan-400', label: 'Snowflake' },
   computer: { icon: Hash, color: 'text-slate-500', label: 'Compute' },
   star: { icon: Star, color: 'text-amber-400', label: 'Star' },
@@ -153,7 +151,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
   useEffect(() => {
     if (profile) {
-      setBadgesOrder(profile.badges_order || ['star', 'computer', 'snowflake', 'verified', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
+      setBadgesOrder(profile.badges_order || ['star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
       setHiddenBadges(profile.hidden_badges || []);
     }
   }, [profile]);
@@ -312,7 +310,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const allAvailableBadges = [...purchasedBadges];
   if (profile?.username === 'winterwastaken' && !allAvailableBadges.includes('snowflake')) allAvailableBadges.push('snowflake');
   if (['viscaelbarca', 'camilakiriek'].includes(profile?.username || '') && !allAvailableBadges.includes('star')) allAvailableBadges.push('star');
-  if (profile?.username === 'mavebo' && !allAvailableBadges.includes('verified')) allAvailableBadges.push('verified');
   if (profile?.username === 'zaharques') {
     if (!allAvailableBadges.includes('computer')) allAvailableBadges.push('computer');
     if (!allAvailableBadges.includes('star')) allAvailableBadges.push('star');

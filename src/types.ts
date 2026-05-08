@@ -1,6 +1,6 @@
 export type PrivacyMode = 'private' | 'public';
 
-export type BadgeType = 'verified' | 'snowflake' | 'computer' | 'star' | 'crown' | 'diamond' | 'heart' | 'award';
+export type BadgeType = 'snowflake' | 'computer' | 'star' | 'crown' | 'diamond' | 'heart' | 'award';
 
 export interface Profile {
   id: string;

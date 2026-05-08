@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #000000;
+  --color-accent: #64748b;
+  --color-glass: rgba(255, 255, 255, 0.4);
+  --color-glass-border: rgba(255, 255, 255, 0.3);
+}
+
+@layer base {
+  body {
+    @apply bg-white text-slate-900 antialiased font-sans overflow-x-hidden min-h-screen relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-black/5 rounded-full hover:bg-black/10 transition-colors;
+  }
+}
+
+@utility glass-panel {
+  @apply bg-white border border-slate-100;
+}
+
+@utility glass-card {
+  @apply bg-white border border-slate-100 rounded-[2rem] transition-all duration-300;
+  &:hover {
+    @apply border-slate-200 shadow-xl shadow-black/[0.02];
+  }
+}
+
+@utility nav-item-active {
+  @apply text-black bg-slate-50;
+}
+
+@utility nav-item-inactive {
+  @apply text-slate-400 hover:text-black hover:bg-slate-50;
+}
+
+@utility safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility btn-primary {
+  @apply px-8 py-3 bg-black text-white font-bold rounded-full hover:bg-zinc-800 active:scale-95 transition-all disabled:opacity-50;
+}
+
+@utility btn-secondary {
+  @apply px-8 py-3 bg-slate-50 border border-slate-100 font-bold text-slate-500 rounded-full hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-50;
+}
+
+/* Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 300ms, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.page-exit {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  transition: opacity 300ms, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}

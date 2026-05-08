@@ -1,0 +1,6 @@
+{
+  "name": "StartOrigin",
+  "description": "A minimalistic photography sanctuary for organizing your life in frames.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["auth", "database", "storage"]
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Photo, Profile as ProfileType } from '../types';
+import { Photo } from '../types';
 import { Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, Loader2, User, Grid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
@@ -224,8 +224,8 @@ export default function Feed({ user }: { user: any }) {
     <div className="max-w-xl mx-auto p-4 md:p-8 space-y-12 min-h-screen">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-black">Discovery</h1>
-          <p className="text-slate-400 font-medium text-sm">A sanctuary for your essence</p>
+          <h1 className="text-3xl font-bold tracking-tight text-black">Feed</h1>
+    
         </div>
         <div className="flex gap-2">
           <button 
@@ -271,7 +271,11 @@ export default function Feed({ user }: { user: any }) {
         <div className="space-y-16">
           {photos.map((photo, i) => (
             <div key={photo.id} ref={i === photos.length - 1 ? lastPhotoRef : null}>
-              <PhotoCard photo={photo} user={user} onOpen={() => setViewer(photo)} />
+              <PhotoCard 
+                photo={photo} 
+                user={user} 
+                onOpen={() => setViewer(photo)} 
+              />
             </div>
           ))}
           
@@ -332,6 +336,7 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
       setLikesCount(prev => Math.max(0, prev - 1));
     } else {
       await supabase.from('likes').insert({ user_id: user.id, photo_id: photo.id });
+      setLiked(true);
       setLikesCount(prev => prev + 1);
     }
     setLiked(!liked);

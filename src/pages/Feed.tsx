@@ -235,12 +235,12 @@ export default function Feed({ user }: { user: any }) {
           >
             <Flame size={20} />
           </button>
-          <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex gap-2">
             <button 
               onClick={() => { setShowAll(false); setPage(0); setHasMore(true); }}
               className={cn(
-                "px-4 py-2 text-xs font-bold rounded-xl transition-all",
-                !showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
+                "px-5 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border",
+                !showAll ? "bg-black text-white border-black shadow-lg shadow-black/10 scale-105" : "bg-white text-slate-400 border-slate-100 hover:text-black hover:border-black/10"
               )}
             >
               Circle
@@ -248,8 +248,8 @@ export default function Feed({ user }: { user: any }) {
             <button 
               onClick={() => { setShowAll(true); setPage(0); setHasMore(true); }}
               className={cn(
-                "px-4 py-2 text-xs font-bold rounded-xl transition-all",
-                showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
+                "px-5 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border",
+                showAll ? "bg-black text-white border-black shadow-lg shadow-black/10 scale-105" : "bg-white text-slate-400 border-slate-100 hover:text-black hover:border-black/10"
               )}
             >
               Global
@@ -379,7 +379,7 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             <span className="text-xs font-bold">{likesCount}</span>
           </button>
         </div>
-        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">{photo.name}</div>
+        <div className="text-[10px] font-bold text-black uppercase tracking-[0.3em]">{photo.name}</div>
       </div>
     </div>
   );

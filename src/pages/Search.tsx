@@ -9,13 +9,42 @@ import PhotoViewer from '../components/PhotoViewer';
 
 type SearchCategory = 'photos' | 'users';
 
+const HONOR_BOARD = [
+  { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
+  { username: 'pipinos', label: 'Main Developer', role: 'official' },
+  { username: 'startorigin', label: 'StartOrigin Official', role: 'official' },
+  { username: 'camilakiriek', label: 'Friend of StartOrigin', role: 'friend' },
+  { username: 'viscaelbarca', label: 'Friend of StartOrigin', role: 'friend' },
+  { username: 'winterwastaken', label: 'Friend of StartOrigin', role: 'friend' },
+];
+
 export default function Search() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SearchCategory>('photos');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [honorUsers, setHonorUsers] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchHonorBoard();
+  }, []);
+
+  async function fetchHonorBoard() {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('username', HONOR_BOARD.map(u => u.username));
+    
+    if (data) {
+      const sorted = HONOR_BOARD.map(h => ({
+        ...data.find(d => d.username === h.username),
+        ...h
+      })).filter(u => u.id); // Only include if user exists in DB
+      setHonorUsers(sorted);
+    }
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,8 +93,48 @@ export default function Search() {
         </div>
       </div>
 
-      <div className="space-y-6 text-black">
-        {!query && !loading && (
+      <div className="space-y-12 text-black">
+        {!query && !loading && category === 'users' && honorUsers.length > 0 && (
+          <div className="space-y-8">
+            <div className="flex flex-col items-center text-center space-y-2">
+               <h2 className="text-2xl font-bold tracking-tight">Honor Board</h2>
+               <p className="text-slate-400 font-medium text-sm italic">The pioneers and friends of StartOrigin</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+               {honorUsers.map((user, i) => (
+                 <motion.div
+                   key={user.id}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: i * 0.1 }}
+                   onClick={() => navigate(`/profile/${user.username}`)}
+                   className="glass-card p-6 flex flex-col items-center text-center space-y-4 cursor-pointer border border-black/5 hover:scale-[1.05] transition-all bg-white shadow-sm"
+                 >
+                   <div className="relative group">
+                     <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-slate-50 group-hover:border-black transition-colors bg-white shadow-inner">
+                       {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-50 flex items-center justify-center font-bold text-slate-200">{user.username[0]}</div>}
+                     </div>
+                     {user.role === 'official' && (
+                       <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1 shadow-lg">
+                          <SearchIcon size={12} className="rotate-45" />
+                       </div>
+                     )}
+                   </div>
+                   <div className="space-y-1">
+                     <div className="font-bold text-[15px]">{user.name || user.username}</div>
+                     <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{user.username}</div>
+                     <div className="mt-2 px-3 py-1 bg-black/5 rounded-full text-[9px] font-bold uppercase tracking-tighter text-slate-500 whitespace-nowrap">
+                       {user.label}
+                     </div>
+                   </div>
+                 </motion.div>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {!query && !loading && (category === 'photos' || (category === 'users' && honorUsers.length === 0)) && (
            <div className="h-64 flex flex-col items-center justify-center space-y-4 text-slate-200">
               <SearchIcon size={64} strokeWidth={1.5} />
               <p className="font-bold tracking-[0.3em] uppercase text-[10px]">Awaiting discovery</p>

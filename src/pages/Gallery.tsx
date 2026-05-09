@@ -17,6 +17,8 @@ export default function Gallery({ user }: { user: any }) {
   // Edit modals state
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
+  const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
+  const [newAlbumName, setNewAlbumName] = useState('');
   const [unsortedPhotos, setUnsortedPhotos] = useState<Photo[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: 'collection' | 'album' | 'photo';
@@ -131,6 +133,32 @@ export default function Gallery({ user }: { user: any }) {
         setSelectedAlbum({ ...selectedAlbum, ...editingAlbum });
       }
       setEditingAlbum(null);
+    }
+  }
+
+  async function handleCreateAlbum() {
+    if (!newAlbumName || !selectedCollection) return;
+    
+    const { data, error } = await supabase
+      .from('albums')
+      .insert({
+        name: newAlbumName,
+        collection_id: selectedCollection.id,
+        user_id: user.id,
+        privacy: 'private'
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      const updatedAlbums = [...(selectedCollection.albums || []), { ...data, photos: [] }];
+      const updatedCollection = { ...selectedCollection, albums: updatedAlbums };
+      setSelectedCollection(updatedCollection);
+      setCollections(collections.map(c => c.id === selectedCollection.id ? updatedCollection : c));
+      setNewAlbumName('');
+      setIsCreatingAlbum(false);
+    } else {
+      console.error('Create album error:', error);
     }
   }
 
@@ -317,10 +345,13 @@ export default function Gallery({ user }: { user: any }) {
               </div>
             ))}
             
-            <a href="/add" className="glass-card aspect-square border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity">
+            <button 
+              onClick={() => setIsCreatingAlbum(true)}
+              className="glass-card aspect-square border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity"
+            >
               <Plus size={24} className="text-slate-400" />
               <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Add Album</span>
-            </a>
+            </button>
           </motion.div>
         ) : (
           <motion.div
@@ -403,6 +434,41 @@ export default function Gallery({ user }: { user: any }) {
               >
                 <Save size={18} />
                 <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Album Modal */}
+      {isCreatingAlbum && (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-black">New Album</h3>
+              <button onClick={() => { setIsCreatingAlbum(false); setNewAlbumName(''); }} className="text-slate-300 hover:text-black transition-all">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Album Name</label>
+                <input 
+                  type="text" 
+                  value={newAlbumName}
+                  onChange={(e) => setNewAlbumName(e.target.value)}
+                  placeholder="e.g. Summer Memories"
+                  autoFocus
+                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                />
+              </div>
+              <button 
+                onClick={handleCreateAlbum}
+                disabled={!newAlbumName}
+                className="w-full h-14 btn-primary rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Plus size={18} />
+                <span>Create Album</span>
               </button>
             </div>
           </div>

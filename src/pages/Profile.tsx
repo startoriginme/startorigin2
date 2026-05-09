@@ -489,11 +489,19 @@ export default function Profile({ user }: { user: any }) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
-             <button onClick={() => fetchFollows('followers')} className="text-center hover:opacity-60 transition-opacity p-2">
+             <button 
+                onClick={() => { if (isOwn) fetchFollows('followers'); }} 
+                disabled={!isOwn}
+                className={cn("text-center transition-opacity p-2", isOwn ? "hover:opacity-60 cursor-pointer" : "cursor-default")}
+              >
                 <div className="text-base font-bold tracking-tight">{formatCount(followersCount)}</div>
                 <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Followers</div>
              </button>
-             <button onClick={() => fetchFollows('following')} className="text-center hover:opacity-60 transition-opacity p-2">
+             <button 
+                onClick={() => { if (isOwn) fetchFollows('following'); }} 
+                disabled={!isOwn}
+                className={cn("text-center transition-opacity p-2", isOwn ? "hover:opacity-60 cursor-pointer" : "cursor-default")}
+              >
                 <div className="text-base font-bold tracking-tight">{formatCount(followingCount)}</div>
                 <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Following</div>
              </button>

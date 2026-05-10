@@ -291,27 +291,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(true);
     setStatus(null);
 
-    // Check if pet already owned
-    const { data: existing, error: checkError } = await supabase
-      .from('user_pets')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('pet_id_name', pet.id)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error("Check error:", checkError);
-      setStatus({ type: 'error', message: 'Database error: ' + checkError.message });
-      setLoading(false);
-      return;
-    }
-
-    if (existing) {
-      setStatus({ type: 'error', message: 'You already have this companion.' });
-      setLoading(false);
-      return;
-    }
-
     const { error: petError } = await supabase.from('user_pets').insert({
       user_id: user.id,
       pet_id_name: pet.id,

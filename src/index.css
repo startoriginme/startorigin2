@@ -15,6 +15,10 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
   }

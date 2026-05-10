@@ -142,6 +142,14 @@ const PATTERNS: Record<string, string> = {
   stars: 'bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpolygon%20fill%3D%22%23999%22%20fill-opacity%3D%220.15%22%20points%3D%2210%200%2013%207%2020%207%2015%2011%2017%2018%2010%2014%203%2018%205%2011%200%207%207%207%22%2F%3E%3C%2Fsvg%3E")] bg-[length:20px_20px]',
 };
 
+// РАСШИРЕННАЯ КОНФИГУРАЦИЯ ПИТОМЦЕВ
+const PET_ICONS: Record<string, any> = {
+  cat: { image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100', price: 100 },
+  dog: { image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100', price: 150 },
+  bat: { image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100', price: 300 },
+  owl: { image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100', price: 500 },
+};
+
 export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id: string) => void }) {
   const { username } = useParams();
   const [profile, setProfile] = useState<ProfileType | null>(null);
@@ -378,8 +386,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!pet) return;
     
     const pinnedCount = userPets.filter(p => p.is_pinned).length;
-    if (!pet.is_pinned && pinnedCount >= 3) {
-      alert('You can only pin up to 3 companions.');
+    if (!pet.is_pinned && pinnedCount >= 4) {
+      alert('You can only pin up to 4 companions.');
       return;
     }
 
@@ -436,12 +444,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     }
   }
 
-  const PET_ICONS: Record<string, any> = {
-    cat: { image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100', price: 100 },
-    dog: { image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100', price: 150 },
-    bat: { image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100', price: 300 },
-    owl: { image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100', price: 500 },
-  };
 
   async function calculateOriginsBalance() {
     if (!profile) return;
@@ -612,14 +614,49 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         {currentPattern && <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: currentPattern }} />}
         
         <div className="relative z-10 w-full space-y-6">
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 mx-auto shadow-xl bg-white">
-             {profile.avatar_url ? (
-               <img src={profile.avatar_url} className="w-full h-full object-cover" />
-             ) : (
-               <div className="w-full h-full bg-black/5 flex items-center justify-center text-3xl font-bold uppercase text-black">
-                 {profile.name?.[0] || profile.username[0]}
-               </div>
-             )}
+          <div className="relative w-32 h-32 mx-auto">
+            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white/20 shadow-xl bg-white relative z-10">
+               {profile.avatar_url ? (
+                 <img src={profile.avatar_url} className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full bg-black/5 flex items-center justify-center text-3xl font-bold uppercase text-black">
+                   {profile.name?.[0] || profile.username[0]}
+                 </div>
+               )}
+            </div>
+
+            {/* Pinned Pets around avatar */}
+            {userPets.filter(p => p.is_pinned).map((up, idx) => {
+              const config = PET_ICONS[up.pet_id_name || 'cat'] || PET_ICONS.cat;
+              const positions = [
+                "-top-4 -right-12", // 1st: top-right
+                "-top-4 -left-12",  // 2nd: top-left
+                "-bottom-4 -right-12", // 3rd: bottom-right
+                "-bottom-4 -left-12"   // 4th: bottom-left
+              ];
+              if (idx >= 4) return null;
+              return (
+                <motion.div 
+                  key={up.id}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  whileHover={{ scale: 1.1 }}
+                  onClick={() => {
+                    setSelectedPet(up);
+                    setNewName(up.pet_name || '');
+                    setEditingName(false);
+                  }}
+                  transition={{ delay: idx * 0.1 }}
+                  title={up.pet_name || ''}
+                  className={cn(
+                    "absolute z-20 w-12 h-12 rounded-2xl bg-white shadow-xl border border-slate-100 flex items-center justify-center p-1 cursor-pointer transition-transform",
+                    positions[idx]
+                  )}
+                >
+                  <img src={config.image} className="w-full h-full object-contain" alt="" />
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="space-y-2">

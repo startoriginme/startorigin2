@@ -14,6 +14,8 @@ import Auth from './pages/Auth';
 import Landing from './pages/Landing';
 import { Profile as ProfileType } from './types';
 
+import Post from './pages/Post';
+
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<ProfileType | null>(null);
@@ -78,6 +80,7 @@ export default function App() {
               <Route path="/profile" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
               <Route path="/profile/:username" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
               <Route path="/profile/:username/follows" element={session ? <Follows /> : <Navigate to="/auth" />} />
+              <Route path="/posts/:id" element={session ? <Post user={session.user} /> : <Navigate to="/auth" />} />
               <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
               
               <Route path="*" element={<Navigate to="/" />} />

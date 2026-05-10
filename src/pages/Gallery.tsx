@@ -269,7 +269,7 @@ export default function Gallery({ user }: { user: any }) {
                     <div className="p-3 bg-slate-50 rounded-xl">
                       <Folder className="text-slate-400 group-hover:text-black transition-colors" size={24} />
                     </div>
-                    <div className="flex gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 transition-opacity">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setEditingCollection(collection); }}
                         className="p-2 text-slate-200 hover:text-black rounded-lg transition-all"
@@ -324,7 +324,7 @@ export default function Gallery({ user }: { user: any }) {
                 onClick={() => setSelectedAlbum(album)}
                 className="glass-card group aspect-square flex flex-col items-center justify-center cursor-pointer space-y-3 p-4 hover:scale-[1.02] transition-transform border border-black/5 bg-white relative"
               >
-                <div className="absolute top-2 right-2 flex gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex gap-1 transition-opacity">
                   <button 
                     onClick={(e) => { 
                       e.stopPropagation(); 
@@ -626,22 +626,25 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                   <div className="w-full h-full rounded-[1.25rem] overflow-hidden">
                     <img src={photo.url} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 md:group-hover:opacity-100 max-md:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setEditingPhoto(photo); }}
-                      className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all shadow-lg pointer-events-auto"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setDeleteConfirm({ id: photo.id, name: photo.name });
-                      }}
-                      className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-500 transition-all shadow-lg pointer-events-auto"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                  <div className="absolute inset-0 bg-black/5 opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="flex gap-2 relative z-10">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingPhoto(photo); }}
+                        className="p-2 bg-white/90 hover:bg-white rounded-lg text-black transition-all shadow-lg pointer-events-auto"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setDeleteConfirm({ id: photo.id, name: photo.name });
+                        }}
+                        className="p-2 bg-rose-500/90 hover:bg-rose-500 rounded-lg text-white transition-all shadow-lg pointer-events-auto"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </SortableItem>

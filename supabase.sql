@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     pattern_preference TEXT DEFAULT 'none',
     hidden_badges TEXT[] DEFAULT '{}',
     badges_order TEXT[] DEFAULT '{"star", "computer", "snowflake", "verified", "crown", "diamond", "heart", "award"}',
+    photo_count INTEGER DEFAULT 0,
+    followers_count INTEGER DEFAULT 0,
+    following_count INTEGER DEFAULT 0,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -48,17 +51,20 @@ CREATE TABLE IF NOT EXISTS public.pets (
 CREATE TABLE IF NOT EXISTS public.user_pets (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-    pet_id UUID REFERENCES public.pets(id) ON DELETE CASCADE NOT NULL,
+    pet_id UUID REFERENCES public.pets(id) ON DELETE CASCADE,
+    pet_id_name TEXT,
     pet_name TEXT,
+    gifted_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT false,
     is_hidden BOOLEAN DEFAULT false,
+    is_pinned BOOLEAN DEFAULT false,
     acquired_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Collections table
 CREATE TABLE IF NOT EXISTS public.collections (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
     privacy TEXT DEFAULT 'private' CHECK (privacy IN ('private', 'public')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -68,6 +74,7 @@ CREATE TABLE IF NOT EXISTS public.collections (
 CREATE TABLE IF NOT EXISTS public.albums (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     collection_id UUID REFERENCES public.collections(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
     "order" INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -76,10 +83,11 @@ CREATE TABLE IF NOT EXISTS public.albums (
 -- Photos table
 CREATE TABLE IF NOT EXISTS public.photos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-    album_id UUID REFERENCES public.albums(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    album_id UUID REFERENCES public.albums(id) ON DELETE CASCADE,
+    collection_id UUID REFERENCES public.collections(id) ON DELETE CASCADE,
     name TEXT,
-    image_url TEXT NOT NULL,
+    url TEXT NOT NULL,
     "order" INTEGER DEFAULT 0,
     privacy TEXT DEFAULT 'private' CHECK (privacy IN ('private', 'public')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -116,22 +124,47 @@ CREATE TABLE IF NOT EXISTS public.follows (
     PRIMARY KEY (follower_id, following_id)
 );
 
--- Row Level Security (RLS) - Example for collections
+-- Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.albums ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_pets ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own collections"
-ON public.collections FOR SELECT
-USING (auth.uid() = owner_id);
+-- Profiles
+CREATE POLICY "Anyone can view profiles" ON public.profiles
+    FOR SELECT USING (true);
 
-CREATE POLICY "Users can view public collections"
-ON public.collections FOR SELECT
-USING (privacy = 'public');
+CREATE POLICY "Users can manage their own profile" ON public.profiles
+    FOR ALL USING (auth.uid() = id);
 
-CREATE POLICY "Collaborators can view shared collections"
-ON public.collections FOR SELECT
-USING (EXISTS (
-    SELECT 1 FROM public.collaborators 
-    WHERE collection_id = public.collections.id AND user_id = auth.uid()
-));
+-- Collections
+CREATE POLICY "Users can manage their own collections" ON public.collections
+    FOR ALL USING (auth.uid() = user_id);
 
--- (More policies would be needed for albums, photos, etc.)
+CREATE POLICY "Anyone can view public collections" ON public.collections
+    FOR SELECT USING (privacy = 'public');
+
+-- Albums
+CREATE POLICY "Users can manage their own albums" ON public.albums
+    FOR ALL USING (auth.uid() = user_id);
+
+-- Photos
+CREATE POLICY "Users can manage their own photos" ON public.photos
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Anyone can view public photos" ON public.photos
+    FOR SELECT USING (privacy = 'public');
+
+-- User Pets
+CREATE POLICY "Users can insert their own pets" ON public.user_pets
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Anyone can view user pets" ON public.user_pets
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can delete their own pets" ON public.user_pets
+    FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own pets" ON public.user_pets
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (true);

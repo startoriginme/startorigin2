@@ -115,6 +115,13 @@ const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; lab
   sparkles: { icon: Sparkles, color: 'text-purple-400', label: 'Sparkles' },
 };
 
+const PET_CONFIG = [
+  { id: 'cat', name: 'Cat', price: 100, image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100' },
+  { id: 'dog', name: 'Dog', price: 150, image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100' },
+  { id: 'bat', name: 'Bat', price: 300, image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100' },
+  { id: 'owl', name: 'Owl', price: 500, image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100' },
+];
+
 export default function Settings({ user, profile, onUpdate }: { user: any, profile: Profile | null, onUpdate: (id: string) => void }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -122,7 +129,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showIncompleteBalance, setShowIncompleteBalance] = useState(false);
-  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements'>('badges');
+  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
   
   // Secret quest state
@@ -271,6 +278,63 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
     if (!error) {
       onUpdate(user.id);
+    }
+    setLoading(false);
+  }
+
+  async function handlePurchasePet(pet: any) {
+    if (currentBalance < pet.price) {
+      setShowIncompleteBalance(true);
+      return;
+    }
+
+    setLoading(true);
+    setStatus(null);
+
+    // Check if pet already owned
+    const { data: existing, error: checkError } = await supabase
+      .from('user_pets')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('pet_id_name', pet.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("Check error:", checkError);
+      setStatus({ type: 'error', message: 'Database error: ' + checkError.message });
+      setLoading(false);
+      return;
+    }
+
+    if (existing) {
+      setStatus({ type: 'error', message: 'You already have this companion.' });
+      setLoading(false);
+      return;
+    }
+
+    const { error: petError } = await supabase.from('user_pets').insert({
+      user_id: user.id,
+      pet_id_name: pet.id,
+      pet_name: pet.name,
+      is_active: true,
+      is_hidden: false
+    });
+
+    if (!petError) {
+      const newSpent = (profile?.spent_origins || 0) + pet.price;
+      const { error: profileError } = await supabase.from('profiles').update({
+        spent_origins: newSpent
+      }).eq('id', user.id);
+      
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+      }
+
+      setStatus({ type: 'success', message: `${pet.name} joined your journey!` });
+      onUpdate(user.id);
+    } else {
+      console.error("Adoption error:", petError);
+      setStatus({ type: 'error', message: 'Failed to adopt: ' + petError.message });
     }
     setLoading(false);
   }
@@ -544,11 +608,34 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                    <button onClick={() => setShowShop(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24}/></button>
                 </div>
 
-                 <div className="flex gap-2 p-1 bg-white/5 rounded-2xl">
-                    <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
-                    <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Styles</button>
-                    <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Milestones</button>
+                 <div className="flex gap-2 p-1 bg-white/5 rounded-2xl overflow-x-auto custom-scrollbar no-scrollbar">
+                    <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
+                    <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Pets</button>
+                    <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Styles</button>
+                    <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Tasks</button>
                  </div>
+
+                 {activeShopTab === 'pets' && (
+                    <div className="grid grid-cols-2 gap-4">
+                       {PET_CONFIG.map((pet) => (
+                          <div key={pet.id} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-6 group">
+                             <div className={cn("w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center transition-all duration-700 group-hover:scale-110 shadow-2xl overflow-hidden", pet.color)}>
+                                <img src={pet.image} alt={pet.name} className="w-14 h-14 object-contain" />
+                             </div>
+                             <div className="text-center">
+                                <div className="text-white font-bold text-lg mb-1">{pet.name}</div>
+                                <div className="text-[10px] text-amber-500 font-bold uppercase tracking-[0.3em]">{pet.price} ORG</div>
+                             </div>
+                             <button 
+                               onClick={() => handlePurchasePet(pet)}
+                               className="w-full h-12 bg-white text-black rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all"
+                             >
+                               Adopt
+                             </button>
+                          </div>
+                       ))}
+                    </div>
+                 )}
 
                  {activeShopTab === 'badges' && (
                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

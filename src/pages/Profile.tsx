@@ -24,12 +24,15 @@ interface Pet {
 interface UserPet {
   id: string;
   user_id: string;
-  pet_id: string;
+  pet_id: string | null;
+  pet_id_name: string | null;
   pet_name: string | null;
+  gifted_by: string | null;
   is_active: boolean;
   is_hidden: boolean;
   acquired_at: string;
   pets?: Pet;
+  gifter?: { username: string; name: string };
 }
 
 // РАСШИРЕННАЯ КОНФИГУРАЦИЯ ЗНАЧКОВ
@@ -139,7 +142,7 @@ const PATTERNS: Record<string, string> = {
   stars: 'bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpolygon%20fill%3D%22%23999%22%20fill-opacity%3D%220.15%22%20points%3D%2210%200%2013%207%2020%207%2015%2011%2017%2018%2010%2014%203%2018%205%2011%200%207%207%207%22%2F%3E%3C%2Fsvg%3E")] bg-[length:20px_20px]',
 };
 
-export default function Profile({ user }: { user: any }) {
+export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id: string) => void }) {
   const { username } = useParams();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -179,6 +182,15 @@ export default function Profile({ user }: { user: any }) {
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
   const [activeTab, setActiveTab] = useState<'photos' | 'pets' | 'achievements'>('photos');
+  const [showGiftPanel, setShowGiftPanel] = useState(false);
+  const [gifting, setGifting] = useState(false);
+  const [giftSearchQuery, setGiftSearchQuery] = useState('');
+  const [giftSearchResults, setGiftSearchResults] = useState<any[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [selling, setSelling] = useState(false);
+  const [showSellConfirm, setShowSellConfirm] = useState(false);
 
   const isOwn = !username || (user && profile?.id === user.id);
 
@@ -282,9 +294,10 @@ export default function Profile({ user }: { user: any }) {
 
   async function loadPets() {
     if (!profile) return;
-    const { data: petsData } = await supabase.from('pets').select('*');
-    if (petsData) setAllPets(petsData);
-    const { data: userPetsData } = await supabase.from('user_pets').select('*, pets(*)').eq('user_id', profile.id);
+    const { data: userPetsData } = await supabase
+      .from('user_pets')
+      .select('*, gifter:gifted_by(username, name)')
+      .eq('user_id', profile.id);
     if (userPetsData) setUserPets(userPetsData);
   }
 
@@ -294,7 +307,141 @@ export default function Profile({ user }: { user: any }) {
     const newHidden = !pet.is_hidden;
     await supabase.from('user_pets').update({ is_hidden: newHidden }).eq('id', userPetId);
     setUserPets(prev => prev.map(p => p.id === userPetId ? { ...p, is_hidden: newHidden } : p));
+    setSelectedPet(null);
   }
+
+  useEffect(() => {
+    if (showGiftPanel) {
+      searchUsersForGift('');
+    }
+  }, [showGiftPanel]);
+
+  async function searchUsersForGift(query: string) {
+    if (!profile) return;
+    setSearchingUsers(true);
+    try {
+      let q = supabase.from('profiles').select('*').limit(10);
+      if (query) {
+        q = q.or(`username.ilike.%${query}%,name.ilike.%${query}%`);
+      } else {
+        // Show people in circle first if no query
+        const matchField = 'follower_id';
+        const { data: followingList } = await supabase
+          .from('follows')
+          .select('profiles:following_id (*)')
+          .eq(matchField, profile!.id)
+          .limit(10);
+        
+        if (followingList && followingList.length > 0) {
+          setGiftSearchResults(followingList.map((f: any) => f.profiles).filter(Boolean));
+          setSearchingUsers(false);
+          return;
+        }
+      }
+      
+      const { data } = await q;
+      if (data) {
+        setGiftSearchResults(data.filter(p => p.id !== user.id));
+      }
+    } finally {
+      setSearchingUsers(false);
+    }
+  }
+
+  async function handleGiftPet(targetUserId: string) {
+    if (!selectedPet || gifting) return;
+    setGifting(true);
+    try {
+      const { error } = await supabase
+        .from('user_pets')
+        .update({ 
+          user_id: targetUserId, 
+          is_hidden: false,
+          is_pinned: false,
+          gifted_by: user.id
+        })
+        .eq('id', selectedPet.id);
+      
+      if (!error) {
+        setUserPets(prev => prev.filter(p => p.id !== selectedPet.id));
+        setSelectedPet(null);
+        setShowGiftPanel(false);
+        alert('Companion sent to their new home!');
+      }
+    } finally {
+      setGifting(false);
+    }
+  }
+
+  async function togglePinPet(userPetId: string) {
+    const pet = userPets.find(p => p.id === userPetId);
+    if (!pet) return;
+    
+    const pinnedCount = userPets.filter(p => p.is_pinned).length;
+    if (!pet.is_pinned && pinnedCount >= 3) {
+      alert('You can only pin up to 3 companions.');
+      return;
+    }
+
+    const newPinned = !pet.is_pinned;
+    const { error } = await supabase.from('user_pets').update({ is_pinned: newPinned }).eq('id', userPetId);
+    if (!error) {
+      setUserPets(prev => prev.map(p => p.id === userPetId ? { ...p, is_pinned: newPinned } : p));
+      if (selectedPet?.id === userPetId) setSelectedPet(null);
+    }
+  }
+
+  async function handleSellPet(userPetId: string) {
+    const up = userPets.find(p => p.id === userPetId);
+    if (!up || selling) return;
+    
+    const config = PET_ICONS[up.pet_id_name || 'cat'];
+    const sellPrice = Math.floor(config.price * 0.8);
+
+    setSelling(true);
+    try {
+      const { error: sellError } = await supabase.from('user_pets').delete().eq('id', userPetId);
+      if (sellError) {
+        console.error('Error selling pet:', sellError);
+        alert('Failed to sell: ' + sellError.message);
+        return;
+      }
+      
+      const newSpent = Math.max(0, (profile?.spent_origins || 0) - sellPrice);
+      const { error: profileError } = await supabase.from('profiles').update({ spent_origins: newSpent }).eq('id', user.id);
+      
+      if (!profileError) {
+        setProfile(prev => prev ? { ...prev, spent_origins: newSpent } : null);
+        setUserPets(prev => prev.filter(p => p.id !== userPetId));
+        setSelectedPet(null);
+        setShowSellConfirm(false);
+        onUpdate?.(user.id);
+      } else {
+        console.error('Error updating profile:', profileError);
+      }
+    } catch (err) {
+      console.error('Unexpected error during sell:', err);
+    } finally {
+      setSelling(false);
+    }
+  }
+
+  async function updatePetName() {
+    if (!selectedPet || !newName.trim()) return;
+    const { error } = await supabase.from('user_pets').update({ pet_name: newName.trim() }).eq('id', selectedPet.id);
+    if (!error) {
+      setUserPets(prev => prev.map(p => p.id === selectedPet.id ? { ...p, pet_name: newName.trim() } : p));
+      setSelectedPet(prev => prev ? { ...prev, pet_name: newName.trim() } : null);
+      setEditingName(false);
+    }
+  }
+
+  const PET_ICONS: Record<string, any> = {
+    cat: { image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100', price: 100 },
+    dog: { image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100', price: 150 },
+    bat: { image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100', price: 300 },
+    owl: { image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100', price: 500 },
+  };
 
   async function calculateOriginsBalance() {
     if (!profile) return;
@@ -456,7 +603,8 @@ export default function Profile({ user }: { user: any }) {
 
   const currentTheme = THEMES[themePreference] || THEMES.default;
   const currentPattern = PATTERNS[patternPreference] || '';
-  const visiblePets = userPets.filter(pet => !pet.is_hidden);
+  const visiblePets = isOwn ? userPets : userPets.filter(pet => !pet.is_hidden);
+  const hasPetsTab = (isOwn && userPets.length > 0) || visiblePets.length > 0;
 
   return (
     <main className="max-w-xl mx-auto p-4 md:p-8 space-y-8 min-h-screen">
@@ -557,7 +705,7 @@ export default function Profile({ user }: { user: any }) {
         <div className="flex gap-2 p-1.5 bg-slate-50 border border-slate-100 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-hide">
            <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Moments</button>
            <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Achievements</button>
-           {visiblePets.length > 0 && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Companions</button>}
+           {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Companions</button>}
         </div>
 
         {activeTab === 'photos' && (
@@ -628,20 +776,36 @@ export default function Profile({ user }: { user: any }) {
 
         {activeTab === 'pets' && (
           <div className="grid grid-cols-2 gap-4">
-            {visiblePets.map(up => {
-               const p = allPets.find(x => x.id === up.pet_id);
-               return p ? (
-                 <div key={up.id} onClick={() => setSelectedPet(up)} className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 flex flex-col items-center gap-4 cursor-pointer hover:bg-white transition-all shadow-sm group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-white shadow-inner">
-                       <img src={p.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            {userPets
+              .filter(p => isOwn || !p.is_hidden)
+              .sort((a, b) => {
+                if (a.is_pinned && !b.is_pinned) return -1;
+                if (!a.is_pinned && b.is_pinned) return 1;
+                return new Date(b.acquired_at).getTime() - new Date(a.acquired_at).getTime();
+              })
+              .map(up => {
+                const config = PET_ICONS[up.pet_id_name || 'cat'] || PET_ICONS.cat;
+                const typeName = up.pet_id_name ? up.pet_id_name.charAt(0).toUpperCase() + up.pet_id_name.slice(1) : 'Pet';
+                const displayName = up.pet_name === typeName ? up.pet_name : `${typeName} (${up.pet_name})`;
+                
+                return (
+                  <div key={up.id} onClick={() => { setSelectedPet(up); setNewName(up.pet_name || ''); setEditingName(false); }} className={cn("bg-slate-50 border border-slate-100 rounded-[2rem] p-8 flex flex-col items-center gap-6 cursor-pointer hover:bg-white transition-all shadow-sm group relative", up.is_hidden && "opacity-40", up.is_pinned && "border-amber-200 bg-amber-50/30")}>
+                    <div className="absolute top-4 right-4 flex gap-1">
+                      {up.is_pinned && <div className="text-amber-500"><Zap size={14} fill="currentColor"/></div>}
+                      {up.is_hidden && <div className="text-slate-400"><EyeOff size={14}/></div>}
+                    </div>
+                    <div className={cn("w-20 h-20 rounded-[2.5rem] bg-white flex items-center justify-center transition-all duration-700 group-hover:scale-110 shadow-inner overflow-hidden", config.color)}>
+                        <img src={config.image} alt={up.pet_name || ''} className="w-14 h-14 object-contain" />
                     </div>
                     <div className="text-center">
-                       <div className="font-bold text-black">{up.pet_name || p.name}</div>
-                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{p.rarity}</div>
+                       <div className="font-bold text-black text-lg truncate w-full max-w-[120px]">{displayName}</div>
+                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Companion</div>
+                       {up.gifter && <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest mt-1">Gift from {up.gifter.name || up.gifter.username}</div>}
                     </div>
-                 </div>
-               ) : null;
+                  </div>
+                );
             })}
+            {userPets.filter(p => isOwn || !p.is_hidden).length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">No companions found.</div>}
           </div>
         )}
       </div>
@@ -665,23 +829,165 @@ export default function Profile({ user }: { user: any }) {
 
       {selectedPet && (
         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedPet(null)}>
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-50 mx-auto shadow-inner">
-              <img src={selectedPet.pets?.image_url} className="w-full h-full object-cover" />
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-6 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className={cn("w-32 h-32 rounded-[3.5rem] bg-slate-50 mx-auto flex items-center justify-center shadow-inner overflow-hidden", PET_ICONS[selectedPet.pet_id_name || 'cat']?.color)}>
+               <img src={PET_ICONS[selectedPet.pet_id_name || 'cat']?.image} className="w-24 h-24 object-contain" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-black">{selectedPet.pet_name || selectedPet.pets?.name}</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedPet.pets?.rarity}</p>
+              {editingName && isOwn ? (
+                <div className="flex flex-col gap-2">
+                  <input 
+                    autoFocus
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    className="text-center text-xl font-bold border-b border-purple-200 focus:outline-none focus:border-purple-500 w-full"
+                    placeholder="New nickname..."
+                    onKeyDown={e => e.key === 'Enter' && updatePetName()}
+                  />
+                  <div className="flex gap-2 justify-center">
+                    <button onClick={updatePetName} className="text-[10px] font-bold uppercase text-purple-600">Save</button>
+                    <button onClick={() => setEditingName(false)} className="text-[10px] font-bold uppercase text-slate-400">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <h3 className="text-2xl font-bold text-black">{selectedPet.pet_name}</h3>
+                  {isOwn && <button onClick={() => setEditingName(true)} className="text-slate-300 hover:text-purple-500"><Edit2 size={12}/></button>}
+                </div>
+              )}
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Loyal Companion</p>
+              {selectedPet.gifter && (
+                <div className="mt-4 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                  <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest mb-1">Sent by</div>
+                  <div className="text-sm font-bold text-purple-700">@{selectedPet.gifter.username}</div>
+                </div>
+              )}
             </div>
+            
             {isOwn && (
-              <button 
-                onClick={() => toggleHidePet(selectedPet.id)}
-                className="w-full h-12 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
-              >
-                {selectedPet.is_hidden ? 'Show on Profile' : 'Hide from Profile'}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => toggleHidePet(selectedPet.id)}
+                  className="h-12 bg-slate-50 hover:bg-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  {selectedPet.is_hidden ? <Eye size={12}/> : <EyeOff size={12}/>}
+                  {selectedPet.is_hidden ? 'Show' : 'Hide'}
+                </button>
+                <button 
+                  onClick={() => togglePinPet(selectedPet.id)}
+                  className={cn("h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2", selectedPet.is_pinned ? "bg-amber-100 text-amber-600" : "bg-slate-50 hover:bg-slate-100")}
+                >
+                  <Zap size={12} fill={selectedPet.is_pinned ? 'currentColor' : 'none'} />
+                  {selectedPet.is_pinned ? 'Unpin' : 'Pin'}
+                </button>
+                <button 
+                  onClick={() => {
+                    fetchFollows('following');
+                    setShowGiftPanel(true);
+                  }}
+                  className="h-12 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 col-span-1"
+                >
+                  <Gift size={12} />
+                  Gift
+                </button>
+                <button 
+                  onClick={() => {
+                    const up = selectedPet;
+                    const config = PET_ICONS[up.pet_id_name || 'cat'];
+                    const sellPrice = Math.floor(config.price * 0.8);
+                    setShowSellConfirm(true);
+                  }}
+                  disabled={selling}
+                  className="h-12 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 col-span-1 disabled:opacity-50"
+                >
+                  <ShoppingCart size={12} />
+                  Sell
+                </button>
+              </div>
             )}
             <button onClick={() => setSelectedPet(null)} className="text-xs font-bold uppercase tracking-widest text-slate-300">Close</button>
+          </div>
+        </div>
+      )}
+
+      {showSellConfirm && selectedPet && (
+        <div className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowSellConfirm(false)}>
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+              <ShoppingCart size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-black">Confirm Sale</h3>
+              <p className="text-xs text-slate-400 font-medium mt-2">
+                Sell <span className="text-black font-bold">{selectedPet.pet_name}</span> for <span className="text-emerald-500 font-bold">{Math.floor(PET_ICONS[selectedPet.pet_id_name || 'cat'].price * 0.8)} Origins</span>?
+              </p>
+            </div>
+            <div className="space-y-2">
+              <button 
+                onClick={() => handleSellPet(selectedPet.id)}
+                disabled={selling}
+                className="w-full h-12 bg-red-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-red-600 disabled:opacity-50"
+              >
+                {selling ? 'Selling...' : 'Yes, Sell Companion'}
+              </button>
+              <button 
+                onClick={() => setShowSellConfirm(false)}
+                className="w-full h-12 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGiftPanel && (
+        <div className="fixed inset-0 z-[400] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowGiftPanel(false)}>
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center">
+               <h3 className="text-xl font-bold text-black">Gift Companion</h3>
+               <button onClick={() => setShowGiftPanel(false)} className="text-slate-300 hover:text-black"><X/></button>
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                type="text"
+                placeholder="Search all hunters..."
+                value={giftSearchQuery}
+                onChange={(e) => {
+                  setGiftSearchQuery(e.target.value);
+                  searchUsersForGift(e.target.value);
+                }}
+                className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:bg-white focus:border-purple-500 transition-all"
+              />
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+               {searchingUsers ? (
+                 <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
+               ) : giftSearchResults.length > 0 ? (
+                 giftSearchResults.map((p) => (
+                   <button 
+                     key={p.id} 
+                     disabled={gifting}
+                     onClick={() => handleGiftPet(p.id)}
+                     className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-purple-50 hover:border-purple-200 transition-all group disabled:opacity-50"
+                   >
+                     <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-inner">
+                       {p.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-200 bg-slate-50">{p.username[0]}</div>}
+                     </div>
+                     <div className="text-left flex-1">
+                       <div className="text-sm font-bold text-black">{p.name || p.username}</div>
+                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">@{p.username}</div>
+                     </div>
+                     <Gift size={16} className="text-slate-200 group-hover:text-purple-500 transition-colors" />
+                   </button>
+                 ))
+               ) : (
+                 <div className="py-20 text-center text-slate-300 text-[10px] font-bold uppercase tracking-widest">No matching hunters found.</div>
+               )}
+            </div>
           </div>
         </div>
       )}

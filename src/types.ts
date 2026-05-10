@@ -34,6 +34,29 @@ export interface Profile {
   is_following?: boolean;
 }
 
+export interface Pet {
+  id: string;
+  name: string;
+  image_url: string;
+  price: number;
+  rarity: string;
+}
+
+export interface UserPet {
+  id: string;
+  user_id: string;
+  pet_id: string | null;
+  pet_id_name: string | null;
+  pet_name: string | null;
+  gifted_by: string | null;
+  is_active: boolean;
+  is_hidden: boolean;
+  is_pinned: boolean;
+  acquired_at: string;
+  pets?: Pet;
+  gifter?: { username: string; name: string };
+}
+
 export interface Photo {
   id: string;
   album_id: string | null;

@@ -19,41 +19,33 @@ export default function Add({ user }: { user: any }) {
   const [colData, setColData] = useState({ name: '', privacy: 'private' as 'private' | 'public' });
   
   // Photo upload form
-  const [files, setFiles] = useState<{file: File, name: string, privacy: 'private' | 'public'}[]>([]);
+  const [files, setFiles] = useState<{
+    file: File, 
+    name: string, 
+    privacy: 'private' | 'public',
+    collection_id: string,
+    album_id: string
+  }[]>([]);
 
   useEffect(() => {
     fetchCollections();
   }, []);
-
-  useEffect(() => {
-    if (selectedCollection) {
-      const col = collections.find(c => c.id === selectedCollection);
-      if (col?.albums) setAlbums(col.albums);
-      else fetchAlbums(selectedCollection);
-    }
-  }, [selectedCollection]);
 
   async function fetchCollections() {
     const { data } = await supabase.from('collections').select('*, albums(*)').eq('user_id', user.id);
     if (data) setCollections(data);
   }
 
-  async function fetchAlbums(colId: string) {
-    const { data } = await supabase.from('albums').select('*').eq('collection_id', colId);
-    if (data) setAlbums(data);
-  }
-
   async function handleCreateCollection() {
     if (!colData.name) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('collections')
       .insert({ user_id: user.id, name: colData.name, privacy: colData.privacy })
       .select()
       .single();
     
     if (data) {
-      // Create a default album for the collection
       await supabase.from('albums').insert({ collection_id: data.id, name: 'Main', user_id: user.id });
       navigate('/gallery');
     }
@@ -61,7 +53,7 @@ export default function Add({ user }: { user: any }) {
   }
 
   async function handleUploadPhotos() {
-    if (files.length === 0 || !selectedAlbum) return;
+    if (files.length === 0) return;
     setLoading(true);
     
     try {
@@ -82,8 +74,8 @@ export default function Add({ user }: { user: any }) {
 
         await supabase.from('photos').insert({
           user_id: user.id,
-          album_id: selectedAlbum || null,
-          collection_id: selectedCollection || null,
+          album_id: item.album_id || null,
+          collection_id: item.collection_id || null,
           name: item.name,
           privacy: item.privacy,
           url: publicUrl
@@ -102,7 +94,9 @@ export default function Add({ user }: { user: any }) {
       const newFiles = Array.from(e.target.files).slice(0, 10).map((f: File) => ({
         file: f,
         name: f.name.split('.')[0],
-        privacy: 'private' as const
+        privacy: 'private' as const,
+        collection_id: '',
+        album_id: ''
       }));
       setFiles([...files, ...newFiles].slice(0, 10));
     }
@@ -202,38 +196,6 @@ export default function Add({ user }: { user: any }) {
             </div>
 
             <div className="space-y-8">
-              <div className="grid grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Select Collection</label>
-                    <div className="relative group">
-                      <select 
-                        value={selectedCollection}
-                        onChange={(e) => setSelectedCollection(e.target.value)}
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-bold appearance-none cursor-pointer"
-                      >
-                        <option value="" className="bg-white">Unsorted (No Collection)</option>
-                        {collections.map(c => <option key={c.id} value={c.id} className="bg-white">{c.name}</option>)}
-                      </select>
-                      <Plus size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    </div>
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Select Album</label>
-                    <div className="relative group">
-                      <select 
-                        value={selectedAlbum}
-                        onChange={(e) => setSelectedAlbum(e.target.value)}
-                        disabled={!selectedCollection}
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-bold appearance-none cursor-pointer disabled:opacity-30"
-                      >
-                        <option value="" className="bg-white">Main / General</option>
-                        {albums.map(a => <option key={a.id} value={a.id} className="bg-white">{a.name}</option>)}
-                      </select>
-                      <Plus size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    </div>
-                 </div>
-              </div>
-
               {files.length === 0 ? (
                 <label className="flex flex-col items-center justify-center p-16 border-2 border-dashed border-slate-100 rounded-[2.5rem] cursor-pointer hover:bg-black/5 transition-all group scale-100 active:scale-[0.98]">
                    <Upload size={40} className="text-slate-200 group-hover:text-black transition-colors mb-4" />
@@ -241,42 +203,85 @@ export default function Add({ user }: { user: any }) {
                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
               ) : (
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                    {files.map((fileItem, idx) => (
-                     <div key={idx} className="glass-card p-4 flex gap-4 items-center bg-white/50 border border-black/5">
-                        <img src={URL.createObjectURL(fileItem.file)} alt="" className="w-16 h-16 object-cover rounded-2xl shadow-sm" />
-                        <div className="flex-1 space-y-3">
-                          <input 
-                            type="text" 
-                            value={fileItem.name} 
-                            onChange={(e) => {
-                              const newFiles = [...files];
-                              newFiles[idx].name = e.target.value;
-                              setFiles(newFiles);
-                            }}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 focus:outline-none focus:bg-white transition-all text-xs font-bold placeholder:text-slate-300"
-                            placeholder="Photo name"
-                          />
-                          <div className="flex gap-2">
-                             <button 
-                               onClick={() => {
+                     <div key={idx} className="glass-card p-6 flex flex-col gap-6 bg-white shadow-sm border border-slate-100">
+                        <div className="flex gap-4 items-start">
+                          <img src={URL.createObjectURL(fileItem.file)} alt="" className="w-20 h-20 object-cover rounded-2xl shadow-sm" />
+                          <div className="flex-1 space-y-4">
+                            <div className="flex justify-between items-center">
+                              <input 
+                                type="text" 
+                                value={fileItem.name} 
+                                onChange={(e) => {
                                   const newFiles = [...files];
-                                  newFiles[idx].privacy = newFiles[idx].privacy === 'private' ? 'public' : 'private';
+                                  newFiles[idx].name = e.target.value;
                                   setFiles(newFiles);
-                               }}
-                               className={cn("px-4 py-1.5 rounded-lg border-2 flex items-center gap-2 transition-all text-[10px] font-bold uppercase tracking-wider", 
-                                  fileItem.privacy === 'public' ? "bg-black text-white border-black" : "bg-white border-black/5 text-slate-400")
-                               }
-                             >
-                               {fileItem.privacy === 'public' ? <Globe size={12}/> : <Lock size={12}/>}
-                               {fileItem.privacy}
-                             </button>
-                             <button 
-                               onClick={() => setFiles(files.filter((_, i) => i !== idx))}
-                               className="px-4 py-1.5 rounded-lg border-2 border-rose-100 text-rose-500 font-bold text-[10px] uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all"
-                             >
-                               Remove
-                             </button>
+                                }}
+                                className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 focus:outline-none focus:bg-white transition-all text-sm font-bold placeholder:text-slate-300"
+                                placeholder="Photo name"
+                              />
+                              <button 
+                                onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                                className="ml-2 p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                              >
+                                <X size={20} />
+                              </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="relative">
+                                <select 
+                                  value={fileItem.collection_id}
+                                  onChange={(e) => {
+                                    const newFiles = [...files];
+                                    newFiles[idx].collection_id = e.target.value;
+                                    newFiles[idx].album_id = ''; // Reset album
+                                    setFiles(newFiles);
+                                  }}
+                                  className="w-full h-10 bg-slate-50 border border-slate-100 rounded-lg px-3 text-[11px] font-bold appearance-none cursor-pointer"
+                                >
+                                  <option value="">No Collection</option>
+                                  {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                <Tag size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                              </div>
+
+                              <div className="relative">
+                                <select 
+                                  value={fileItem.album_id}
+                                  onChange={(e) => {
+                                    const newFiles = [...files];
+                                    newFiles[idx].album_id = e.target.value;
+                                    setFiles(newFiles);
+                                  }}
+                                  disabled={!fileItem.collection_id}
+                                  className="w-full h-10 bg-slate-50 border border-slate-100 rounded-lg px-3 text-[11px] font-bold appearance-none cursor-pointer disabled:opacity-30"
+                                >
+                                  <option value="">Main Album</option>
+                                  {collections.find(c => c.id === fileItem.collection_id)?.albums?.map((a: any) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                  ))}
+                                </select>
+                                <ImageIcon size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                               <button 
+                                 onClick={() => {
+                                    const newFiles = [...files];
+                                    newFiles[idx].privacy = newFiles[idx].privacy === 'private' ? 'public' : 'private';
+                                    setFiles(newFiles);
+                                 }}
+                                 className={cn("px-4 py-1.5 rounded-lg border flex items-center gap-2 transition-all text-[10px] font-bold uppercase tracking-wider", 
+                                    fileItem.privacy === 'public' ? "bg-black text-white border-black" : "bg-white border-slate-100 text-slate-400")
+                                 }
+                               >
+                                 {fileItem.privacy === 'public' ? <Globe size={12}/> : <Lock size={12}/>}
+                                 {fileItem.privacy}
+                               </button>
+                            </div>
                           </div>
                         </div>
                      </div>

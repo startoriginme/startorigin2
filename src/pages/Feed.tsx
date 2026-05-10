@@ -189,9 +189,9 @@ export default function Feed({ user }: { user: any }) {
               className="w-full h-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 cursor-grab active:cursor-grabbing bg-slate-50"
             >
               <img src={currentPhoto.url} alt="" className="w-full h-full object-cover pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/60 to-transparent">
-                <h3 className="text-xl font-bold text-white">{currentPhoto.name}</h3>
-                <p className="text-white/80 font-medium text-sm">@{currentPhoto.owner?.username}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-white/90 to-transparent">
+                <h3 className="text-xl font-bold text-black">{currentPhoto.name}</h3>
+                <p className="text-black/60 font-medium text-sm">@{currentPhoto.owner?.username}</p>
               </div>
             </motion.div>
           ) : (
@@ -379,7 +379,7 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             <span className="text-xs font-bold">{likesCount}</span>
           </button>
         </div>
-        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">{photo.name}</div>
+        <div className="text-[10px] font-bold text-black uppercase tracking-[0.3em]">{photo.name}</div>
       </div>
     </div>
   );

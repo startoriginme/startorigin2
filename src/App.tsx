@@ -75,8 +75,8 @@ export default function App() {
               <Route path="/search" element={session ? <Search /> : <Navigate to="/auth" />} />
               <Route path="/add" element={session ? <Add user={session.user} /> : <Navigate to="/auth" />} />
               <Route path="/gallery" element={session ? <Gallery user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={session ? <Profile user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/profile/:username" element={session ? <Profile user={session.user} /> : <Navigate to="/auth" />} />
+              <Route path="/profile" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
+              <Route path="/profile/:username" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
               <Route path="/profile/:username/follows" element={session ? <Follows /> : <Navigate to="/auth" />} />
               <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
               

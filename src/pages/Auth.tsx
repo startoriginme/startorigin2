@@ -69,7 +69,7 @@ export default function Auth() {
         if (emailExists) {
           setValidationModal({ 
             show: true, 
-            message: 'This email is already registered. Please use a different email or sign in.' 
+            message: 'This email and/or username is already taken. Please try again or login.' 
           });
           setLoading(false);
           return;

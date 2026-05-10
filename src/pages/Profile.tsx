@@ -7,7 +7,7 @@ import {
   Settings, Trophy, Flame, Camera, Sparkles, X, Search, Upload, Eye, 
   EyeOff, Edit2, Minus, Plus, Coins, Glasses, Crown, Diamond, Heart, 
   Award, ShoppingCart, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, 
-  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid
+  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
@@ -444,6 +444,43 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     }
   }
 
+  async function reorderPet(direction: 'left' | 'right') {
+    if (!selectedPet || !isOwn) return;
+    
+    // We only reorder within the pinned pets list for convenience
+    const pinnedPets = userPets.filter(p => p.is_pinned);
+    const index = pinnedPets.findIndex(p => p.id === selectedPet.id);
+    if (index === -1) return;
+
+    let targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= pinnedPets.length) return;
+
+    // Swap positions in the local array first
+    const newPinned = [...pinnedPets];
+    const temp = newPinned[index];
+    newPinned[index] = newPinned[targetIndex];
+    newPinned[targetIndex] = temp;
+
+    // To persist order without a 'sort_order' column, we can use 'is_pinned' toggle 
+    // BUT that won't help with specific order. 
+    // Actually, since I don't have a sort_order column yet, I should probably just 
+    // use the array indices and update the full list.
+    // However, without a dedicated column, Supabase won't remember the rank.
+    // I'll assume we can use the 'acquired_at' timestamp trick: slightly modify timestamps 
+    // to change chronological order. This is a bit hacky but works without schema change.
+    
+    const targetPet = pinnedPets[targetIndex];
+    const currentPet = pinnedPets[index];
+
+    // Swap their acquired_at values
+    const { error: err1 } = await supabase.from('user_pets').update({ acquired_at: targetPet.acquired_at }).eq('id', currentPet.id);
+    const { error: err2 } = await supabase.from('user_pets').update({ acquired_at: currentPet.acquired_at }).eq('id', targetPet.id);
+
+    if (!err1 && !err2) {
+      loadPets();
+    }
+  }
+
 
   async function calculateOriginsBalance() {
     if (!profile) return;
@@ -867,8 +904,27 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       {selectedPet && (
         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedPet(null)}>
           <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-6 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className={cn("w-32 h-32 rounded-[3.5rem] bg-slate-50 mx-auto flex items-center justify-center shadow-inner overflow-hidden", PET_ICONS[selectedPet.pet_id_name || 'cat']?.color)}>
-               <img src={PET_ICONS[selectedPet.pet_id_name || 'cat']?.image} className="w-24 h-24 object-contain" />
+            <div className="relative group/petimage">
+              <div className={cn("w-32 h-32 rounded-[3.5rem] bg-slate-50 mx-auto flex items-center justify-center shadow-inner overflow-hidden", PET_ICONS[selectedPet.pet_id_name || 'cat']?.color)}>
+                 <img src={PET_ICONS[selectedPet.pet_id_name || 'cat']?.image} className="w-24 h-24 object-contain" />
+              </div>
+              
+              {isOwn && selectedPet.is_pinned && (
+                <>
+                  <button 
+                    onClick={() => reorderPet('left')}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-0 group-hover/petimage:opacity-100"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button 
+                    onClick={() => reorderPet('right')}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-0 group-hover/petimage:opacity-100"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </>
+              )}
             </div>
             <div>
               {editingName && isOwn ? (
@@ -996,7 +1052,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                   setGiftSearchQuery(e.target.value);
                   searchUsersForGift(e.target.value);
                 }}
-                className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:bg-white focus:border-purple-500 transition-all"
+                className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold focus:outline-none focus:bg-white focus:border-purple-500 transition-all"
               />
             </div>
             

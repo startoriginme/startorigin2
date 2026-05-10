@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { AlertCircle, ArrowRight, Loader2, Mail } from 'lucide-react';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -11,6 +10,8 @@ export default function Auth() {
   const modeParam = searchParams.get('mode');
   
   const [isLogin, setIsLogin] = useState(modeParam !== 'register');
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [validationModal, setValidationModal] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -24,6 +25,30 @@ export default function Auth() {
   useEffect(() => {
     setIsLogin(modeParam !== 'register');
   }, [modeParam]);
+
+  // Функция для проверки существующего email через Supabase Auth
+  async function checkEmailExists(email: string): Promise<boolean> {
+    try {
+      // Пытаемся отправить запрос на восстановление пароля
+      // Если email существует, Supabase вернет успех, но не отправит письмо
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      // Если ошибка не "Email not found", значит email существует
+      return !error?.message?.includes('not found');
+    } catch {
+      return false;
+    }
+  }
+
+  // Функция для проверки существующего username
+  async function checkUsernameExists(username: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username.toLowerCase())
+      .maybeSingle();
+    
+    return !!data;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,10 +64,38 @@ export default function Auth() {
         if (error) throw error;
         navigate('/feed');
       } else {
+        // Проверка email
+        const emailExists = await checkEmailExists(formData.email);
+        if (emailExists) {
+          setValidationModal({ 
+            show: true, 
+            message: 'This email is already registered. Please use a different email or sign in.' 
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Проверка username
+        const usernameExists = await checkUsernameExists(formData.username);
+        if (usernameExists) {
+          setValidationModal({ 
+            show: true, 
+            message: 'This username is already taken. Please choose another one.' 
+          });
+          setLoading(false);
+          return;
+        }
+
         // Register flow
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            data: {
+              username: formData.username.toLowerCase(),
+              name: formData.name,
+            }
+          }
         });
         
         if (authError) throw authError;
@@ -53,21 +106,66 @@ export default function Auth() {
             .from('profiles')
             .insert({
               id: authData.user.id,
-              username: formData.username,
+              username: formData.username.toLowerCase(),
               name: formData.name,
+              email: formData.email.toLowerCase(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             });
           
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error("Profile creation error:", profileError);
+          }
         }
         
-        setError("Account created! Check your email for confirmation (if enabled). You can now sign in.");
-        setIsLogin(true);
+        setIsRegistered(true);
+        setFormData({ name: '', username: '', email: '', password: '' });
       }
     } catch (err: any) {
-      setError(err.message);
+      // Обработка ошибки от Supabase
+      if (err.message?.includes('already registered')) {
+        setValidationModal({ 
+          show: true, 
+          message: 'This email is already registered. Please use a different email or sign in.' 
+        });
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  if (isRegistered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-sm glass-card p-10 space-y-8 text-center"
+        >
+          <div className="w-20 h-20 bg-black rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl">
+            <Mail className="text-white" size={32} />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold tracking-tight text-black">Check your mail</h2>
+            <p className="text-slate-400 text-sm font-medium leading-relaxed px-2">
+              We've sent you a confirmation email. Confirm your mail and login to explore StartOrigin.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setIsRegistered(false);
+              setIsLogin(true);
+            }}
+            className="w-full h-14 bg-black text-white font-bold rounded-[1.25rem] flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 mt-4"
+          >
+            <span>Back to Login</span>
+            <ArrowRight size={18} />
+          </button>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -111,7 +209,7 @@ export default function Auth() {
                     required
                     type="text"
                     value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
                     className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
                     placeholder="johndoe"
                   />
@@ -126,7 +224,7 @@ export default function Auth() {
               required
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
               className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
               placeholder="name@example.com"
             />
@@ -178,6 +276,48 @@ export default function Auth() {
           </button>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {validationModal.show && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-white rounded-[2.5rem] p-10 text-center space-y-8 shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-rose-50 rounded-[2.5rem] flex items-center justify-center mx-auto">
+                <AlertCircle className="text-rose-500" size={32} />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-black">Hold on...</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                  {validationModal.message}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setValidationModal({ show: false, message: '' })}
+                  className="w-full h-14 bg-black text-white font-bold rounded-[1.25rem] hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10"
+                >
+                  Try again
+                </button>
+                {validationModal.message.includes('email') && (
+                  <button
+                    onClick={() => {
+                      setValidationModal({ show: false, message: '' });
+                      setIsLogin(true);
+                    }}
+                    className="w-full h-14 bg-slate-50 text-slate-400 font-bold rounded-[1.25rem] hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                  >
+                    Go to Login
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

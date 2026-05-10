@@ -8,7 +8,7 @@ import {
   EyeOff, Search, Flame, Star, Coins, Crown, Diamond, Heart, 
   Award, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, Music, 
   Book, Coffee, Gamepad, Gift, Smile, X, Medal, Target, 
-  Compass, Shield, Hash, MapPin, GripVertical
+  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown
 } from 'lucide-react';
 import {
   DndContext,
@@ -207,6 +207,16 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       const oldIndex = badgesOrder.indexOf(active.id);
       const newIndex = badgesOrder.indexOf(over.id);
       const newOrder = arrayMove(badgesOrder, oldIndex, newIndex) as string[];
+      setBadgesOrder(newOrder);
+      handleBadgeUpdate(newOrder, hiddenBadges);
+    }
+  }
+
+  function handleMoveBadge(id: string, direction: 'up' | 'down') {
+    const activeIndex = badgesOrder.indexOf(id);
+    const overIndex = direction === 'up' ? activeIndex - 1 : activeIndex + 1;
+    if (overIndex >= 0 && overIndex < badgesOrder.length) {
+      const newOrder = arrayMove(badgesOrder, activeIndex, overIndex) as string[];
       setBadgesOrder(newOrder);
       handleBadgeUpdate(newOrder, hiddenBadges);
     }
@@ -419,12 +429,12 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
           </div>
           
           <div className="space-y-4">
-             <div className="space-y-2">
+              <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Name</label>
                 <input 
                   value={editProfile.name}
                   onChange={(e) => setEditProfile({ ...editProfile, name: e.target.value })}
-                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner"
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-bold text-black shadow-inner"
                   placeholder="Your display name"
                 />
              </div>
@@ -433,7 +443,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                 <input 
                   value={editProfile.username}
                   onChange={(e) => setEditProfile({ ...editProfile, username: e.target.value })}
-                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner"
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-bold text-black shadow-inner"
                   placeholder="Your username"
                 />
              </div>
@@ -442,7 +452,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                 <textarea 
                   value={editProfile.bio}
                   onChange={(e) => setEditProfile({ ...editProfile, bio: e.target.value })}
-                  className="w-full h-32 px-6 py-4 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-medium text-black resize-none shadow-inner"
+                  className="w-full h-32 px-6 py-4 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-medium text-black resize-none shadow-inner"
                   placeholder="About you..."
                 />
              </div>
@@ -544,7 +554,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
              <input 
                value={secretCode}
                onChange={(e) => setSecretCode(e.target.value)}
-               className="w-full h-12 px-6 bg-white border border-purple-500/10 rounded-xl focus:ring-0 text-sm font-bold text-black"
+               className="w-full h-12 px-6 bg-white border border-purple-500/10 rounded-xl focus:ring-0 text-base font-bold text-black"
                placeholder="Enter secret code..."
                onKeyDown={(e) => e.key === 'Enter' && handleSecretQuest()}
              />
@@ -771,7 +781,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   );
 }
 
-function SortableBadgeItem({ id, badge, isHidden, onToggleVisibility }: any) {
+function SortableBadgeItem({ id, badge, isHidden, onToggleVisibility, onMoveUp, onMoveDown }: any) {
   const {
     attributes,
     listeners,
@@ -800,12 +810,22 @@ function SortableBadgeItem({ id, badge, isHidden, onToggleVisibility }: any) {
         </div>
         <div className="text-sm font-bold text-black">{badge.label}</div>
       </div>
-      <button 
-        onClick={onToggleVisibility} 
-        className={cn("p-2 transition-all", isHidden ? "text-slate-300 hover:text-black" : "text-black hover:opacity-60")}
-      >
-        {isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
-      </button>
+      <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-0.5">
+          <button onClick={onMoveUp} className="p-1 text-slate-300 hover:text-black transition-all">
+            <ChevronUp size={14} />
+          </button>
+          <button onClick={onMoveDown} className="p-1 text-slate-300 hover:text-black transition-all">
+            <ChevronDown size={14} />
+          </button>
+        </div>
+        <button 
+          onClick={onToggleVisibility} 
+          className={cn("p-2 transition-all", isHidden ? "text-slate-300 hover:text-black" : "text-black hover:opacity-60")}
+        >
+          {isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -818,7 +838,7 @@ function SettingsInput({ label, value, onChange, placeholder, type = 'text' }: a
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent border-none p-0 focus:ring-0 text-sm font-bold md:text-right placeholder-slate-200 focus:placeholder-slate-200 text-black w-full md:w-auto"
+        className="bg-transparent border-none p-0 focus:ring-0 text-base font-bold md:text-right placeholder-slate-200 focus:placeholder-slate-200 text-black w-full md:w-auto"
         placeholder={placeholder}
       />
     </div>

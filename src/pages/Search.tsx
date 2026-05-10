@@ -12,6 +12,7 @@ type SearchCategory = 'photos' | 'users';
 const HONOR_BOARD = [
   { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
   { username: 'pipinos', label: 'Main Developer', role: 'official' },
+  { username: '1winter_', label: 'Creative Director', role: 'official' },
   { username: 'startorigin', label: 'StartOrigin Official', role: 'official' },
   { username: 'camilakiriek', label: 'Friend of StartOrigin', role: 'friend' },
   { username: 'viscaelbarca', label: 'Friend of StartOrigin', role: 'friend' },

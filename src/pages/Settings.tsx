@@ -642,6 +642,10 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       {Object.entries(BADGE_CONFIG).map(([id, cfg]) => {
                          const isPurchased = profile?.purchased_badges?.includes(id);
                          const price = BADGE_PRICES[id] || 0;
+                         
+                         // Special case: verified badge is no longer in the shop but owners keep it
+                         if (id === 'verified' && !isPurchased) return null;
+                         
                          return (
                            <div key={id} className="p-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center group">
                               <div className={cn("w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center transition-all duration-500 group-hover:scale-125", cfg.color)}>

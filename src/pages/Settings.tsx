@@ -489,6 +489,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                      badge={BADGE_CONFIG[id]} 
                      isHidden={hiddenBadges.includes(id)}
                      onToggleVisibility={() => toggleBadgeVisibility(id)}
+                      onMoveUp={() => handleMoveBadge(id, 'up')}
+                      onMoveDown={() => handleMoveBadge(id, 'down')}
                    />
                  ))}
                  {allAvailableBadges.length === 0 && (

@@ -379,7 +379,7 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             <span className="text-xs font-bold">{likesCount}</span>
           </button>
         </div>
-        <Link to={`/posts/${photo.id}`} className="text-[10px] font-bold text-black uppercase tracking-[0.3em] hover:underline underline-offset-4">{photo.name}</Link>
+        <Link to={`/posts/${photo.id}`} className="text-[10px] font-bold text-black uppercase tracking-[0.3em] hover:underline underline-offset-4 max-w-[150px] truncate block text-right">{photo.name}</Link>
       </div>
     </div>
   );

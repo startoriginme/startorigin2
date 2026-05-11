@@ -305,7 +305,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     const { data: userPetsData } = await supabase
       .from('user_pets')
       .select('*, gifter:gifted_by(username, name)')
-      .eq('user_id', profile.id);
+      .eq('user_id', profile.id)
+      .order('acquired_at', { ascending: true });
     if (userPetsData) setUserPets(userPetsData);
   }
 

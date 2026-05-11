@@ -11,13 +11,32 @@ export default function Post({ user }: { user: any }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [photo, setPhoto] = useState<Photo | null>(null);
+  const [similarPhotos, setSimilarPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
-    if (id) fetchPost();
+    if (id) {
+      fetchPost();
+      fetchSimilarPosts();
+    }
   }, [id]);
+
+  async function fetchSimilarPosts() {
+    // Fetch up to 50 other photos to pick 16 randomly ( Pinterest-style )
+    const { data } = await supabase
+      .from('photos')
+      .select('*, owner:profiles(username, name, avatar_url)')
+      .neq('id', id)
+      .limit(50);
+    
+    if (data) {
+      // Shuffle client-side to ensure variety on each load
+      const shuffled = [...data].sort(() => 0.5 - Math.random());
+      setSimilarPhotos(shuffled.slice(0, 16) as any);
+    }
+  }
 
   async function fetchPost() {
     setLoading(true);
@@ -161,6 +180,39 @@ export default function Post({ user }: { user: any }) {
             </div>
           </div>
         </div>
+
+        {/* Similar Posts Section */}
+        {similarPhotos.length > 0 && (
+          <div className="mt-24 p-6 md:p-0 space-y-8 pb-32">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-black tracking-tight">More like this</h3>
+              <div className="h-px flex-1 bg-slate-50 mx-8 hidden md:block" />
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+              {similarPhotos.map((p) => (
+                <Link 
+                  key={p.id} 
+                  to={`/posts/${p.id}`}
+                  className="group space-y-4"
+                >
+                  <div className="aspect-[4/3] rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm transition-all group-hover:scale-[1.02] group-hover:shadow-xl">
+                    <img src={p.url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="px-2">
+                    <div className="text-[10px] font-bold text-black uppercase tracking-widest truncate">{p.name}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-4 h-4 rounded-full overflow-hidden bg-slate-100">
+                        {p.owner?.avatar_url && <img src={p.owner.avatar_url} className="w-full h-full object-cover" />}
+                      </div>
+                      <span className="text-[10px] font-medium text-slate-400">@{p.owner?.username}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

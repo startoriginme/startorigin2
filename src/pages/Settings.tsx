@@ -347,25 +347,61 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ АВАТАРКИ
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
+    
+    // Проверяем размер файла (максимум 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setStatus({ type: 'error', message: 'File too large. Max 2MB.' });
+      return;
+    }
+
+    // Проверяем тип файла
+    if (!file.type.startsWith('image/')) {
+      setStatus({ type: 'error', message: 'Only image files are allowed.' });
+      return;
+    }
+
     const fileExt = file.name.split('.').pop();
-    const filePath = `avatars/${user.id}.${fileExt}`;
+    const filePath = `${user.id}.${fileExt}`;
 
     setLoading(true);
+    setStatus(null);
+
+    // Загружаем в бакет 'avatars'
     const { error: uploadError } = await supabase.storage
-      .from('photos')
+      .from('avatars')
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
+      console.error('Upload error:', uploadError);
       setStatus({ type: 'error', message: uploadError.message });
       setLoading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filePath);
+    // Получаем публичный URL из бакета 'avatars'
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+    
     setEditProfile({ ...editProfile, avatar_url: publicUrl });
+    setStatus({ type: 'success', message: 'Avatar updated successfully!' });
+    
+    // Автоматически сохраняем профиль с новой аватаркой
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', user.id);
+    
+    if (updateError) {
+      setStatus({ type: 'error', message: updateError.message });
+    } else {
+      onUpdate(user.id);
+    }
+    
     setLoading(false);
   }
 
@@ -435,15 +471,15 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
-              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-200" />}
+              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" alt="Avatar" /> : <User size={32} className="text-slate-200" />}
               <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                  <Camera size={24} className="text-white" />
-                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={loading} />
               </label>
             </div>
             <div>
               <div className="font-bold text-black mb-1">Avatar</div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Your photo</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Click to change</div>
             </div>
           </div>
           
@@ -805,7 +841,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                         <div className="flex items-center gap-5">
                            <div className="w-8 flex justify-center font-bold text-white/40 group-hover:text-amber-500 transition-colors">#{idx + 1}</div>
                            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-white">
-                              {lb.avatar_url ? <img src={lb.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-black font-bold uppercase">{lb.username[0]}</div>}
+                              {lb.avatar_url ? <img src={lb.avatar_url} className="w-full h-full object-cover" alt={lb.username} /> : <div className="w-full h-full flex items-center justify-center text-black font-bold uppercase">{lb.username[0]}</div>}
                            </div>
                            <div>
                               <div className="text-white font-bold text-sm">{lb.name || lb.username}</div>

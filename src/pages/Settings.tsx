@@ -123,11 +123,11 @@ const PET_CONFIG = [
 ];
 
 const GRADIENT_PRICES: Record<string, number> = {
-  soft_blue: 50000,
-  sunset: 10000,
-  emerald: 15000,
-  royal: 20000,
-  neon: 25000
+  soft_blue: 7000,
+  sunset: 3500,
+  emerald: 4000,
+  royal: 5000,
+  neon: 5000
 };
 
 const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {

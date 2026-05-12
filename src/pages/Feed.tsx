@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Photo } from '../types';
-import { Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, Loader2, User, Grid } from 'lucide-react';
+import { Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, Loader2, User, Grid, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';

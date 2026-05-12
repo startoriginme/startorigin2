@@ -122,6 +122,22 @@ const PET_CONFIG = [
   { id: 'owl', name: 'Owl', price: 500, image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100' },
 ];
 
+const GRADIENT_PRICES: Record<string, number> = {
+  soft_blue: 50000,
+  sunset: 10000,
+  emerald: 15000,
+  royal: 20000,
+  neon: 25000
+};
+
+const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
+  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm' },
+  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent' },
+  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent' },
+  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent' },
+  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 bg-clip-text text-transparent' }
+};
+
 export default function Settings({ user, profile, onUpdate }: { user: any, profile: Profile | null, onUpdate: (id: string) => void }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -129,7 +145,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showIncompleteBalance, setShowIncompleteBalance] = useState(false);
-  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets'>('badges');
+  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
   
   // Secret quest state
@@ -154,7 +170,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     bio: profile?.bio || '',
     avatar_url: profile?.avatar_url || '',
     theme_preference: profile?.theme_preference || 'default',
-    pattern_preference: profile?.pattern_preference || 'none'
+    pattern_preference: profile?.pattern_preference || 'none',
+    active_gradient: profile?.active_gradient || null
   });
 
   useEffect(() => {
@@ -255,7 +272,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     }
   }
 
-  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement', item: string, price: number) {
+  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient', item: string, price: number) {
     if (currentBalance < price) {
       setShowIncompleteBalance(true);
       return;
@@ -283,6 +300,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       updates.unlocked_patterns = [...(profile?.unlocked_patterns || []), item];
     } else if (type === 'achievement') {
       updates.purchased_achievements = [...(profile?.purchased_achievements || []), item];
+    } else if (type === 'gradient') {
+      updates.purchased_gradients = [...(profile?.purchased_gradients || []), item];
     }
 
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
@@ -398,7 +417,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         </motion.div>
       )}
 
-      {/* Quick Actions */}
+       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
          <button onClick={() => setShowShop(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={24}/></div>
@@ -535,6 +554,19 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   ))}
                 </select>
               </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Nickname Effect</label>
+                <select 
+                  value={editProfile.active_gradient || 'none'}
+                  onChange={(e) => setEditProfile({ ...editProfile, active_gradient: e.target.value === 'none' ? null : e.target.value })}
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
+                >
+                  <option value="none">None</option>
+                  {(profile?.purchased_gradients || []).map(g => (
+                    <option key={g} value={g}>{GRADIENT_CONFIG[g]?.label || g}</option>
+                  ))}
+                </select>
+              </div>
            </div>
            <button onClick={handleUpdateProfile} className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Apply Style</button>
         </div>
@@ -600,8 +632,9 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                 </div>
 
                  <div className="flex gap-2 p-1 bg-white/5 rounded-2xl overflow-x-auto custom-scrollbar no-scrollbar">
-                    <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
+                     <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
                     <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Pets</button>
+                    <button onClick={() => setActiveShopTab('gradients')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'gradients' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Gradients</button>
                     <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Styles</button>
                     <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Tasks</button>
                  </div>
@@ -615,7 +648,9 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                              </div>
                              <div className="text-center">
                                 <div className="text-white font-bold text-lg mb-1">{pet.name}</div>
-                                <div className="text-[10px] text-amber-500 font-bold uppercase tracking-[0.3em]">{pet.price} ORG</div>
+                                <div className="text-[10px] text-amber-500 font-bold uppercase tracking-[0.3em]">
+  {pet.price} ORG
+</div>
                              </div>
                              <button 
                                onClick={() => handlePurchasePet(pet)}
@@ -644,7 +679,9 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                               </div>
                               <div>
                                  <div className="text-white font-bold text-sm tracking-tight">{cfg.label}</div>
-                                 <div className="text-[10px] text-white/40 font-bold mt-1 uppercase tracking-[0.2em]">{isPurchased ? 'Owned' : `${price} ORG`}</div>
+                                 <div className="text-[10px] text-white/40 font-bold mt-1 uppercase tracking-[0.2em]">
+                                   {isPurchased ? 'Owned' : `${price} ORG`}
+                                 </div>
                               </div>
                               {!isPurchased && (
                                 <button onClick={() => handlePurchase('badge', id, price)} className="w-full h-10 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">Purchase</button>
@@ -668,17 +705,41 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                  </div>
                                  <div className="text-left">
                                     <div className="text-white font-bold text-sm tracking-tight">{ach.title}</div>
-                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{ach.description}</div>
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                                      {ach.description} • {price} ORG
+                                    </div>
                                  </div>
                               </div>
                               {!isPurchased ? (
-                                <button onClick={() => handlePurchase('achievement', ach.id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">{price} ORG</button>
+                                <button onClick={() => handlePurchase('achievement', ach.id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">Buy</button>
                               ) : <Check className="text-emerald-500" size={20} />}
                            </div>
                          );
                       })}
                    </div>
                  )}
+
+                 {activeShopTab === 'gradients' && (
+                    <div className="grid grid-cols-1 gap-4">
+                       {Object.entries(GRADIENT_CONFIG).map(([id, cfg]) => {
+                          const isOwned = profile?.purchased_gradients?.includes(id);
+                          const price = GRADIENT_PRICES[id];
+                          return (
+                            <div key={id} className="p-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-between group">
+                               <div className="flex flex-col gap-1">
+                                  <div className={cn("text-xl font-black uppercase tracking-tighter italic", cfg.className)}>
+                                    {profile?.username || 'Gradients'}
+                                  </div>
+                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{cfg.label}</div>
+                               </div>
+                               {!isOwned ? (
+                                 <button onClick={() => handlePurchase('gradient', id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">{price} ORG</button>
+                               ) : <Check className="text-emerald-500" size={24} />}
+                            </div>
+                          );
+                       })}
+                    </div>
+                  )}
 
                  {activeShopTab === 'decorations' && (
                    <div className="space-y-12 pb-20">

@@ -19,8 +19,22 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     photo_count INTEGER DEFAULT 0,
     followers_count INTEGER DEFAULT 0,
     following_count INTEGER DEFAULT 0,
+    purchased_gradients TEXT[] DEFAULT '{}',
+    active_gradient TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Saved Photos table
+CREATE TABLE IF NOT EXISTS public.saved_photos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    photo_id UUID REFERENCES public.photos(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, photo_id)
+);
+ALTER TABLE public.saved_photos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own saved photos" ON public.saved_photos
+    FOR ALL USING (auth.uid() = user_id);
 
 -- Achievements table
 CREATE TABLE IF NOT EXISTS public.achievements (
@@ -124,12 +138,27 @@ CREATE TABLE IF NOT EXISTS public.follows (
     PRIMARY KEY (follower_id, following_id)
 );
 
+-- Messages table
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    sender_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    receiver_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Index for faster message fetching
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id);
+
 -- Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.albums ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_pets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- Profiles
 CREATE POLICY "Anyone can view profiles" ON public.profiles
@@ -168,3 +197,13 @@ CREATE POLICY "Users can delete their own pets" ON public.user_pets
 
 CREATE POLICY "Users can update their own pets" ON public.user_pets
     FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (true);
+
+-- Messages
+CREATE POLICY "Users can view their own messages" ON public.messages
+    FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+CREATE POLICY "Users can insert their own messages" ON public.messages
+    FOR INSERT WITH CHECK (auth.uid() = sender_id);
+
+CREATE POLICY "Users can update their own received messages" ON public.messages
+    FOR UPDATE USING (auth.uid() = receiver_id) WITH CHECK (true);

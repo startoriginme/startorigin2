@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Photo, Profile } from '../types';
-import { Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2, Bookmark, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
@@ -15,13 +15,51 @@ export default function Post({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchPost();
       fetchSimilarPosts();
+      if (user) checkIsSaved();
     }
-  }, [id]);
+  }, [id, user]);
+
+  async function checkIsSaved() {
+    if (!user || !id) return;
+    const { data } = await supabase
+      .from('saved_photos')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('photo_id', id)
+      .single();
+    setIsSaved(!!data);
+  }
+
+  async function toggleSave() {
+    if (!user || !photo || saving) return;
+    setSaving(true);
+    try {
+      if (isSaved) {
+        await supabase
+          .from('saved_photos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('photo_id', photo.id);
+        setIsSaved(false);
+      } else {
+        await supabase
+          .from('saved_photos')
+          .insert({ user_id: user.id, photo_id: photo.id });
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error('Error toggling save:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function fetchSimilarPosts() {
     // Fetch up to 50 other photos to pick 16 randomly ( Pinterest-style )
@@ -111,7 +149,7 @@ export default function Post({ user }: { user: any }) {
           <h1 className="text-xl font-bold text-black truncate">{photo.name}</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 pb-8">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -166,6 +204,20 @@ export default function Post({ user }: { user: any }) {
               </button>
 
               <button 
+                onClick={toggleSave}
+                disabled={saving || !user}
+                className={cn(
+                  "flex flex-col items-center gap-2 group transition-all",
+                  isSaved ? "text-emerald-500" : "text-slate-300 hover:text-black"
+                )}
+              >
+                <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all", isSaved ? "bg-emerald-50" : "bg-slate-50 group-hover:bg-black group-hover:text-white")}>
+                  {saving ? <Loader2 className="animate-spin" size={24} /> : isSaved ? <Check size={28} /> : <Bookmark size={28} />}
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest">{isSaved ? 'Saved' : 'Save Moment'}</span>
+              </button>
+
+              <button 
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   alert('Link copied to clipboard!');
@@ -183,7 +235,7 @@ export default function Post({ user }: { user: any }) {
 
         {/* Similar Posts Section */}
         {similarPhotos.length > 0 && (
-          <div className="mt-24 p-6 md:p-0 space-y-8 pb-32">
+          <div className="mt-8 p-6 md:p-0 space-y-8 pb-32">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-black tracking-tight">More like this</h3>
               <div className="h-px flex-1 bg-slate-50 mx-8 hidden md:block" />

@@ -23,6 +23,10 @@ const navItems = [
 export default function Navigation() {
   const location = useLocation();
 
+  if (location.pathname.startsWith('/chat')) {
+    return null;
+  }
+
   return (
     <>
       {/* Desktop Sidebar */}

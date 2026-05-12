@@ -29,6 +29,8 @@ export interface Profile {
   followers_count: number | null;
   sent_origins: number | null;
   received_origins: number | null;
+  purchased_gradients: string[] | null;
+  active_gradient: string | null;
   // UI helpers
   following_count?: number;
   is_following?: boolean;

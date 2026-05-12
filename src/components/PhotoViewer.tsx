@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Share2, ZoomIn } from 'lucide-react';
+import { X, Download, Share2, ZoomIn, Bookmark, Check, Loader2 } from 'lucide-react';
 import { Photo } from '../types';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { cn } from '../lib/utils';
 
 interface PhotoViewerProps {
   photo: Photo;
@@ -10,6 +12,46 @@ interface PhotoViewerProps {
 }
 
 export default function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) checkIsSaved(user.id);
+    });
+  }, [photo.id]);
+
+  async function checkIsSaved(userId: string) {
+    const { data } = await supabase
+      .from('saved_photos')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('photo_id', photo.id)
+      .single();
+    setIsSaved(!!data);
+  }
+
+  async function toggleSave() {
+    if (!user || saving) return;
+    setSaving(true);
+    if (isSaved) {
+      await supabase
+        .from('saved_photos')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('photo_id', photo.id);
+      setIsSaved(false);
+    } else {
+      await supabase
+        .from('saved_photos')
+        .insert({ user_id: user.id, photo_id: photo.id });
+      setIsSaved(true);
+    }
+    setSaving(false);
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -25,7 +67,18 @@ export default function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
         className="relative z-10 w-full h-full flex flex-col items-center justify-center gap-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+        <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex gap-2">
+          <button 
+            onClick={toggleSave}
+            disabled={saving || !user}
+            className={cn(
+              "p-3 rounded-full transition-all backdrop-blur-md border border-white/10 flex items-center gap-2",
+              isSaved ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"
+            )}
+          >
+            {saving ? <Loader2 className="animate-spin" size={20} /> : isSaved ? <Check size={20} /> : <Bookmark size={20} />}
+            <span className="text-xs font-bold uppercase tracking-widest hidden md:block">{isSaved ? 'Saved' : 'Save Moment'}</span>
+          </button>
           <button 
             onClick={onClose} 
             className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all backdrop-blur-md border border-white/10"

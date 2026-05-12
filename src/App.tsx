@@ -10,6 +10,7 @@ import Gallery from './pages/Gallery';
 import Profile from './pages/Profile';
 import Follows from './pages/Follows';
 import Settings from './pages/Settings';
+import Chat from './pages/Chat';
 import Auth from './pages/Auth';
 import Landing from './pages/Landing';
 import { Profile as ProfileType } from './types';
@@ -82,6 +83,7 @@ export default function App() {
               <Route path="/profile/:username/follows" element={session ? <Follows /> : <Navigate to="/auth" />} />
               <Route path="/posts/:id" element={session ? <Post user={session.user} /> : <Navigate to="/auth" />} />
               <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
+              <Route path="/chat/:userId?" element={session ? <Chat user={session.user} /> : <Navigate to="/auth" />} />
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

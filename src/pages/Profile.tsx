@@ -7,7 +7,7 @@ import {
   Settings, Trophy, Flame, Camera, Sparkles, X, Search, Upload, Eye, 
   EyeOff, Edit2, Minus, Plus, Coins, Glasses, Crown, Diamond, Heart, 
   Award, ShoppingCart, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, 
-  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight
+  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
@@ -122,13 +122,21 @@ type Achievement = {
 const THEMES: Record<string, { bg: string; text: string }> = {
   default: { bg: 'bg-white dark:bg-gray-900', text: 'text-black dark:text-white' },
   black: { bg: 'bg-black', text: 'text-white' },
-  pink: { bg: 'bg-pink-100', text: 'text-pink-900' },
-  gray: { bg: 'bg-gray-300', text: 'text-gray-800' },
-  green: { bg: 'bg-green-100', text: 'text-green-900' },
-  blue: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-900 dark:text-blue-100' },
-  purple: { bg: 'bg-purple-100 dark:bg-purple-900', text: 'text-purple-900 dark:text-purple-100' },
-  orange: { bg: 'bg-orange-100 dark:bg-orange-900', text: 'text-orange-900 dark:text-orange-100' },
-  red: { bg: 'bg-red-100 dark:bg-red-900', text: 'text-red-900 dark:text-red-100' },
+  pink: { bg: 'bg-pink-100', text: 'text-black' },
+  gray: { bg: 'bg-gray-300', text: 'text-black' },
+  green: { bg: 'bg-green-100', text: 'text-black' },
+  blue: { bg: 'bg-blue-100', text: 'text-black' },
+  purple: { bg: 'bg-purple-100', text: 'text-black' },
+  orange: { bg: 'bg-orange-100', text: 'text-black' },
+  red: { bg: 'bg-red-100', text: 'text-black' },
+};
+
+const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
+  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm' },
+  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent' },
+  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent' },
+  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent' },
+  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 bg-clip-text text-transparent' }
 };
 
 // Pattern configurations
@@ -189,7 +197,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [userPets, setUserPets] = useState<UserPet[]>([]);
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
-  const [activeTab, setActiveTab] = useState<'photos' | 'pets' | 'achievements'>('photos');
+  const [savedPhotos, setSavedPhotos] = useState<Photo[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<'photos' | 'pets' | 'achievements' | 'saved'>('photos');
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [gifting, setGifting] = useState(false);
   const [giftSearchQuery, setGiftSearchQuery] = useState('');
@@ -483,6 +493,25 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   }
 
 
+  useEffect(() => {
+    if (activeTab === 'saved' && isOwn) {
+      fetchSavedPhotos();
+    }
+  }, [activeTab, isOwn]);
+
+  async function fetchSavedPhotos() {
+    if (!user) return;
+    setLoadingSaved(true);
+    const { data, error } = await supabase
+      .from('saved_photos')
+      .select('photos(*, owner:profiles(*))')
+      .eq('user_id', user.id);
+
+    if (data) {
+      setSavedPhotos(data.map((item: any) => item.photos));
+    }
+    setLoadingSaved(false);
+  }
   async function calculateOriginsBalance() {
     if (!profile) return;
     const spent = profile.spent_origins || 0;
@@ -647,7 +676,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const hasPetsTab = (isOwn && userPets.length > 0) || visiblePets.length > 0;
 
   return (
-    <main className="max-w-xl mx-auto p-4 md:p-8 space-y-8 min-h-screen">
+    <div className="max-w-xl mx-auto p-4 md:p-8 space-y-8 min-h-screen">
       <div className={cn("rounded-[3rem] p-8 flex flex-col items-center text-center gap-6 relative shadow-2xl transition-all duration-500 overflow-hidden", currentTheme.bg, currentTheme.text)}>
         {currentPattern && <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: currentPattern }} />}
         
@@ -697,9 +726,14 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
             })}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{profile.name || profile.username}</h1>
+              <h1 className={cn(
+                "text-2xl font-bold tracking-tight",
+                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className
+              )}>
+                {profile.name || profile.username}
+              </h1>
               <div className="flex gap-1">
                 {visibleBadges.map(bid => {
                    const cfg = BADGE_CONFIG[bid];
@@ -708,7 +742,14 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               </div>
             </div>
             <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
-            {profile.bio && <p className="text-sm font-medium opacity-60 leading-relaxed max-w-xs mx-auto italic">"{profile.bio}"</p>}
+            {profile.bio && (
+              <div className={cn(
+                "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
+                themePreference === 'black' ? "text-white" : "text-black"
+              )}>
+                {profile.bio}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
@@ -762,15 +803,17 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 <span>Settings</span>
               </Link>
             ) : (
-              <button 
-                onClick={toggleFollow} 
-                className={cn(
-                  "h-10 px-8 rounded-2xl font-bold text-xs transition-all shadow-lg !bg-white !text-black border border-slate-100 hover:opacity-90", 
-                  following && "opacity-60"
-                )}
-              >
-                 {following ? 'In Circle' : 'Join Circle'}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={toggleFollow} 
+                  className={cn(
+                    "h-10 px-8 rounded-2xl font-bold text-xs transition-all shadow-lg !bg-white !text-black border border-slate-100 hover:opacity-90", 
+                    following && "opacity-60"
+                  )}
+                >
+                   {following ? 'In Circle' : 'Join Circle'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -781,7 +824,25 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
            <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Moments</button>
            <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Achievements</button>
            {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Companions</button>}
+           {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Saved</button>}
         </div>
+
+        {activeTab === 'saved' && isOwn && (
+          <div className="grid grid-cols-2 gap-4">
+            {loadingSaved ? (
+              <div className="col-span-full py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
+            ) : savedPhotos.map(p => (
+              <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm">
+                <img src={p.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              </div>
+            ))}
+            {!loadingSaved && savedPhotos.length === 0 && (
+              <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+                Your collection of saved moments is empty.
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'photos' && (
           <div className="grid grid-cols-2 gap-4">
@@ -1128,6 +1189,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       <AnimatePresence>
         {viewer && <PhotoViewer photo={viewer} onClose={() => setViewer(null)} />}
       </AnimatePresence>
-    </main>
+    </div>
   );
 }

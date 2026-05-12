@@ -26,30 +26,6 @@ export default function Auth() {
     setIsLogin(modeParam !== 'register');
   }, [modeParam]);
 
-  // Функция для проверки существующего email через Supabase Auth
-  async function checkEmailExists(email: string): Promise<boolean> {
-    try {
-      // Пытаемся отправить запрос на восстановление пароля
-      // Если email существует, Supabase вернет успех, но не отправит письмо
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      // Если ошибка не "Email not found", значит email существует
-      return !error?.message?.includes('not found');
-    } catch {
-      return false;
-    }
-  }
-
-  // Функция для проверки существующего username
-  async function checkUsernameExists(username: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', username.toLowerCase())
-      .maybeSingle();
-    
-    return !!data;
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -64,20 +40,14 @@ export default function Auth() {
         if (error) throw error;
         navigate('/feed');
       } else {
-        // Проверка email
-        const emailExists = await checkEmailExists(formData.email);
-        if (emailExists) {
-          setValidationModal({ 
-            show: true, 
-            message: 'This email is already registered. Please use a different email or sign in.' 
-          });
-          setLoading(false);
-          return;
-        }
+        // Проверка username (через profiles)
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', formData.username.toLowerCase())
+          .maybeSingle();
 
-        // Проверка username
-        const usernameExists = await checkUsernameExists(formData.username);
-        if (usernameExists) {
+        if (existingUser) {
           setValidationModal({ 
             show: true, 
             message: 'This username is already taken. Please choose another one.' 
@@ -86,7 +56,7 @@ export default function Auth() {
           return;
         }
 
-        // Register flow
+        // Регистрация — Supabase сам проверит email
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -98,10 +68,19 @@ export default function Auth() {
           }
         });
         
-        if (authError) throw authError;
+        if (authError) {
+          if (authError.message?.includes('already registered')) {
+            setValidationModal({ 
+              show: true, 
+              message: 'This email is already registered. Please use a different email or sign in.' 
+            });
+            setLoading(false);
+            return;
+          }
+          throw authError;
+        }
         
         if (authData.user) {
-          // Create profile
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -122,15 +101,7 @@ export default function Auth() {
         setFormData({ name: '', username: '', email: '', password: '' });
       }
     } catch (err: any) {
-      // Обработка ошибки от Supabase
-      if (err.message?.includes('already registered')) {
-        setValidationModal({ 
-          show: true, 
-          message: 'This email is already registered. Please use a different email or sign in.' 
-        });
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -142,9 +113,9 @@ export default function Auth() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-sm glass-card p-10 space-y-8 text-center"
+          className="w-full max-w-sm bg-white rounded-3xl p-10 space-y-8 text-center shadow-2xl"
         >
-          <div className="w-20 h-20 bg-black rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl">
+          <div className="w-20 h-20 bg-black rounded-3xl flex items-center justify-center mx-auto shadow-xl">
             <Mail className="text-white" size={32} />
           </div>
           <div className="space-y-4">
@@ -158,7 +129,7 @@ export default function Auth() {
               setIsRegistered(false);
               setIsLogin(true);
             }}
-            className="w-full h-14 bg-black text-white font-bold rounded-[1.25rem] flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 mt-4"
+            className="w-full h-14 bg-black text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 mt-4"
           >
             <span>Back to Login</span>
             <ArrowRight size={18} />
@@ -169,10 +140,10 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100">
       <motion.div 
         layout
-        className="w-full max-w-sm glass-card p-10 space-y-10"
+        className="w-full max-w-sm bg-white rounded-3xl p-10 space-y-10 shadow-xl"
       >
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold tracking-tight text-black">
@@ -199,7 +170,7 @@ export default function Auth() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
+                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
                     placeholder="Your Name"
                   />
                 </div>
@@ -210,7 +181,7 @@ export default function Auth() {
                     type="text"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
+                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
                     placeholder="johndoe"
                   />
                 </div>
@@ -225,7 +196,7 @@ export default function Auth() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
-              className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
+              className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
               placeholder="name@example.com"
             />
           </div>
@@ -237,7 +208,7 @@ export default function Auth() {
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium placeholder:text-slate-300 focus:placeholder-slate-300"
+              className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
               placeholder="••••••••"
             />
           </div>
@@ -256,7 +227,7 @@ export default function Auth() {
           <button
             disabled={loading}
             type="submit"
-            className="w-full h-14 bg-black text-white font-bold rounded-[1.25rem] flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 mt-8"
+            className="w-full h-14 bg-black text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 disabled:opacity-50 mt-8"
           >
             {loading ? <Loader2 className="animate-spin" size={18} /> : (
               <>
@@ -284,9 +255,9 @@ export default function Auth() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-sm bg-white rounded-[2.5rem] p-10 text-center space-y-8 shadow-2xl"
+              className="w-full max-w-sm bg-white rounded-3xl p-10 text-center space-y-8 shadow-2xl"
             >
-              <div className="w-20 h-20 bg-rose-50 rounded-[2.5rem] flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto">
                 <AlertCircle className="text-rose-500" size={32} />
               </div>
               <div className="space-y-3">
@@ -298,7 +269,7 @@ export default function Auth() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => setValidationModal({ show: false, message: '' })}
-                  className="w-full h-14 bg-black text-white font-bold rounded-[1.25rem] hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10"
+                  className="w-full h-14 bg-black text-white font-bold rounded-2xl hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10"
                 >
                   Try again
                 </button>
@@ -308,7 +279,7 @@ export default function Auth() {
                       setValidationModal({ show: false, message: '' });
                       setIsLogin(true);
                     }}
-                    className="w-full h-14 bg-slate-50 text-slate-400 font-bold rounded-[1.25rem] hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                    className="w-full h-14 bg-slate-50 text-slate-400 font-bold rounded-2xl hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                   >
                     Go to Login
                   </button>

@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE,
     name TEXT,
     avatar_url TEXT,
     bio TEXT,

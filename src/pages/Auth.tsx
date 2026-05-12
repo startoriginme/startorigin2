@@ -40,7 +40,7 @@ export default function Auth() {
         if (error) throw error;
         navigate('/feed');
       } else {
-        // Проверка username (через profiles)
+        // 1. Проверка username (через profiles)
         const { data: existingUser } = await supabase
           .from('profiles')
           .select('username')
@@ -56,7 +56,23 @@ export default function Auth() {
           return;
         }
 
-        // Регистрация — Supabase сам проверит email
+        // 2. Проверка email в profiles.email
+        const { data: existingEmail } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('email', formData.email.toLowerCase())
+          .maybeSingle();
+
+        if (existingEmail) {
+          setValidationModal({ 
+            show: true, 
+            message: 'This email is already registered. Please sign in instead or use a different email.' 
+          });
+          setLoading(false);
+          return;
+        }
+
+        // 3. Регистрация
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -69,10 +85,11 @@ export default function Auth() {
         });
         
         if (authError) {
+          // Fallback: если вдруг проверка пропустила дубликат
           if (authError.message?.includes('already registered')) {
             setValidationModal({ 
               show: true, 
-              message: 'This email is already registered. Please use a different email or sign in.' 
+              message: 'This email is already registered. Please sign in instead.' 
             });
             setLoading(false);
             return;
@@ -81,6 +98,7 @@ export default function Auth() {
         }
         
         if (authData.user) {
+          // Создаём профиль с email
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({

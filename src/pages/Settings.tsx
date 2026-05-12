@@ -8,7 +8,8 @@ import {
   EyeOff, Search, Flame, Star, Coins, Crown, Diamond, Heart, 
   Award, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, Music, 
   Book, Coffee, Gamepad, Gift, Smile, X, Medal, Target, 
-  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown
+  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown,
+  Trash2
 } from 'lucide-react';
 import {
   DndContext,
@@ -145,6 +146,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showIncompleteBalance, setShowIncompleteBalance] = useState(false);
+  const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState(false);
   const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
   
@@ -174,12 +176,43 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     active_gradient: profile?.active_gradient || null
   });
 
+  // Local state for origins calculation
+  const [originsBalance, setOriginsBalance] = useState(0);
+  const [uploadCount, setUploadCount] = useState(profile?.photo_count || 0);
+  const [swipeCount, setSwipeCount] = useState(profile?.swipe_count || 0);
+  const [receivedOrigins, setReceivedOrigins] = useState(profile?.received_origins || 0);
+  const [spentOrigins, setSpentOrigins] = useState(profile?.spent_origins || 0);
+
   useEffect(() => {
     if (profile) {
       setBadgesOrder(profile.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
       setHiddenBadges(profile.hidden_badges || []);
+      setUploadCount(profile.photo_count || 0);
+      setSwipeCount(profile.swipe_count || 0);
+      setReceivedOrigins(profile.received_origins || 0);
+      setSpentOrigins(profile.spent_origins || 0);
     }
   }, [profile]);
+
+  // Calculate origins balance whenever relevant values change
+  useEffect(() => {
+    calculateAndUpdateOriginsBalance();
+  }, [uploadCount, swipeCount, receivedOrigins, spentOrigins]);
+
+  async function calculateAndUpdateOriginsBalance() {
+    if (!profile) return;
+    
+    // Формула: фото + свайпы×0.5 + полученные - потраченные
+    const maxBalance = uploadCount + (swipeCount * 0.5) + receivedOrigins;
+    const currentBalance = maxBalance - spentOrigins;
+    
+    setOriginsBalance(currentBalance);
+    
+    // Обновляем в базе данных
+    await supabase.from('profiles').update({ 
+      origins_balance: currentBalance
+    }).eq('id', profile.id);
+  }
 
   useEffect(() => {
     if (showLeaderboard) fetchLeaderboard();
@@ -251,11 +284,14 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     if (secretCode.toLowerCase() === 'origin2026') {
       const purchased = profile?.purchased_achievements || [];
       if (!purchased.includes('secret_agent_1')) {
+        const newReceived = (profile?.received_origins || 0) + 500;
+        setReceivedOrigins(newReceived);
+        
         const { error } = await supabase
           .from('profiles')
           .update({ 
             purchased_achievements: [...purchased, 'secret_agent_1'],
-            received_origins: (profile?.received_origins || 0) + 500
+            received_origins: newReceived
           })
           .eq('id', user.id);
         
@@ -273,23 +309,17 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   }
 
   async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient', item: string, price: number) {
-    if (currentBalance < price) {
+    if (originsBalance < price) {
       setShowIncompleteBalance(true);
       return;
     }
 
     setLoading(true);
-    const newSpent = (profile?.spent_origins || 0) + price;
-    
-    // Formula: photos + swipes * 0.5 + received - spent
-    const newBalance = (profile?.photo_count || 0) + 
-                      ((profile?.swipe_count || 0) * 0.5) + 
-                      (profile?.received_origins || 0) - 
-                      newSpent;
+    const newSpent = spentOrigins + price;
+    setSpentOrigins(newSpent);
 
     const updates: any = {
-      spent_origins: newSpent,
-      origins_balance: newBalance
+      spent_origins: newSpent
     };
 
     if (type === 'badge') {
@@ -312,7 +342,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   }
 
   async function handlePurchasePet(pet: any) {
-    if (currentBalance < pet.price) {
+    if (originsBalance < pet.price) {
       setShowIncompleteBalance(true);
       return;
     }
@@ -329,7 +359,9 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     });
 
     if (!petError) {
-      const newSpent = (profile?.spent_origins || 0) + pet.price;
+      const newSpent = spentOrigins + pet.price;
+      setSpentOrigins(newSpent);
+      
       const { error: profileError } = await supabase.from('profiles').update({
         spent_origins: newSpent
       }).eq('id', user.id);
@@ -347,7 +379,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
-  // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ АВАТАРКИ
+  // Функция загрузки аватарки
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
@@ -405,15 +437,52 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
+  // Функция удаления аватарки
+  async function handleDeleteAvatar() {
+    setLoading(true);
+    setStatus(null);
+    
+    // Определяем путь к файлу на основе URL
+    const oldAvatarUrl = editProfile.avatar_url;
+    if (oldAvatarUrl) {
+      // Извлекаем путь из URL
+      const urlParts = oldAvatarUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = fileName;
+      
+      // Удаляем файл из Storage
+      const { error: deleteError } = await supabase.storage
+        .from('avatars')
+        .remove([filePath]);
+      
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        // Не показываем ошибку пользователю, продолжаем удаление из профиля
+      }
+    }
+    
+    // Обновляем профиль - убираем ссылку на аватарку
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: null })
+      .eq('id', user.id);
+    
+    if (updateError) {
+      setStatus({ type: 'error', message: updateError.message });
+    } else {
+      setEditProfile({ ...editProfile, avatar_url: '' });
+      setStatus({ type: 'success', message: 'Avatar removed successfully!' });
+      onUpdate(user.id);
+    }
+    
+    setShowDeleteAvatarConfirm(false);
+    setLoading(false);
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
   };
-
-  const currentBalance = (profile?.photo_count || 0) + 
-                         ((profile?.swipe_count || 0) * 0.5) + 
-                         (profile?.received_origins || 0) - 
-                         (profile?.spent_origins || 0);
 
   const purchasedBadges = profile?.purchased_badges || [];
   const allAvailableBadges = [...purchasedBadges];
@@ -434,7 +503,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         </div>
         <div className="p-3 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 shadow-sm">
            <Coins size={18} className="text-amber-500" />
-           <span className="font-bold text-black">{currentBalance.toFixed(0)}</span>
+           <span className="font-bold text-black">{originsBalance.toFixed(0)}</span>
         </div>
       </header>
 
@@ -470,12 +539,27 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Account Details</h2>
         <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
-              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" alt="Avatar" /> : <User size={32} className="text-slate-200" />}
-              <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                 <Camera size={24} className="text-white" />
-                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={loading} />
-              </label>
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
+                {editProfile.avatar_url ? (
+                  <img src={editProfile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
+                ) : (
+                  <User size={32} className="text-slate-200" />
+                )}
+                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+                  <Camera size={24} className="text-white" />
+                  <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={loading} />
+                </label>
+              </div>
+              {editProfile.avatar_url && (
+                <button
+                  onClick={() => setShowDeleteAvatarConfirm(true)}
+                  className="absolute -bottom-2 -right-2 p-2 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 transition-all"
+                  disabled={loading}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
             <div>
               <div className="font-bold text-black mb-1">Avatar</div>
@@ -651,6 +735,27 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         Depart to Void
       </button>
 
+      {/* DELETE AVATAR CONFIRM MODAL */}
+      <AnimatePresence>
+        {showDeleteAvatarConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+             <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
+                <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
+                   <Trash2 size={40} className="text-rose-500" />
+                </div>
+                <div className="space-y-2">
+                   <h3 className="text-xl font-bold text-black tracking-tight">Delete Avatar?</h3>
+                   <p className="text-sm text-slate-400 font-medium leading-relaxed">Are you sure you want to remove your profile picture?</p>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDeleteAvatarConfirm(false)} className="flex-1 h-12 bg-slate-100 text-black font-bold rounded-2xl text-sm hover:bg-slate-200 transition-all">Cancel</button>
+                  <button onClick={handleDeleteAvatar} className="flex-1 h-12 bg-rose-500 text-white font-bold rounded-2xl text-sm hover:bg-rose-600 transition-all">Delete</button>
+                </div>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* SHOP MODAL */}
       <AnimatePresence>
         {showShop && (
@@ -661,7 +766,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       <h2 className="text-3xl font-bold tracking-tight">Origin Shop</h2>
                       <div className="flex items-center gap-2 mt-1">
                          <Coins size={16} className="text-amber-500" />
-                         <span className="font-bold text-amber-500">{currentBalance.toFixed(0)} available</span>
+                         <span className="font-bold text-amber-500">{originsBalance.toFixed(0)} available</span>
                       </div>
                    </div>
                    <button onClick={() => setShowShop(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24}/></button>

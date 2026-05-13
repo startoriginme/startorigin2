@@ -721,44 +721,36 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               );
             })}
           </div>
+{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ */}
+<div className="space-y-3">
+  <div className="flex items-center justify-center flex-wrap">
+    <h1 className={cn(
+      "text-2xl font-bold tracking-tight",
+      profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+      profile.active_font && FONT_CONFIG[profile.active_font]?.className
+    )}>
+      {profile.name || profile.username}
+    </h1>
+    {/* ПРИНУДИТЕЛЬНЫЙ ОТСТУП ml-2 (8px) - ВСЕГДА */}
+    <div className="flex gap-0.5 ml-2">
+      {visibleBadges.map(bid => {
+        const cfg = BADGE_CONFIG[bid];
+        return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
+      })}
+    </div>
+  </div>
+  <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
+  {profile.bio && (
+    <div className={cn(
+      "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
+      themePreference === 'black' ? "text-white" : "text-black"
+    )}>
+      {profile.bio}
+    </div>
+  )}
+</div>
 
-                   {/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-center flex-wrap">
-              <h1 className={cn(
-                "text-2xl font-bold tracking-tight",
-                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-                profile.active_font && FONT_CONFIG[profile.active_font]?.className
-              )}>
-                {profile.name || profile.username}
-              </h1>
-              {(() => {
-                const hasActiveGradient = profile.active_gradient && profile.active_gradient !== 'none';
-                const hasActiveFont = profile.active_font && profile.active_font !== 'modern';
-                const needsMargin = !hasActiveGradient && !hasActiveFont;
-                
-                return (
-                  <div className={cn("flex gap-0.5", needsMargin && "ml-2")}>
-                    {visibleBadges.map(bid => {
-                      const cfg = BADGE_CONFIG[bid];
-                      return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
-            <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
-            {profile.bio && (
-              <div className={cn(
-                "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
-                themePreference === 'black' ? "text-white" : "text-black"
-              )}>
-                {profile.bio}
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
              <button 
                 onClick={() => { if (isOwn) fetchFollows('followers'); }} 
                 disabled={!isOwn}

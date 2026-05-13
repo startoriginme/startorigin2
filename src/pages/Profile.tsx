@@ -302,32 +302,60 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (data) setPhotos(data);
   }
 
- async function fetchPosts() {
+async function fetchPosts() {
   if (!profile) return;
-  console.log('Fetching posts for user:', profile.id);
-  const { data, error } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      profiles:user_id (
-        username,
-        name,
-        avatar_url,
-        active_gradient,
-        active_font
-      )
-    `)
-    .eq('user_id', profile.id)
-    .order('created_at', { ascending: false });
   
-  if (error) {
-    console.error('Error fetching posts:', error);
-  } else {
-    console.log('Posts fetched:', data);
-    setPosts(data as Post[]);
+  console.log('Fetching posts for user:', profile.id);
+  
+  try {
+    // Сначала просто получаем посты
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', profile.id)
+      .order('created_at', { ascending: false });
+    
+    if (postsError) {
+      console.error('Error fetching posts:', postsError);
+      return;
+    }
+    
+    console.log('Raw posts data:', postsData);
+    
+    if (!postsData || postsData.length === 0) {
+      console.log('No posts found');
+      setPosts([]);
+      return;
+    }
+    
+    // Получаем данные профилей для каждого поста
+    const postsWithProfiles = await Promise.all(
+      postsData.map(async (post) => {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('username, name, avatar_url, active_gradient, active_font')
+          .eq('id', post.user_id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error fetching profile for post:', profileError);
+          return { ...post, profiles: null };
+        }
+        
+        return {
+          ...post,
+          profiles: profileData
+        };
+      })
+    );
+    
+    console.log('Posts with profiles:', postsWithProfiles);
+    setPosts(postsWithProfiles as Post[]);
+    
+  } catch (err) {
+    console.error('Unexpected error:', err);
   }
 }
-
 
   async function fetchUserLikes() {
     if (!user) return;

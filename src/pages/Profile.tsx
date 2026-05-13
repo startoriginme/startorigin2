@@ -722,8 +722,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
             })}
           </div>
 
+          {/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ */}
           <div className="space-y-3">
-            <div className="flex items-center justify-center gap-0 flex-wrap">
+            <div className="flex items-center justify-center flex-wrap">
               <h1 className={cn(
                 "text-2xl font-bold tracking-tight",
                 profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
@@ -731,7 +732,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               )}>
                 {profile.name || profile.username}
               </h1>
-              <div className="flex gap-0.5">
+              <div className={cn(
+                "flex gap-0.5",
+                !profile.active_gradient && !profile.active_font && "ml-3"
+              )}>
                 {visibleBadges.map(bid => {
                    const cfg = BADGE_CONFIG[bid];
                    return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;

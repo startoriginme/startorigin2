@@ -721,21 +721,29 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               );
             })}
           </div>
-{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - ФИКСИРОВАННЫЙ */}
+{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - ЖЕСТКОЕ ВЫРАВНИВАНИЕ */}
 <div className="space-y-3">
-  <div className="text-center">
-    <div className="inline-flex items-baseline gap-2">
+  <div className="flex justify-center">
+    <div className="flex items-center gap-2" style={{ lineHeight: 1, minHeight: '36px' }}>
       <h1 className={cn(
         "text-2xl font-bold tracking-tight",
         profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
         profile.active_font && FONT_CONFIG[profile.active_font]?.className
-      )}>
+      )} style={{ 
+        lineHeight: 1, 
+        display: 'inline-block',
+        verticalAlign: 'middle'
+      }}>
         {profile.name || profile.username}
       </h1>
-      <div className="inline-flex gap-0.5" style={{ position: 'relative', top: '-1px' }}>
+      <div className="flex gap-0.5 items-center" style={{ 
+        display: 'inline-flex',
+        alignItems: 'center',
+        verticalAlign: 'middle'
+      }}>
         {visibleBadges.map(bid => {
           const cfg = BADGE_CONFIG[bid];
-          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
+          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} style={{ display: 'inline-block' }} /> : null;
         })}
       </div>
     </div>

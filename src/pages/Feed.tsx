@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Photo } from '../types';
-import { Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, Loader2, User, Grid, MessageSquare } from 'lucide-react';
+import { 
+  Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, 
+  Loader2, User, Grid, MessageSquare, BadgeCheck, Snowflake, Monitor, 
+  Crown, Diamond, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, 
+  Gamepad, Gift, Smile 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -231,16 +236,17 @@ export default function Feed({ user }: { user: any }) {
         <div className="flex gap-2">
           <button 
             onClick={() => setTinderMode(true)}
-            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all"
+            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all font-bold text-xs flex items-center gap-2"
             title="Tinder Mode"
           >
             <Flame size={20} />
+            <span className="hidden sm:inline uppercase tracking-widest">Experience</span>
           </button>
           <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
             <button 
               onClick={() => { setShowAll(false); setPage(0); setHasMore(true); }}
               className={cn(
-                "px-4 py-2 text-xs font-bold rounded-xl transition-all",
+                "px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-xl transition-all",
                 !showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
               )}
             >
@@ -249,7 +255,7 @@ export default function Feed({ user }: { user: any }) {
             <button 
               onClick={() => { setShowAll(true); setPage(0); setHasMore(true); }}
               className={cn(
-                "px-4 py-2 text-xs font-bold rounded-xl transition-all",
+                "px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-xl transition-all",
                 showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
               )}
             >
@@ -287,11 +293,11 @@ export default function Feed({ user }: { user: any }) {
               </div>
               <div className="space-y-2">
                 <p className="text-black font-bold">Your circle is quiet</p>
-                <p className="text-slate-400 text-sm max-w-xs mx-auto">Follow creative souls to populate your personal sanctuary with their essence.</p>
+                <p className="text-slate-400 text-sm max-w-xs mx-auto">Try Discovering some ancient beings.</p>
               </div>
               <button 
                 onClick={() => setShowAll(true)}
-                className="btn-primary h-12 px-8"
+                className="btn-primary h-12 px-8 uppercase tracking-widest text-[10px]"
               >
                 Explore Globally
               </button>
@@ -355,12 +361,14 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             </div>
           </div>
           <div>
-            <div className={cn(
-              "text-sm font-bold group-hover:underline underline-offset-4",
-              photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
-              photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
-            )}>
-              {photo.owner?.name || photo.owner?.username}
+            <div className="flex items-center gap-1">
+              <div className={cn(
+                "text-sm font-bold group-hover:underline underline-offset-4",
+                photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
+                photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
+              )}>
+                {photo.owner?.name || photo.owner?.username}
+              </div>
             </div>
             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
               {formatDistanceToNow(new Date(photo.created_at))} ago

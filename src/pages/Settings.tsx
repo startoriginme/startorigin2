@@ -37,13 +37,14 @@ import {
 } from '../constants/shop';
 
 
+import { useNotification } from '../context/NotificationContext';
+
 export default function Settings({ user, profile, onUpdate }: { user: any, profile: Profile | null, onUpdate: (id: string) => void }) {
   const navigate = useNavigate();
+  const { showAlert } = useNotification();
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showIncompleteBalance, setShowIncompleteBalance] = useState(false);
   const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
   
@@ -96,15 +97,15 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
   async function handleUpdateProfile() {
     setLoading(true);
-    setStatus(null);
     const { error } = await supabase
       .from('profiles')
       .update(editProfile)
       .eq('id', user.id);
     
-    if (error) setStatus({ type: 'error', message: error.message });
-    else {
-      setStatus({ type: 'success', message: 'Profile updated.' });
+    if (error) {
+      showAlert({ message: error.message, type: 'error' });
+    } else {
+      showAlert({ message: 'Profile updated!', type: 'success' });
       onUpdate(user.id);
     }
     setLoading(false);
@@ -160,21 +161,21 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
           .eq('id', user.id);
         
         if (!error) {
-          setStatus({ type: 'success', message: 'Secret discovered! + 500 Origins' });
+          showAlert({ message: 'Secret discovered! + 500 ORG', type: 'success' });
           onUpdate(user.id);
           setShowSecretInput(false);
         }
       } else {
-        setStatus({ type: 'error', message: 'Secret already claimed.' });
+        showAlert({ message: 'Secret already claimed.', type: 'warning' });
       }
     } else {
-      setStatus({ type: 'error', message: 'Incorrect code.' });
+      showAlert({ message: 'Incorrect code.', type: 'error' });
     }
   }
 
   async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient' | 'font', item: string, price: number) {
     if (currentBalance < price) {
-      setShowIncompleteBalance(true);
+      showAlert({ message: 'Insufficient Origins.', type: 'warning' });
       return;
     }
 
@@ -208,19 +209,21 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
     if (!error) {
+      showAlert({ message: 'Item acquired!', type: 'success' });
       onUpdate(user.id);
+    } else {
+      showAlert({ message: error.message, type: 'error' });
     }
     setLoading(false);
   }
 
   async function handlePurchasePet(pet: any) {
     if (currentBalance < pet.price) {
-      setShowIncompleteBalance(true);
+      showAlert({ message: 'Insufficient Origins.', type: 'warning' });
       return;
     }
 
     setLoading(true);
-    setStatus(null);
 
     const { error: petError } = await supabase.from('user_pets').insert({
       user_id: user.id,
@@ -240,11 +243,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         console.error("Profile update error:", profileError);
       }
 
-      setStatus({ type: 'success', message: `${pet.name} joined your journey!` });
+      showAlert({ message: `${pet.name} joined your journey!`, type: 'success' });
       onUpdate(user.id);
     } else {
       console.error("Adoption error:", petError);
-      setStatus({ type: 'error', message: 'Failed to adopt: ' + petError.message });
+      showAlert({ message: 'Failed to adopt.', type: 'error' });
     }
     setLoading(false);
   }
@@ -261,13 +264,14 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
-      setStatus({ type: 'error', message: uploadError.message });
+      showAlert({ message: uploadError.message, type: 'error' });
       setLoading(false);
       return;
     }
 
     const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filePath);
     setEditProfile({ ...editProfile, avatar_url: publicUrl });
+    showAlert({ message: 'Avatar uploaded!', type: 'success' });
     setLoading(false);
   }
 
@@ -304,22 +308,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         </div>
       </header>
 
-
-      {status && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "p-4 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-sm",
-            status.type === 'success' ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600" : "bg-rose-500/10 border border-rose-500/20 text-rose-600"
-          )}
-        >
-          {status.type === 'success' ? <Check size={18}/> : <AlertCircle size={18}/>}
-          {status.message}
-        </motion.div>
-      )}
-
-       {/* Quick Actions */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
          <button onClick={() => setShowShop(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={24}/></div>
@@ -757,23 +746,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                      </div>
                    ))}
                 </div>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showIncompleteBalance && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-             <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
-                <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
-                   <AlertCircle size={40} className="text-rose-500" />
-                </div>
-                <div className="space-y-2">
-                   <h3 className="text-xl font-bold text-black tracking-tight">Insufficient Origins</h3>
-                   <p className="text-sm text-slate-400 font-medium leading-relaxed">You don't have so much Origins. Go earn it first..</p>
-                </div>
-                <button onClick={() => setShowIncompleteBalance(false)} className="w-full h-14 bg-black text-white rounded-2xl font-bold text-sm shadow-xl hover:opacity-90 transition-all">Understood</button>
              </div>
           </motion.div>
         )}

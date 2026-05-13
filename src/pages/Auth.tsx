@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { AlertCircle, ArrowRight, Loader2, Mail } from 'lucide-react';
+import { AlertCircle, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -14,6 +14,7 @@ export default function Auth() {
   const [validationModal, setValidationModal] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -221,14 +222,24 @@ export default function Auth() {
 
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Password</label>
-            <input
-              required
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
-              placeholder="••••••••"
-            />
+            <div className="relative group/pass">
+              <input
+                required
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 pr-14 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-black transition-colors"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {error && (

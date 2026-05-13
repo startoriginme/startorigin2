@@ -11,17 +11,17 @@ import {
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
-const navItems = [
-  { icon: Home, label: 'Feed', path: '/feed' },
-  { icon: Search, label: 'Search', path: '/search' },
-  { icon: PlusSquare, label: 'Add', path: '/add' },
-  { icon: Grid, label: 'Gallery', path: '/gallery' },
-  { icon: User, label: 'Profile', path: '/profile' },
-  { icon: Settings, label: 'Settings', path: '/settings' },
-];
-
 export default function Navigation() {
   const location = useLocation();
+
+  const navItems = [
+    { icon: Home, label: 'Feed', path: '/feed' },
+    { icon: Search, label: 'Search', path: '/search' },
+    { icon: PlusSquare, label: 'Add', path: '/add' },
+    { icon: Grid, label: 'Gallery', path: '/gallery' },
+    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+  ];
 
   if (location.pathname.startsWith('/chat')) {
     return null;

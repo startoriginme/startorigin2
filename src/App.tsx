@@ -17,6 +17,8 @@ import { Profile as ProfileType } from './types';
 
 import Post from './pages/Post';
 
+import { NotificationProvider } from './context/NotificationContext';
+
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<ProfileType | null>(null);
@@ -63,33 +65,35 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-white text-slate-900 flex flex-col md:flex-row">
-        {session && <Navigation />}
-        
-        <main className="flex-1 relative pb-20 md:pb-0 overflow-x-hidden">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={session ? <Navigate to="/feed" /> : <Landing />} />
-              <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/feed" />} />
-              
-              {/* Protected Routes */}
-              <Route path="/feed" element={session ? <Feed user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/search" element={session ? <Search /> : <Navigate to="/auth" />} />
-              <Route path="/add" element={session ? <Add user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/gallery" element={session ? <Gallery user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
-              <Route path="/profile/:username" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
-              <Route path="/profile/:username/follows" element={session ? <Follows /> : <Navigate to="/auth" />} />
-              <Route path="/posts/:id" element={session ? <Post user={session.user} /> : <Navigate to="/auth" />} />
-              <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
-              <Route path="/chat/:userId?" element={session ? <Chat user={session.user} /> : <Navigate to="/auth" />} />
-              
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-      </div>
-    </Router>
+    <NotificationProvider>
+      <Router>
+        <div className="min-h-screen bg-white text-slate-900 flex flex-col md:flex-row">
+          {session && <Navigation />}
+          
+          <main className="flex-1 relative pb-20 md:pb-0 overflow-x-hidden">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={session ? <Navigate to="/feed" /> : <Landing />} />
+                <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/feed" />} />
+                
+                {/* Protected Routes */}
+                <Route path="/feed" element={session ? <Feed user={session.user} /> : <Navigate to="/auth" />} />
+                <Route path="/search" element={session ? <Search /> : <Navigate to="/auth" />} />
+                <Route path="/add" element={session ? <Add user={session.user} /> : <Navigate to="/auth" />} />
+                <Route path="/gallery" element={session ? <Gallery user={session.user} /> : <Navigate to="/auth" />} />
+                <Route path="/profile" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
+                <Route path="/profile/:username" element={session ? <Profile user={session.user} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
+                <Route path="/profile/:username/follows" element={session ? <Follows /> : <Navigate to="/auth" />} />
+                <Route path="/posts/:id" element={session ? <Post user={session.user} /> : <Navigate to="/auth" />} />
+                <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
+                <Route path="/chat/:userId?" element={session ? <Chat user={session.user} /> : <Navigate to="/auth" />} />
+                
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </AnimatePresence>
+          </main>
+        </div>
+      </Router>
+    </NotificationProvider>
   );
 }

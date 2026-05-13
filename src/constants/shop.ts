@@ -102,11 +102,11 @@ export const GRADIENT_PRICES: Record<string, number> = {
 };
 
 export const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
-  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 text-transparent bg-clip-text [-webkit-background-clip:text] drop-shadow-sm' },
-  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 text-transparent bg-clip-text [-webkit-background-clip:text]' },
-  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text [-webkit-background-clip:text]' },
-  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text [-webkit-background-clip:text]' },
-  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-transparent bg-clip-text [-webkit-background-clip:text]' }
+  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
+  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
+  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
+  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
+  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' }
 };
 
 export const FONT_PRICES: Record<string, number> = {
@@ -115,7 +115,12 @@ export const FONT_PRICES: Record<string, number> = {
   retro: 1500,
   futuristic: 2500,
   elegant: 3000,
-  handwritten: 1000
+  handwritten: 1000,
+  comic: 4000,
+  cute: 3500,
+  scifi: 4500,
+  marker: 3000,
+  sf_italic: 5000
 };
 
 export const FONT_CONFIG: Record<string, { label: string; className: string }> = {
@@ -124,5 +129,10 @@ export const FONT_CONFIG: Record<string, { label: string; className: string }> =
   retro: { label: 'Retro Mono', className: 'font-retro-mono' },
   futuristic: { label: 'Futuristic', className: 'font-futuristic' },
   elegant: { label: 'Elegant', className: 'font-elegant' },
-  handwritten: { label: 'Handwritten', className: 'font-handwritten' }
+  handwritten: { label: 'Handwritten', className: 'font-handwritten' },
+  comic: { label: 'Comic Hero', className: 'font-comic tracking-wider' },
+  cute: { label: 'Sweet Candy', className: 'font-cute' },
+  scifi: { label: 'Neural Link', className: 'font-scifi tracking-tight' },
+  marker: { label: 'Wild Spirit', className: 'font-marker' },
+  sf_italic: { label: 'SF Bold Italic', className: 'font-[var(--font-sf)] italic uppercase font-bold tracking-tight' }
 };

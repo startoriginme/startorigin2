@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Photo, Profile } from '../types';
-import { Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2, Bookmark, Check } from 'lucide-react';
+import { 
+  Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2, 
+  Bookmark, Check, BadgeCheck, Snowflake, Monitor, Star, Crown, Diamond, 
+  Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, 
+  Smile, Sparkles 
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn, optimizeImage } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -173,13 +178,15 @@ export default function Post({ user }: { user: any }) {
                   </div>
                 </div>
                 <div>
-                  <h2 className={cn(
-                    "font-bold text-lg group-hover:underline",
-                    photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
-                    photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
-                  )}>
-                    {photo.owner?.name || photo.owner?.username}
-                  </h2>
+                  <div className="flex items-center gap-1">
+                    <h2 className={cn(
+                      "font-bold text-lg group-hover:underline",
+                      photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
+                      photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
+                    )}>
+                      {photo.owner?.name || photo.owner?.username}
+                    </h2>
+                  </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     {formatDistanceToNow(new Date(photo.created_at))} ago
                   </p>

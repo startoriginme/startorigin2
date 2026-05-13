@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { 
+  Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo, Profile } from '../types';
 import { cn } from '../lib/utils';
@@ -13,7 +15,7 @@ type SearchCategory = 'photos' | 'users';
 const HONOR_BOARD = [
   { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
   { username: 'pipinos', label: 'Main Developer', role: 'official' },
-  { username: '1winter_', label: 'Creative Director', role: 'official' },
+  { username: 'winter', label: 'Creative Director', role: 'official' },
   { username: 'startorigin', label: 'StartOrigin Official', role: 'official' },
   { username: 'camilakiriek', label: 'Friend of StartOrigin', role: 'friend' },
   { username: 'viscaelbarca', label: 'Friend of StartOrigin', role: 'friend' },
@@ -119,20 +121,22 @@ export default function Search() {
                      </div>
                      {user.role === 'official' && (
                        <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1 shadow-lg">
-                          <SearchIcon size={12} className="rotate-45" />
+                          <SearchIcon size={11} className="rotate-45" />
                        </div>
                      )}
                    </div>
-                   <div className="space-y-1">
-                     <div className={cn(
-                       "font-bold text-[15px]",
-                       user.active_gradient ? GRADIENT_CONFIG[user.active_gradient]?.className : "text-black",
-                       user.active_font ? FONT_CONFIG[user.active_font]?.className : ""
-                     )}>
-                       {user.name || user.username}
+                   <div className="space-y-1 text-center flex flex-col items-center">
+                     <div className="flex items-center gap-1 justify-center">
+                       <div className={cn(
+                         "font-bold text-[15px]",
+                         user.active_gradient ? GRADIENT_CONFIG[user.active_gradient]?.className : "text-black",
+                         user.active_font ? FONT_CONFIG[user.active_font]?.className : ""
+                       )}>
+                         {user.name || user.username}
+                       </div>
                      </div>
                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{user.username}</div>
-                     <div className="mt-2 px-3 py-1 bg-black/5 rounded-full text-[9px] font-bold uppercase tracking-tighter text-slate-500 whitespace-nowrap">
+                     <div className="mt-1 px-3 py-1 bg-black/5 rounded-full text-[9px] font-bold uppercase tracking-tighter text-slate-500 whitespace-nowrap">
                        {user.label}
                      </div>
                    </div>
@@ -221,11 +225,13 @@ function SearchResultCard({ item, category, index, onClick }: any) {
             {item.avatar_url ? <img src={item.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
           </div>
           <div>
-            <div className={cn(
-              "font-bold text-[15px] truncate w-full",
-              item.active_gradient ? GRADIENT_CONFIG[item.active_gradient]?.className : "text-black",
-              item.active_font ? FONT_CONFIG[item.active_font]?.className : ""
-            )}>{item.name || item.username}</div>
+            <div className="flex items-center justify-center gap-1">
+              <div className={cn(
+                "font-bold text-[15px] truncate max-w-[120px]",
+                item.active_gradient ? GRADIENT_CONFIG[item.active_gradient]?.className : "text-black",
+                item.active_font ? FONT_CONFIG[item.active_font]?.className : ""
+              )}>{item.name || item.username}</div>
+            </div>
             <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{item.username}</div>
           </div>
         </div>

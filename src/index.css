@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@600&family=Space+Grotesk:wght@600&family=Cormorant+Garamond:wght@700&family=Caveat:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@600&family=Space+Grotesk:wght@600&family=Cormorant+Garamond:wght@700&family=Caveat:wght@700&family=Bangers&family=Pacifico&family=Michroma&family=Permanent+Marker&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -8,6 +8,11 @@
   --font-futuristic: "Space Grotesk", sans-serif;
   --font-elegant: "Cormorant Garamond", serif;
   --font-handwritten: "Caveat", cursive;
+  --font-comic: "Bangers", system-ui;
+  --font-cute: "Pacifico", cursive;
+  --font-scifi: "Michroma", sans-serif;
+  --font-marker: "Permanent Marker", cursive;
+  --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --color-primary: #000000;
   --color-accent: #1d1d1f;
   --color-glass: rgba(255, 255, 255, 0.5);

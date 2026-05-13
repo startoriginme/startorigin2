@@ -723,7 +723,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="flex items-center justify-center gap-0 flex-wrap">
               <h1 className={cn(
                 "text-2xl font-bold tracking-tight",
                 profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
@@ -731,7 +731,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               )}>
                 {profile.name || profile.username}
               </h1>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5">
                 {visibleBadges.map(bid => {
                    const cfg = BADGE_CONFIG[bid];
                    return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;

@@ -721,29 +721,21 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               );
             })}
           </div>
-{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - ЖЕСТКОЕ ВЫРАВНИВАНИЕ */}
+{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - С ГЛОБАЛЬНЫМИ СТИЛЯМИ */}
 <div className="space-y-3">
   <div className="flex justify-center">
-    <div className="flex items-center gap-2" style={{ lineHeight: 1, minHeight: '36px' }}>
+    <div className="profile-name-wrapper">
       <h1 className={cn(
         "text-2xl font-bold tracking-tight",
         profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
         profile.active_font && FONT_CONFIG[profile.active_font]?.className
-      )} style={{ 
-        lineHeight: 1, 
-        display: 'inline-block',
-        verticalAlign: 'middle'
-      }}>
+      )}>
         {profile.name || profile.username}
       </h1>
-      <div className="flex gap-0.5 items-center" style={{ 
-        display: 'inline-flex',
-        alignItems: 'center',
-        verticalAlign: 'middle'
-      }}>
+      <div className="badges-container flex gap-0.5">
         {visibleBadges.map(bid => {
           const cfg = BADGE_CONFIG[bid];
-          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} style={{ display: 'inline-block' }} /> : null;
+          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
         })}
       </div>
     </div>

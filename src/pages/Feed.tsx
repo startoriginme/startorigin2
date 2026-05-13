@@ -5,8 +5,9 @@ import { Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, 
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { cn, optimizeImage } from '../lib/utils';
 import PhotoViewer from '../components/PhotoViewer';
+import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 // Swipe Achievement thresholds
 const SWIPE_ACHIEVEMENTS = [
@@ -354,7 +355,13 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             </div>
           </div>
           <div>
-            <div className="text-sm font-bold text-black group-hover:underline underline-offset-4">{photo.owner?.name || photo.owner?.username}</div>
+            <div className={cn(
+              "text-sm font-bold group-hover:underline underline-offset-4",
+              photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
+              photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
+            )}>
+              {photo.owner?.name || photo.owner?.username}
+            </div>
             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
               {formatDistanceToNow(new Date(photo.created_at))} ago
             </div>
@@ -366,7 +373,7 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
         onClick={onOpen}
         className="aspect-[4/3] rounded-[2.5rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in relative group/image shadow-sm"
       >
-        <img src={photo.url} alt="" className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/image:scale-110" />
+        <img src={optimizeImage(photo.url, 800)} alt="" className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/image:scale-110" loading="lazy" />
       </div>
 
       <div className="flex items-center justify-between px-6">

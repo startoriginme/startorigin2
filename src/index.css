@@ -1,18 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@600&family=Space+Grotesk:wght@600&family=Cormorant+Garamond:wght@700&family=Caveat:wght@700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-serif-display: "Playfair Display", serif;
+  --font-retro-mono: "JetBrains Mono", monospace;
+  --font-futuristic: "Space Grotesk", sans-serif;
+  --font-elegant: "Cormorant Garamond", serif;
+  --font-handwritten: "Caveat", cursive;
   --color-primary: #000000;
-  --color-accent: #64748b;
-  --color-glass: rgba(255, 255, 255, 0.4);
-  --color-glass-border: rgba(255, 255, 255, 0.3);
+  --color-accent: #1d1d1f;
+  --color-glass: rgba(255, 255, 255, 0.5);
+  --color-glass-border: rgba(255, 255, 255, 0.2);
+  --radius-liquid: 2.5rem;
 }
 
 @layer base {
   body {
-    @apply bg-white text-slate-900 antialiased font-sans overflow-x-hidden min-h-screen relative;
+    @apply bg-white text-[#1d1d1f] antialiased font-sans overflow-x-hidden min-h-screen relative selection:bg-black/5;
     -webkit-tap-highlight-color: transparent;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  h1, h2, h3, h4 {
+    @apply tracking-tight font-semibold;
   }
 
   input, textarea, select {

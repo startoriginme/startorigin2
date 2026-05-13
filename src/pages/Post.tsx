@@ -4,8 +4,10 @@ import { supabase } from '../lib/supabase';
 import { Photo, Profile } from '../types';
 import { Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2, Bookmark, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { cn, optimizeImage } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
+import PhotoViewer from '../components/PhotoViewer';
 
 export default function Post({ user }: { user: any }) {
   const { id } = useParams();
@@ -17,6 +19,7 @@ export default function Post({ user }: { user: any }) {
   const [likesCount, setLikesCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [viewer, setViewer] = useState<Photo | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -153,9 +156,10 @@ export default function Post({ user }: { user: any }) {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="aspect-[4/3] md:aspect-square bg-slate-50 md:rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100"
+            onClick={() => setViewer(photo)}
+            className="aspect-[4/3] md:aspect-square bg-slate-50 md:rounded-[3rem] overflow-hidden shadow-2xl border border-slate-100 cursor-zoom-in"
           >
-            <img src={photo.url} alt="" className="w-full h-full object-cover" />
+            <img src={optimizeImage(photo.url, 1200)} alt="" className="w-full h-full object-cover" loading="eager" />
           </motion.div>
 
           <div className="p-6 md:p-0 space-y-12">
@@ -169,7 +173,13 @@ export default function Post({ user }: { user: any }) {
                   </div>
                 </div>
                 <div>
-                  <h2 className="font-bold text-black text-lg group-hover:underline">{photo.owner?.name || photo.owner?.username}</h2>
+                  <h2 className={cn(
+                    "font-bold text-lg group-hover:underline",
+                    photo.owner?.active_gradient ? GRADIENT_CONFIG[photo.owner.active_gradient]?.className : "text-black",
+                    photo.owner?.active_font ? FONT_CONFIG[photo.owner.active_font]?.className : ""
+                  )}>
+                    {photo.owner?.name || photo.owner?.username}
+                  </h2>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     {formatDistanceToNow(new Date(photo.created_at))} ago
                   </p>
@@ -249,7 +259,7 @@ export default function Post({ user }: { user: any }) {
                   className="group space-y-4"
                 >
                   <div className="aspect-[4/3] rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm transition-all group-hover:scale-[1.02] group-hover:shadow-xl">
-                    <img src={p.url} alt="" className="w-full h-full object-cover" />
+                    <img src={optimizeImage(p.url, 400)} alt="" className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <div className="px-2">
                     <div className="text-[10px] font-bold text-black uppercase tracking-widest truncate">{p.name}</div>
@@ -266,6 +276,14 @@ export default function Post({ user }: { user: any }) {
           </div>
         )}
       </div>
+      <AnimatePresence>
+        {viewer && (
+          <PhotoViewer 
+            photo={viewer} 
+            onClose={() => setViewer(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

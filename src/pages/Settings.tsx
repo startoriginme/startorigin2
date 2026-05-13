@@ -8,8 +8,7 @@ import {
   EyeOff, Search, Flame, Star, Coins, Crown, Diamond, Heart, 
   Award, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, Music, 
   Book, Coffee, Gamepad, Gift, Smile, X, Medal, Target, 
-  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown,
-  Trash2
+  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown
 } from 'lucide-react';
 import {
   DndContext,
@@ -31,113 +30,12 @@ import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 // BASE CONSTANTS
-const BADGE_PRICES: Record<string, number> = {
-  snowflake: 300,
-  computer: 300,
-  star: 200,
-  crown: 1000,
-  diamond: 1500,
-  heart: 150,
-  award: 400,
-  rocket: 600,
-  leaf: 100,
-  moon: 250,
-  sun: 250,
-  music: 200,
-  book: 150,
-  coffee: 100,
-  gamepad: 350,
-  gift: 200,
-  smile: 100,
-  sparkles: 300
-};
+import { 
+  BADGE_PRICES, THEME_PRICES, PATTERN_PRICES, ACHIEVEMENT_PRICES, 
+  SHOP_ACHIEVEMENTS, BADGE_CONFIG, PET_CONFIG, GRADIENT_PRICES, 
+  GRADIENT_CONFIG, FONT_PRICES, FONT_CONFIG 
+} from '../constants/shop';
 
-const THEME_PRICES: Record<string, number> = {
-  black: 200,
-  pink: 150,
-  gray: 100,
-  green: 150,
-  blue: 200,
-  purple: 250,
-  orange: 200,
-  red: 250
-};
-
-const PATTERN_PRICES: Record<string, number> = {
-  circles: 100,
-  triangles: 150,
-  squares: 150,
-  flowers: 200,
-  hearts: 250,
-  stars: 300
-};
-
-const ACHIEVEMENT_PRICES: Record<string, number> = {
-  shopkeeper: 500,
-  buyer: 100,
-  shopping: 300,
-  collector: 1000,
-  big_spender: 2000,
-  legendary: 1500,
-  completionist: 5000,
-  daily_shopper: 800
-};
-
-const SHOP_ACHIEVEMENTS = [
-  { id: 'shopkeeper', title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-purple-500", description: "Spent 500 Origins" },
-  { id: 'buyer', title: "Buyer", icon: ShoppingBag, color: "text-green-500", description: "Made first purchase" },
-  { id: 'shopping', title: "Shopping", icon: Zap, color: "text-yellow-500", description: "Bought 3 items" },
-  { id: 'collector', title: "Collector", icon: Star, color: "text-amber-500", description: "Collected 5 badges" },
-  { id: 'big_spender', title: "Big Spender", icon: Trophy, color: "text-red-500", description: "Spent 2000 Origins" },
-  { id: 'legendary', title: "Legendary", icon: Crown, color: "text-yellow-500", description: "Bought a legendary item" },
-  { id: 'completionist', title: "Completionist", icon: Award, color: "text-emerald-500", description: "Collected all badges" },
-  { id: 'daily_shopper', title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-500", description: "Bought 3 days in a row" },
-];
-
-const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  verified: { icon: Shield, color: 'text-blue-500', label: 'Verified' },
-  snowflake: { icon: Sparkles, color: 'text-cyan-400', label: 'Snowflake' },
-  computer: { icon: Hash, color: 'text-slate-500', label: 'Compute' },
-  star: { icon: Star, color: 'text-amber-400', label: 'Star' },
-  crown: { icon: Crown, color: 'text-yellow-500', label: 'Crown' },
-  diamond: { icon: Diamond, color: 'text-sky-400', label: 'Diamond' },
-  heart: { icon: Heart, color: 'text-pink-500', label: 'Heart' },
-  award: { icon: Award, color: 'text-emerald-500', label: 'Award' },
-  rocket: { icon: Rocket, color: 'text-red-500', label: 'Rocket' },
-  leaf: { icon: Leaf, color: 'text-green-600', label: 'Leaf' },
-  moon: { icon: Moon, color: 'text-indigo-400', label: 'Moon' },
-  sun: { icon: Sun, color: 'text-orange-500', label: 'Sun' },
-  music: { icon: Music, color: 'text-pink-600', label: 'Music' },
-  book: { icon: Book, color: 'text-amber-700', label: 'Book' },
-  coffee: { icon: Coffee, color: 'text-amber-700', label: 'Coffee' },
-  gamepad: { icon: Gamepad, color: 'text-purple-600', label: 'Gamepad' },
-  gift: { icon: Gift, color: 'text-red-500', label: 'Gift' },
-  smile: { icon: Smile, color: 'text-yellow-500', label: 'Smile' },
-  sparkles: { icon: Sparkles, color: 'text-purple-400', label: 'Sparkles' },
-};
-
-const PET_CONFIG = [
-  { id: 'cat', name: 'Cat', price: 100, image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100' },
-  { id: 'dog', name: 'Dog', price: 150, image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100' },
-  { id: 'bat', name: 'Bat', price: 300, image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100' },
-  { id: 'owl', name: 'Owl', price: 500, image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100' },
-];
-
-const GRADIENT_PRICES: Record<string, number> = {
-  soft_blue: 7000,
-  sunset: 3500,
-  emerald: 4000,
-  royal: 5000,
-  neon: 5000
-};
-
-const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
-  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm' },
-  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent' },
-  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent' },
-  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent' },
-  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 bg-clip-text text-transparent' }
-};
 
 export default function Settings({ user, profile, onUpdate }: { user: any, profile: Profile | null, onUpdate: (id: string) => void }) {
   const navigate = useNavigate();
@@ -146,8 +44,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showIncompleteBalance, setShowIncompleteBalance] = useState(false);
-  const [showDeleteAvatarConfirm, setShowDeleteAvatarConfirm] = useState(false);
-  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients'>('badges');
+  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
   
   // Secret quest state
@@ -173,46 +70,16 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     avatar_url: profile?.avatar_url || '',
     theme_preference: profile?.theme_preference || 'default',
     pattern_preference: profile?.pattern_preference || 'none',
-    active_gradient: profile?.active_gradient || null
+    active_gradient: profile?.active_gradient || null,
+    active_font: profile?.active_font || 'modern'
   });
-
-  // Local state for origins calculation
-  const [originsBalance, setOriginsBalance] = useState(0);
-  const [uploadCount, setUploadCount] = useState(profile?.photo_count || 0);
-  const [swipeCount, setSwipeCount] = useState(profile?.swipe_count || 0);
-  const [receivedOrigins, setReceivedOrigins] = useState(profile?.received_origins || 0);
-  const [spentOrigins, setSpentOrigins] = useState(profile?.spent_origins || 0);
 
   useEffect(() => {
     if (profile) {
       setBadgesOrder(profile.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
       setHiddenBadges(profile.hidden_badges || []);
-      setUploadCount(profile.photo_count || 0);
-      setSwipeCount(profile.swipe_count || 0);
-      setReceivedOrigins(profile.received_origins || 0);
-      setSpentOrigins(profile.spent_origins || 0);
     }
   }, [profile]);
-
-  // Calculate origins balance whenever relevant values change
-  useEffect(() => {
-    calculateAndUpdateOriginsBalance();
-  }, [uploadCount, swipeCount, receivedOrigins, spentOrigins]);
-
-  async function calculateAndUpdateOriginsBalance() {
-    if (!profile) return;
-    
-    // Формула: фото + свайпы×0.5 + полученные - потраченные
-    const maxBalance = uploadCount + (swipeCount * 0.5) + receivedOrigins;
-    const currentBalance = maxBalance - spentOrigins;
-    
-    setOriginsBalance(currentBalance);
-    
-    // Обновляем в базе данных
-    await supabase.from('profiles').update({ 
-      origins_balance: currentBalance
-    }).eq('id', profile.id);
-  }
 
   useEffect(() => {
     if (showLeaderboard) fetchLeaderboard();
@@ -284,14 +151,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     if (secretCode.toLowerCase() === 'origin2026') {
       const purchased = profile?.purchased_achievements || [];
       if (!purchased.includes('secret_agent_1')) {
-        const newReceived = (profile?.received_origins || 0) + 500;
-        setReceivedOrigins(newReceived);
-        
         const { error } = await supabase
           .from('profiles')
           .update({ 
             purchased_achievements: [...purchased, 'secret_agent_1'],
-            received_origins: newReceived
+            received_origins: (profile?.received_origins || 0) + 500
           })
           .eq('id', user.id);
         
@@ -308,18 +172,24 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     }
   }
 
-  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient', item: string, price: number) {
-    if (originsBalance < price) {
+  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient' | 'font', item: string, price: number) {
+    if (currentBalance < price) {
       setShowIncompleteBalance(true);
       return;
     }
 
     setLoading(true);
-    const newSpent = spentOrigins + price;
-    setSpentOrigins(newSpent);
+    const newSpent = (profile?.spent_origins || 0) + price;
+    
+    // Formula: photos + swipes * 0.5 + received - spent
+    const newBalance = (profile?.photo_count || 0) + 
+                      ((profile?.swipe_count || 0) * 0.5) + 
+                      (profile?.received_origins || 0) - 
+                      newSpent;
 
     const updates: any = {
-      spent_origins: newSpent
+      spent_origins: newSpent,
+      origins_balance: newBalance
     };
 
     if (type === 'badge') {
@@ -332,6 +202,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       updates.purchased_achievements = [...(profile?.purchased_achievements || []), item];
     } else if (type === 'gradient') {
       updates.purchased_gradients = [...(profile?.purchased_gradients || []), item];
+    } else if (type === 'font') {
+      updates.purchased_fonts = [...(profile?.purchased_fonts || []), item];
     }
 
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
@@ -342,7 +214,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   }
 
   async function handlePurchasePet(pet: any) {
-    if (originsBalance < pet.price) {
+    if (currentBalance < pet.price) {
       setShowIncompleteBalance(true);
       return;
     }
@@ -359,9 +231,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     });
 
     if (!petError) {
-      const newSpent = spentOrigins + pet.price;
-      setSpentOrigins(newSpent);
-      
+      const newSpent = (profile?.spent_origins || 0) + pet.price;
       const { error: profileError } = await supabase.from('profiles').update({
         spent_origins: newSpent
       }).eq('id', user.id);
@@ -379,103 +249,25 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
-  // Функция загрузки аватарки
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
-    
-    // Проверяем размер файла (максимум 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setStatus({ type: 'error', message: 'File too large. Max 2MB.' });
-      return;
-    }
-
-    // Проверяем тип файла
-    if (!file.type.startsWith('image/')) {
-      setStatus({ type: 'error', message: 'Only image files are allowed.' });
-      return;
-    }
-
     const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}.${fileExt}`;
+    const filePath = `avatars/${user.id}.${fileExt}`;
 
     setLoading(true);
-    setStatus(null);
-
-    // Загружаем в бакет 'avatars'
     const { error: uploadError } = await supabase.storage
-      .from('avatars')
+      .from('photos')
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
       setStatus({ type: 'error', message: uploadError.message });
       setLoading(false);
       return;
     }
 
-    // Получаем публичный URL из бакета 'avatars'
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-    
+    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filePath);
     setEditProfile({ ...editProfile, avatar_url: publicUrl });
-    setStatus({ type: 'success', message: 'Avatar updated successfully!' });
-    
-    // Автоматически сохраняем профиль с новой аватаркой
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: publicUrl })
-      .eq('id', user.id);
-    
-    if (updateError) {
-      setStatus({ type: 'error', message: updateError.message });
-    } else {
-      onUpdate(user.id);
-    }
-    
-    setLoading(false);
-  }
-
-  // Функция удаления аватарки
-  async function handleDeleteAvatar() {
-    setLoading(true);
-    setStatus(null);
-    
-    // Определяем путь к файлу на основе URL
-    const oldAvatarUrl = editProfile.avatar_url;
-    if (oldAvatarUrl) {
-      // Извлекаем путь из URL
-      const urlParts = oldAvatarUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const filePath = fileName;
-      
-      // Удаляем файл из Storage
-      const { error: deleteError } = await supabase.storage
-        .from('avatars')
-        .remove([filePath]);
-      
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        // Не показываем ошибку пользователю, продолжаем удаление из профиля
-      }
-    }
-    
-    // Обновляем профиль - убираем ссылку на аватарку
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: null })
-      .eq('id', user.id);
-    
-    if (updateError) {
-      setStatus({ type: 'error', message: updateError.message });
-    } else {
-      setEditProfile({ ...editProfile, avatar_url: '' });
-      setStatus({ type: 'success', message: 'Avatar removed successfully!' });
-      onUpdate(user.id);
-    }
-    
-    setShowDeleteAvatarConfirm(false);
     setLoading(false);
   }
 
@@ -483,6 +275,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     await supabase.auth.signOut();
     navigate('/');
   };
+
+  const currentBalance = (profile?.photo_count || 0) + 
+                         ((profile?.swipe_count || 0) * 0.5) + 
+                         (profile?.received_origins || 0) - 
+                         (profile?.spent_origins || 0);
 
   const purchasedBadges = profile?.purchased_badges || [];
   const allAvailableBadges = [...purchasedBadges];
@@ -503,7 +300,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         </div>
         <div className="p-3 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 shadow-sm">
            <Coins size={18} className="text-amber-500" />
-           <span className="font-bold text-black">{originsBalance.toFixed(0)}</span>
+           <span className="font-bold text-black">{currentBalance.toFixed(0)}</span>
         </div>
       </header>
 
@@ -539,31 +336,16 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Account Details</h2>
         <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
           <div className="flex items-center gap-6">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
-                {editProfile.avatar_url ? (
-                  <img src={editProfile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
-                ) : (
-                  <User size={32} className="text-slate-200" />
-                )}
-                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
-                  <Camera size={24} className="text-white" />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={loading} />
-                </label>
-              </div>
-              {editProfile.avatar_url && (
-                <button
-                  onClick={() => setShowDeleteAvatarConfirm(true)}
-                  className="absolute -bottom-2 -right-2 p-2 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 transition-all"
-                  disabled={loading}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
+            <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
+              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-200" />}
+              <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                 <Camera size={24} className="text-white" />
+                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+              </label>
             </div>
             <div>
               <div className="font-bold text-black mb-1">Avatar</div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Click to change</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Your photo</div>
             </div>
           </div>
           
@@ -687,6 +469,19 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   ))}
                 </select>
               </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Typography Style</label>
+                <select 
+                  value={editProfile.active_font || 'modern'}
+                  onChange={(e) => setEditProfile({ ...editProfile, active_font: e.target.value })}
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
+                >
+                  <option value="modern">Modern Sans</option>
+                  {(profile?.purchased_fonts || []).map(f => (
+                    <option key={f} value={f}>{FONT_CONFIG[f]?.label || f}</option>
+                  ))}
+                </select>
+              </div>
            </div>
            <button onClick={handleUpdateProfile} className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Apply Style</button>
         </div>
@@ -735,27 +530,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         Depart to Void
       </button>
 
-      {/* DELETE AVATAR CONFIRM MODAL */}
-      <AnimatePresence>
-        {showDeleteAvatarConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-             <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
-                <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto">
-                   <Trash2 size={40} className="text-rose-500" />
-                </div>
-                <div className="space-y-2">
-                   <h3 className="text-xl font-bold text-black tracking-tight">Delete Avatar?</h3>
-                   <p className="text-sm text-slate-400 font-medium leading-relaxed">Are you sure you want to remove your profile picture?</p>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowDeleteAvatarConfirm(false)} className="flex-1 h-12 bg-slate-100 text-black font-bold rounded-2xl text-sm hover:bg-slate-200 transition-all">Cancel</button>
-                  <button onClick={handleDeleteAvatar} className="flex-1 h-12 bg-rose-500 text-white font-bold rounded-2xl text-sm hover:bg-rose-600 transition-all">Delete</button>
-                </div>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* SHOP MODAL */}
       <AnimatePresence>
         {showShop && (
@@ -766,7 +540,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       <h2 className="text-3xl font-bold tracking-tight">Origin Shop</h2>
                       <div className="flex items-center gap-2 mt-1">
                          <Coins size={16} className="text-amber-500" />
-                         <span className="font-bold text-amber-500">{originsBalance.toFixed(0)} available</span>
+                         <span className="font-bold text-amber-500">{currentBalance.toFixed(0)} available</span>
                       </div>
                    </div>
                    <button onClick={() => setShowShop(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24}/></button>
@@ -776,6 +550,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                      <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
                     <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Pets</button>
                     <button onClick={() => setActiveShopTab('gradients')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'gradients' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Gradients</button>
+                    <button onClick={() => setActiveShopTab('fonts')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'fonts' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Fonts</button>
                     <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Styles</button>
                     <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Tasks</button>
                  </div>
@@ -859,6 +634,28 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       })}
                    </div>
                  )}
+
+                 {activeShopTab === 'fonts' && (
+                    <div className="grid grid-cols-1 gap-4">
+                       {Object.entries(FONT_CONFIG).map(([id, cfg]) => {
+                          const isOwned = (profile?.purchased_fonts || []).includes(id) || id === 'modern';
+                          const price = FONT_PRICES[id];
+                          return (
+                            <div key={id} className="p-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-between group">
+                               <div className="flex flex-col gap-1">
+                                  <div className={cn("text-xl font-bold tracking-tight text-white", cfg.className)}>
+                                    {profile?.name || profile?.username || 'Typography'}
+                                  </div>
+                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{cfg.label}</div>
+                               </div>
+                               {!isOwned ? (
+                                 <button onClick={() => handlePurchase('font', id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">{price} ORG</button>
+                               ) : <Check className="text-emerald-500" size={24} />}
+                            </div>
+                          );
+                       })}
+                    </div>
+                  )}
 
                  {activeShopTab === 'gradients' && (
                     <div className="grid grid-cols-1 gap-4">
@@ -946,7 +743,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                         <div className="flex items-center gap-5">
                            <div className="w-8 flex justify-center font-bold text-white/40 group-hover:text-amber-500 transition-colors">#{idx + 1}</div>
                            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-white">
-                              {lb.avatar_url ? <img src={lb.avatar_url} className="w-full h-full object-cover" alt={lb.username} /> : <div className="w-full h-full flex items-center justify-center text-black font-bold uppercase">{lb.username[0]}</div>}
+                              {lb.avatar_url ? <img src={lb.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-black font-bold uppercase">{lb.username[0]}</div>}
                            </div>
                            <div>
                               <div className="text-white font-bold text-sm">{lb.name || lb.username}</div>

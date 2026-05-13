@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import PhotoViewer from '../components/PhotoViewer';
+import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 type SearchCategory = 'photos' | 'users';
 
@@ -123,7 +124,13 @@ export default function Search() {
                      )}
                    </div>
                    <div className="space-y-1">
-                     <div className="font-bold text-[15px]">{user.name || user.username}</div>
+                     <div className={cn(
+                       "font-bold text-[15px]",
+                       user.active_gradient ? GRADIENT_CONFIG[user.active_gradient]?.className : "text-black",
+                       user.active_font ? FONT_CONFIG[user.active_font]?.className : ""
+                     )}>
+                       {user.name || user.username}
+                     </div>
                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{user.username}</div>
                      <div className="mt-2 px-3 py-1 bg-black/5 rounded-full text-[9px] font-bold uppercase tracking-tighter text-slate-500 whitespace-nowrap">
                        {user.label}
@@ -214,8 +221,12 @@ function SearchResultCard({ item, category, index, onClick }: any) {
             {item.avatar_url ? <img src={item.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
           </div>
           <div>
-            <div className="font-bold text-[15px] text-black truncate w-full">{item.username}</div>
-            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{item.name}</div>
+            <div className={cn(
+              "font-bold text-[15px] truncate w-full",
+              item.active_gradient ? GRADIENT_CONFIG[item.active_gradient]?.className : "text-black",
+              item.active_font ? FONT_CONFIG[item.active_font]?.className : ""
+            )}>{item.name || item.username}</div>
+            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{item.username}</div>
           </div>
         </div>
       )}

@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
-import { cn, formatCount } from '../lib/utils';
+import { cn, formatCount, optimizeImage } from '../lib/utils';
+import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 interface Pet {
   id: string;
@@ -131,14 +132,6 @@ const THEMES: Record<string, { bg: string; text: string }> = {
   red: { bg: 'bg-red-100', text: 'text-black' },
 };
 
-const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
-  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm' },
-  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent' },
-  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent' },
-  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent' },
-  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 bg-clip-text text-transparent' }
-};
-
 // Pattern configurations
 const PATTERNS: Record<string, string> = {
   none: '',
@@ -218,14 +211,17 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
 
   useEffect(() => {
     if (profile) {
-      loadUserStats();
-      loadAchievements();
-      loadUserSettings();
-      loadDecorations();
-      loadBadgeSettings();
-      loadPets();
-      fetchPhotos();
-      checkFollowStatus();
+      // Parallelize fetches for "instant" load
+      Promise.all([
+        loadUserStats(),
+        loadAchievements(),
+        loadUserSettings(),
+        loadDecorations(),
+        loadBadgeSettings(),
+        loadPets(),
+        fetchPhotos(),
+        checkFollowStatus()
+      ]);
     }
   }, [profile]);
 
@@ -684,7 +680,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           <div className="relative w-32 h-32 mx-auto">
             <div className="w-full h-full rounded-full overflow-hidden border-4 border-white/20 shadow-xl bg-white relative z-10">
                {profile.avatar_url ? (
-                 <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                 <img src={profile.avatar_url} className="w-full h-full object-cover" loading="eager" />
                ) : (
                  <div className="w-full h-full bg-black/5 flex items-center justify-center text-3xl font-bold uppercase text-black">
                    {profile.name?.[0] || profile.username[0]}
@@ -730,7 +726,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <h1 className={cn(
                 "text-2xl font-bold tracking-tight",
-                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className
+                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+                profile.active_font && FONT_CONFIG[profile.active_font]?.className
               )}>
                 {profile.name || profile.username}
               </h1>
@@ -833,7 +830,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               <div className="col-span-full py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
             ) : savedPhotos.map(p => (
               <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm">
-                <img src={p.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <img src={optimizeImage(p.url, 400)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
               </div>
             ))}
             {!loadingSaved && savedPhotos.length === 0 && (
@@ -848,7 +845,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           <div className="grid grid-cols-2 gap-4">
              {photos.map(p => (
                <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm">
-                  <img src={p.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={optimizeImage(p.url, 400)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
                </div>
              ))}
              {photos.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">The sanctuary is quiet.</div>}

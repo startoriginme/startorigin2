@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     following_count INTEGER DEFAULT 0,
     purchased_gradients TEXT[] DEFAULT '{}',
     active_gradient TEXT,
+    purchased_fonts TEXT[] DEFAULT '{}',
+    active_font TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

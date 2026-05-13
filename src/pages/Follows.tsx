@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, User as UserIcon, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Profile } from '../types';
+import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 export default function Follows() {
   const { username } = useParams();
@@ -120,7 +121,11 @@ export default function Follows() {
                       ) : <UserIcon className="w-full h-full p-3 text-slate-300" />}
                     </div>
                     <div>
-                      <div className="font-bold text-black group-hover:underline underline-offset-4">{user.name || user.username}</div>
+                      <div className={cn(
+                        "font-bold group-hover:underline underline-offset-4",
+                        user.active_gradient ? GRADIENT_CONFIG[user.active_gradient]?.className : "text-black",
+                        user.active_font ? FONT_CONFIG[user.active_font]?.className : ""
+                      )}>{user.name || user.username}</div>
                       <div className="text-xs text-slate-400 font-medium">@{user.username}</div>
                     </div>
                   </div>

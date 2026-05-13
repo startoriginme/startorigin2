@@ -32,6 +32,8 @@ export interface Profile {
   received_origins: number | null;
   purchased_gradients: string[] | null;
   active_gradient: string | null;
+  purchased_fonts: string[] | null;
+  active_font: string | null;
   // UI helpers
   following_count?: number;
   is_following?: boolean;

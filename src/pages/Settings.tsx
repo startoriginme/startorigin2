@@ -257,8 +257,8 @@ async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const file = e.target.files[0];
   
   // Проверка размера файла (макс 2MB)
-  if (file.size > 2 * 1024 * 1024) {
-    showAlert({ message: 'File too large. Max 2MB.', type: 'error' });
+  if (file.size > 7 * 1024 * 1024) {
+    showAlert({ message: 'File too large. Max 7MB.', type: 'error' });
     return;
   }
   

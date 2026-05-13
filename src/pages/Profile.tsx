@@ -731,8 +731,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     )}>
       {profile.name || profile.username}
     </h1>
-    {/* ПРИНУДИТЕЛЬНЫЙ ОТСТУП ml-2 (8px) - ВСЕГДА */}
-    <div className="flex gap-0.5 ml-2">
+    {/* ФИКСИРОВАННЫЙ ОТСТУП 12px ДЛЯ ВСЕХ */}
+    <span className="w-3" />
+    <div className="flex gap-0.5">
       {visibleBadges.map(bid => {
         const cfg = BADGE_CONFIG[bid];
         return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;

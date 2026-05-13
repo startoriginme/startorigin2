@@ -240,7 +240,6 @@ export default function Feed({ user }: { user: any }) {
             title="Tinder Mode"
           >
             <Flame size={20} />
-            <span className="hidden sm:inline uppercase tracking-widest">Experience</span>
           </button>
           <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
             <button 

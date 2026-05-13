@@ -7,12 +7,16 @@ import {
   Settings, Trophy, Flame, Camera, Sparkles, X, Search, Upload, Eye, 
   EyeOff, Edit2, Minus, Plus, Coins, Glasses, Crown, Diamond, Heart, 
   Award, ShoppingCart, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, 
-  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark
+  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark,
+  MessageSquare, Trash2, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
 import { cn, formatCount, optimizeImage } from '../lib/utils';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
+
+// Удаляем проблемные шрифты из FONT_CONFIG (делаем это в constants/shop, но на всякий случай)
+// В твоем constants/shop нужно удалить neural_link и display_serif из FONT_CONFIG
 
 interface Pet {
   id: string;
@@ -34,6 +38,27 @@ interface UserPet {
   acquired_at: string;
   pets?: Pet;
   gifter?: { username: string; name: string };
+}
+
+interface Post {
+  id: string;
+  user_id: string;
+  content: string;
+  likes_count: number;
+  created_at: string;
+  profiles?: {
+    username: string;
+    name: string;
+    avatar_url: string;
+    active_gradient: string;
+    active_font: string;
+  };
+}
+
+interface PostLike {
+  id: string;
+  post_id: string;
+  user_id: string;
 }
 
 // РАСШИРЕННАЯ КОНФИГУРАЦИЯ ЗНАЧКОВ
@@ -94,7 +119,7 @@ const UPLOAD_ACHIEVEMENTS = [
   { count: 100, title: "Photo God", icon: Trophy, color: "text-cyan-500", description: "Uploaded 100 photos" },
 ];
 
-// Ачивки из магазина (РАСШИРЕННЫЕ)
+// Ачивки из магазина
 const SHOP_ACHIEVEMENTS = [
   { title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-purple-500", description: "Spent 500 Origins in shop" },
   { title: "Buyer", icon: ShoppingBag, color: "text-green-500", description: "Made first purchase" },
@@ -151,10 +176,27 @@ const PET_ICONS: Record<string, any> = {
   owl: { image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100', price: 500 },
 };
 
+// Функция для форматирования времени
+function formatTimeAgo(date: string) {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(date).toLocaleDateString();
+}
+
 export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id: string) => void }) {
   const { username } = useParams();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [newPostContent, setNewPostContent] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
@@ -192,7 +234,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
   const [savedPhotos, setSavedPhotos] = useState<Photo[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'photos' | 'pets' | 'achievements' | 'saved'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'wall' | 'pets' | 'achievements' | 'saved'>('photos');
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [gifting, setGifting] = useState(false);
   const [giftSearchQuery, setGiftSearchQuery] = useState('');
@@ -211,7 +253,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
 
   useEffect(() => {
     if (profile) {
-      // Parallelize fetches for "instant" load
       Promise.all([
         loadUserStats(),
         loadAchievements(),
@@ -220,6 +261,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         loadBadgeSettings(),
         loadPets(),
         fetchPhotos(),
+        fetchPosts(),
+        fetchUserLikes(),
         checkFollowStatus()
       ]);
     }
@@ -259,12 +302,119 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (data) setPhotos(data);
   }
 
+  async function fetchPosts() {
+    if (!profile) return;
+    const { data } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles:user_id (
+          username,
+          name,
+          avatar_url,
+          active_gradient,
+          active_font
+        )
+      `)
+      .eq('user_id', profile.id)
+      .order('created_at', { ascending: false });
+    if (data) setPosts(data as Post[]);
+  }
+
+  async function fetchUserLikes() {
+    if (!user) return;
+    const { data } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .eq('user_id', user.id);
+    if (data) {
+      setUserLikes(new Set(data.map((like: any) => like.post_id)));
+    }
+  }
+
+  async function handleCreatePost() {
+    if (!newPostContent.trim() || !user || !profile) return;
+    setPosting(true);
+    
+    const { data, error } = await supabase
+      .from('posts')
+      .insert({
+        user_id: profile.id,
+        content: newPostContent.trim()
+      })
+      .select()
+      .single();
+    
+    if (!error && data) {
+      setNewPostContent('');
+      await fetchPosts();
+    }
+    setPosting(false);
+  }
+
+  async function handleDeletePost(postId: string) {
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId);
+    
+    if (!error) {
+      setPosts(prev => prev.filter(p => p.id !== postId));
+    }
+  }
+
+  async function handleLikePost(postId: string) {
+    if (!user) return;
+    
+    if (userLikes.has(postId)) {
+      // Unlike
+      const { error } = await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id);
+      
+      if (!error) {
+        setUserLikes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+        setPosts(prev => prev.map(p => 
+          p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 0) - 1) } : p
+        ));
+      }
+    } else {
+      // Like
+      const { error } = await supabase
+        .from('post_likes')
+        .insert({ post_id: postId, user_id: user.id });
+      
+      if (!error) {
+        setUserLikes(prev => new Set([...prev, postId]));
+        setPosts(prev => prev.map(p => 
+          p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p
+        ));
+      }
+    }
+  }
+
   async function checkFollowStatus() {
     if (!user || !profile) return;
-    const { data } = await supabase.from('follows').select('*').eq('follower_id', user.id).eq('following_id', profile.id).single();
+    const { data } = await supabase.from('follows').select('*').eq('follower_id', user.id).eq('following_id', profile.id).maybeSingle();
     setFollowing(!!data);
-    setFollowersCount(profile.followers_count || 0);
-    setFollowingCount(profile.following_count || 0);
+    
+    // Получаем актуальные счетчики из БД
+    const { data: freshProfile } = await supabase
+      .from('profiles')
+      .select('followers_count, following_count')
+      .eq('id', profile.id)
+      .single();
+    
+    if (freshProfile) {
+      setFollowersCount(freshProfile.followers_count || 0);
+      setFollowingCount(freshProfile.following_count || 0);
+    }
   }
 
   async function fetchFollows(type: 'followers' | 'following') {
@@ -339,7 +489,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       if (query) {
         q = q.or(`username.ilike.%${query}%,name.ilike.%${query}%`);
       } else {
-        // Show people in circle first if no query
         const matchField = 'follower_id';
         const { data: followingList } = await supabase
           .from('follows')
@@ -431,8 +580,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         setSelectedPet(null);
         setShowSellConfirm(false);
         onUpdate?.(user.id);
-      } else {
-        console.error('Error updating profile:', profileError);
       }
     } catch (err) {
       console.error('Unexpected error during sell:', err);
@@ -454,7 +601,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   async function reorderPet(direction: 'left' | 'right') {
     if (!selectedPet || !isOwn) return;
     
-    // We only reorder within the pinned pets list for convenience
     const pinnedPets = userPets.filter(p => p.is_pinned);
     const index = pinnedPets.findIndex(p => p.id === selectedPet.id);
     if (index === -1) return;
@@ -462,24 +608,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     let targetIndex = direction === 'left' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= pinnedPets.length) return;
 
-    // Swap positions in the local array first
-    const newPinned = [...pinnedPets];
-    const temp = newPinned[index];
-    newPinned[index] = newPinned[targetIndex];
-    newPinned[targetIndex] = temp;
-
-    // To persist order without a 'sort_order' column, we can use 'is_pinned' toggle 
-    // BUT that won't help with specific order. 
-    // Actually, since I don't have a sort_order column yet, I should probably just 
-    // use the array indices and update the full list.
-    // However, without a dedicated column, Supabase won't remember the rank.
-    // I'll assume we can use the 'acquired_at' timestamp trick: slightly modify timestamps 
-    // to change chronological order. This is a bit hacky but works without schema change.
-    
     const targetPet = pinnedPets[targetIndex];
     const currentPet = pinnedPets[index];
 
-    // Swap their acquired_at values
     const { error: err1 } = await supabase.from('user_pets').update({ acquired_at: targetPet.acquired_at }).eq('id', currentPet.id);
     const { error: err2 } = await supabase.from('user_pets').update({ acquired_at: currentPet.acquired_at }).eq('id', targetPet.id);
 
@@ -487,7 +618,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       loadPets();
     }
   }
-
 
   useEffect(() => {
     if (activeTab === 'saved' && isOwn) {
@@ -508,6 +638,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     }
     setLoadingSaved(false);
   }
+
   async function calculateOriginsBalance() {
     if (!profile) return;
     const spent = profile.spent_origins || 0;
@@ -516,7 +647,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     setSpentOrigins(spent);
     setReceivedOrigins(received);
     
-    // Формула: фото + свайпы×0.5 + полученные - потраченные
     const maxBalance = uploadCount + (swipeCount * 0.5) + received;
     setMaxOriginsBalance(maxBalance);
     
@@ -688,14 +818,13 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                )}
             </div>
 
-            {/* Pinned Pets around avatar */}
             {userPets.filter(p => p.is_pinned).map((up, idx) => {
               const config = PET_ICONS[up.pet_id_name || 'cat'] || PET_ICONS.cat;
               const positions = [
-                "-top-4 -right-12", // 1st: top-right
-                "-top-4 -left-12",  // 2nd: top-left
-                "-bottom-4 -right-12", // 3rd: bottom-right
-                "-bottom-4 -left-12"   // 4th: bottom-left
+                "-top-4 -right-12",
+                "-top-4 -left-12",
+                "-bottom-4 -right-12",
+                "-bottom-4 -left-12"
               ];
               if (idx >= 4) return null;
               return (
@@ -721,37 +850,38 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               );
             })}
           </div>
-{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - С ГЛОБАЛЬНЫМИ СТИЛЯМИ */}
-<div className="space-y-3">
-  <div className="flex justify-center">
-    <div className="profile-name-wrapper">
-      <h1 className={cn(
-        "text-2xl font-bold tracking-tight",
-        profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-        profile.active_font && FONT_CONFIG[profile.active_font]?.className
-      )}>
-        {profile.name || profile.username}
-      </h1>
-      <div className="badges-container flex gap-0.5">
-        {visibleBadges.map(bid => {
-          const cfg = BADGE_CONFIG[bid];
-          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
-        })}
-      </div>
-    </div>
-  </div>
-  <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
-  {profile.bio && (
-    <div className={cn(
-      "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
-      themePreference === 'black' ? "text-white" : "text-black"
-    )}>
-      {profile.bio}
-    </div>
-  )}
-</div>
 
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
+          {/* Блок с именем и бейджами */}
+          <div className="space-y-3">
+            <div className="flex justify-center">
+              <div className="flex items-center gap-2">
+                <h1 className={cn(
+                  "text-2xl font-bold tracking-tight",
+                  profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+                  profile.active_font && FONT_CONFIG[profile.active_font]?.className
+                )}>
+                  {profile.name || profile.username}
+                </h1>
+                <div className="flex gap-0.5">
+                  {visibleBadges.map(bid => {
+                    const cfg = BADGE_CONFIG[bid];
+                    return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
+                  })}
+                </div>
+              </div>
+            </div>
+            <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
+            {profile.bio && (
+              <div className={cn(
+                "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
+                themePreference === 'black' ? "text-white" : "text-black"
+              )}>
+                {profile.bio}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-4 px-4 bg-black/5 rounded-[2rem] backdrop-blur-sm border border-white/5 w-full">
              <button 
                 onClick={() => { if (isOwn) fetchFollows('followers'); }} 
                 disabled={!isOwn}
@@ -821,10 +951,101 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       <div className="space-y-6">
         <div className="flex gap-2 p-1.5 bg-slate-50 border border-slate-100 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-hide">
            <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Moments</button>
+           <button onClick={() => setActiveTab('wall')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'wall' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Wall</button>
            <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Achievements</button>
            {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Companions</button>}
            {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Saved</button>}
         </div>
+
+        {/* WALL TAB - ПОСТЫ */}
+        {activeTab === 'wall' && (
+          <div className="space-y-4">
+            {/* Форма создания поста (только для владельца профиля) */}
+            {isOwn && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                <textarea
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl resize-none focus:outline-none focus:border-purple-300 text-sm font-medium"
+                  rows={3}
+                />
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={handleCreatePost}
+                    disabled={posting || !newPostContent.trim()}
+                    className="h-9 px-5 bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {posting ? <Loader2 className="animate-spin w-3 h-3" /> : <Send size={12} />}
+                    Post
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Список постов */}
+            {posts.length === 0 ? (
+              <div className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+                No posts yet.
+              </div>
+            ) : (
+              posts.map((post) => (
+                <div key={post.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-4 shadow-sm">
+                  {/* Шапка поста */}
+                  <div className="flex items-center justify-between mb-3">
+                    <Link to={`/profile/${post.profiles?.username}`} className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-white shadow-inner">
+                        {post.profiles?.avatar_url ? (
+                          <img src={post.profiles.avatar_url} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">
+                            {post.profiles?.username?.[0]?.toUpperCase() || '?'}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className={cn(
+                          "text-sm font-bold",
+                          post.profiles?.active_gradient && GRADIENT_CONFIG[post.profiles.active_gradient]?.className,
+                          post.profiles?.active_font && FONT_CONFIG[post.profiles.active_font]?.className
+                        )}>
+                          {post.profiles?.name || post.profiles?.username}
+                        </p>
+                        <p className="text-[10px] text-slate-400">@{post.profiles?.username} • {formatTimeAgo(post.created_at)}</p>
+                      </div>
+                    </Link>
+                    {isOwn && (
+                      <button onClick={() => handleDeletePost(post.id)} className="p-1 text-slate-300 hover:text-red-500 transition-all">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Контент поста */}
+                  <p className="text-sm text-black font-medium leading-relaxed mb-3 whitespace-pre-wrap">
+                    {post.content}
+                  </p>
+
+                  {/* Кнопка лайка */}
+                  <button
+                    onClick={() => user && handleLikePost(post.id)}
+                    disabled={!user}
+                    className="flex items-center gap-1.5 text-xs font-medium transition-all"
+                  >
+                    <Heart
+                      size={16}
+                      className={cn(
+                        "transition-all",
+                        userLikes.has(post.id) ? "fill-red-500 text-red-500" : "text-slate-300 hover:text-red-400"
+                      )}
+                    />
+                    <span className="text-slate-400">{post.likes_count || 0}</span>
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {activeTab === 'saved' && isOwn && (
           <div className="grid grid-cols-2 gap-4">

@@ -252,65 +252,29 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
-async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-  if (!e.target.files?.[0]) return;
-  const file = e.target.files[0];
-  
-  // Проверка размера файла (макс 2MB)
-  if (file.size > 7 * 1024 * 1024) {
-    showAlert({ message: 'File too large. Max 7MB.', type: 'error' });
-    return;
-  }
-  
-  // Проверка типа файла
-  if (!file.type.startsWith('image/')) {
-    showAlert({ message: 'Only image files are allowed.', type: 'error' });
-    return;
-  }
-  
-  const fileExt = file.name.split('.').pop();
-  // Убираем 'avatars/' из пути, так как бакет уже 'avatars'
-  const filePath = `${user.id}.${fileExt}`;
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const filePath = `avatars/${user.id}.${fileExt}`;
 
-  setLoading(true);
-  
-  // Загружаем в бакет 'avatars' (НЕ 'photos')
-  const { error: uploadError } = await supabase.storage
-    .from('avatars')  // ← ИСПРАВЛЕНО: теперь 'avatars'
-    .upload(filePath, file, { 
-      upsert: true,
-      cacheControl: '31536000' // Кеширование на год
-    });
+    setLoading(true);
+    const { error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(filePath, file, { upsert: true });
 
-  if (uploadError) {
-    console.error('Upload error:', uploadError);
-    showAlert({ message: uploadError.message, type: 'error' });
+    if (uploadError) {
+      showAlert({ message: uploadError.message, type: 'error' });
+      setLoading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filePath);
+    setEditProfile({ ...editProfile, avatar_url: publicUrl });
+    showAlert({ message: 'Avatar uploaded!', type: 'success' });
     setLoading(false);
-    return;
   }
 
-  // Получаем публичный URL из бакета 'avatars'
-  const { data: { publicUrl } } = supabase.storage
-    .from('avatars')  // ← ИСПРАВЛЕНО: теперь 'avatars'
-    .getPublicUrl(filePath);
-  
-  setEditProfile({ ...editProfile, avatar_url: publicUrl });
-  showAlert({ message: 'Avatar uploaded!', type: 'success' });
-  
-  // Автоматически сохраняем профиль с новой аватаркой
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ avatar_url: publicUrl })
-    .eq('id', user.id);
-  
-  if (updateError) {
-    showAlert({ message: updateError.message, type: 'error' });
-  } else {
-    onUpdate(user.id);
-  }
-  
-  setLoading(false);
-}
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/');

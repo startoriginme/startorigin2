@@ -723,20 +723,21 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           </div>
 {/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ */}
 <div className="space-y-3">
-  <div className="flex items-center justify-center flex-wrap">
-    <h1 className={cn(
-      "text-2xl font-bold tracking-tight leading-tight",
-      profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-      profile.active_font && FONT_CONFIG[profile.active_font]?.className
-    )}>
-      {profile.name || profile.username}
-    </h1>
-    {/* ФИКСИРОВАННЫЙ ОТСТУП И ВЕРТИКАЛЬНОЕ ВЫРАВНИВАНИЕ */}
-    <div className="flex items-center gap-0.5 ml-2 translate-y-[2px]">
-      {visibleBadges.map(bid => {
-        const cfg = BADGE_CONFIG[bid];
-        return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
-      })}
+  <div className="flex justify-center">
+    <div className="flex items-center gap-2 flex-wrap justify-center" style={{ lineHeight: 1 }}>
+      <h1 className={cn(
+        "text-2xl font-bold tracking-tight inline-block",
+        profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+        profile.active_font && FONT_CONFIG[profile.active_font]?.className
+      )}>
+        {profile.name || profile.username}
+      </h1>
+      <div className="flex gap-0.5 items-center" style={{ transform: "translateY(1px)" }}>
+        {visibleBadges.map(bid => {
+          const cfg = BADGE_CONFIG[bid];
+          return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
+        })}
+      </div>
     </div>
   </div>
   <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>

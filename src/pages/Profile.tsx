@@ -723,25 +723,41 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           </div>
 
           {/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-center flex-wrap">
-              <h1 className={cn(
-                "text-2xl font-bold tracking-tight",
-                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-                profile.active_font && FONT_CONFIG[profile.active_font]?.className
-              )}>
-                {profile.name || profile.username}
-              </h1>
-              <div className={cn(
-                "flex gap-0.5",
-                !profile.active_gradient && !profile.active_font && "ml-8"
-              )}>
-                {visibleBadges.map(bid => {
-                   const cfg = BADGE_CONFIG[bid];
-                   return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
-                })}
-              </div>
-            </div>
+        <div className="space-y-3">
+  <div className="flex items-center justify-center flex-wrap">
+    <h1 className={cn(
+      "text-2xl font-bold tracking-tight",
+      profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+      profile.active_font && FONT_CONFIG[profile.active_font]?.className
+    )}>
+      {profile.name || profile.username}
+    </h1>
+    {/* Проверяем, есть ли реально активные эффекты */}
+    {(() => {
+      const hasActiveGradient = profile.active_gradient && profile.active_gradient !== 'none';
+      const hasActiveFont = profile.active_font && profile.active_font !== 'modern';
+      const needsMargin = !hasActiveGradient && !hasActiveFont;
+      
+      return (
+        <div className={cn("flex gap-0.5", needsMargin && "ml-3")}>
+          {visibleBadges.map(bid => {
+            const cfg = BADGE_CONFIG[bid];
+            return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
+          })}
+        </div>
+      );
+    })()}
+  </div>
+  <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
+  {profile.bio && (
+    <div className={cn(
+      "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
+      themePreference === 'black' ? "text-white" : "text-black"
+    )}>
+      {profile.bio}
+    </div>
+  )}
+</div>
             <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
             {profile.bio && (
               <div className={cn(

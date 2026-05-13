@@ -721,10 +721,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               );
             })}
           </div>
-{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - ЖЕСТКИЙ ВАРИАНТ */}
+{/* ИСПРАВЛЕННЫЙ БЛОК С ИМЕНЕМ И БЕЙДЖАМИ - ФИКСИРОВАННЫЙ */}
 <div className="space-y-3">
-  <div className="flex justify-center items-center">
-    <div className="inline-flex items-center gap-2">
+  <div className="text-center">
+    <div className="inline-flex items-baseline gap-2">
       <h1 className={cn(
         "text-2xl font-bold tracking-tight",
         profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
@@ -732,12 +732,12 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       )}>
         {profile.name || profile.username}
       </h1>
-      <span className="inline-flex items-center gap-0.5 align-middle">
+      <div className="inline-flex gap-0.5" style={{ position: 'relative', top: '-1px' }}>
         {visibleBadges.map(bid => {
           const cfg = BADGE_CONFIG[bid];
           return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
         })}
-      </span>
+      </div>
     </div>
   </div>
   <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>

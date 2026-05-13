@@ -734,7 +734,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               </h1>
               <div className={cn(
                 "flex gap-0.5",
-                !profile.active_gradient && !profile.active_font && "ml-3"
+                !profile.active_gradient && !profile.active_font && "ml-8"
               )}>
                 {visibleBadges.map(bid => {
                    const cfg = BADGE_CONFIG[bid];

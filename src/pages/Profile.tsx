@@ -302,24 +302,32 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (data) setPhotos(data);
   }
 
-  async function fetchPosts() {
-    if (!profile) return;
-    const { data } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        profiles:user_id (
-          username,
-          name,
-          avatar_url,
-          active_gradient,
-          active_font
-        )
-      `)
-      .eq('user_id', profile.id)
-      .order('created_at', { ascending: false });
-    if (data) setPosts(data as Post[]);
+ async function fetchPosts() {
+  if (!profile) return;
+  console.log('Fetching posts for user:', profile.id);
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      profiles:user_id (
+        username,
+        name,
+        avatar_url,
+        active_gradient,
+        active_font
+      )
+    `)
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching posts:', error);
+  } else {
+    console.log('Posts fetched:', data);
+    setPosts(data as Post[]);
   }
+}
+
 
   async function fetchUserLikes() {
     if (!user) return;
@@ -332,25 +340,40 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     }
   }
 
-  async function handleCreatePost() {
-    if (!newPostContent.trim() || !user || !profile) return;
-    setPosting(true);
-    
-    const { data, error } = await supabase
-      .from('posts')
-      .insert({
-        user_id: profile.id,
-        content: newPostContent.trim()
-      })
-      .select()
-      .single();
-    
-    if (!error && data) {
-      setNewPostContent('');
-      await fetchPosts();
-    }
-    setPosting(false);
+  
+// Замени функцию handleCreatePost на эту:
+async function handleCreatePost() {
+  if (!newPostContent.trim() || !user || !profile) {
+    console.log('Cannot post: missing content, user or profile');
+    return;
   }
+  
+  setPosting(true);
+  console.log('Creating post with content:', newPostContent.trim());
+  
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({
+      user_id: profile.id,
+      content: newPostContent.trim()
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating post:', error);
+    alert('Failed to create post: ' + error.message);
+  } else if (data) {
+    console.log('Post created:', data);
+    setNewPostContent('');
+    // Обновляем список постов
+    await fetchPosts();
+    // Также обновляем лайки пользователя
+    await fetchUserLikes();
+  }
+  
+  setPosting(false);
+}
 
   async function handleDeletePost(postId: string) {
     const { error } = await supabase

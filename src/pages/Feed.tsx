@@ -45,14 +45,39 @@ export default function Feed({ user }: { user: any }) {
   const [showAchievement, setShowAchievement] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
  
   const items = showAll ? allItems : followingItems;
   const isFollowingEmpty = !loading && followingItems.length === 0 && !showAll;
- 
+  
   useEffect(() => {
     fetchInitialFeed();
     loadUserSwipeCount();
+    fetchUnreadCount();
+
+    const channel = supabase
+      .channel('feed-unread')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${user.id}`
+      }, () => {
+        fetchUnreadCount();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user.id]);
+
+  async function fetchUnreadCount() {
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', user.id)
+      .eq('is_read', false);
+    setUnreadCount(count || 0);
+  }
 
   async function loadUserSwipeCount() {
     const { data, error } = await supabase
@@ -264,10 +289,15 @@ export default function Feed({ user }: { user: any }) {
         <div className="flex gap-2">
           <Link 
             to="/chat"
-            className="p-3 bg-slate-50 rounded-2xl text-slate-400 border border-slate-100 hover:bg-white hover:text-black transition-all font-bold text-xs flex items-center justify-center"
+            className="p-3 bg-slate-50 rounded-2xl text-slate-400 border border-slate-100 hover:bg-white hover:text-black transition-all font-bold text-xs flex items-center justify-center relative"
             title="Messages"
           >
             <MessageSquare size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg shadow-emerald-500/20 px-1 border-2 border-white">
+                {unreadCount}
+              </span>
+            )}
           </Link>
           <button 
             onClick={() => setTinderMode(true)}
@@ -276,26 +306,22 @@ export default function Feed({ user }: { user: any }) {
           >
             <Flame size={20} />
           </button>
-          <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
-            <button 
-              onClick={() => { setShowAll(false); setPage(0); setHasMore(true); }}
-              className={cn(
-                "px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-xl transition-all",
-                !showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
-              )}
-            >
-              {t('feed.circle')}
-            </button>
-            <button 
-              onClick={() => { setShowAll(true); setPage(0); setHasMore(true); }}
-              className={cn(
-                "px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-xl transition-all",
-                showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
-              )}
-            >
-              {t('feed.global')}
-            </button>
-          </div>
+          <button 
+            onClick={() => { setShowAll(!showAll); setPage(0); setHasMore(true); }}
+            className="h-12 px-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 hover:bg-white transition-all shadow-sm group"
+          >
+            {showAll ? (
+              <>
+                <Globe size={18} className="text-black group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-black">{t('feed.global')}</span>
+              </>
+            ) : (
+              <>
+                <Users size={18} className="text-black group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-black">{t('feed.circle')}</span>
+              </>
+            )}
+          </button>
         </div>
       </header>
 

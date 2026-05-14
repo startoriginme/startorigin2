@@ -6,16 +6,66 @@ import {
   Image as ImageIcon, 
   User, 
   Settings,
-  Grid
+  Grid,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 import { useTranslation } from 'react-i18next';
 
 export default function Navigation() {
   const { t } = useTranslation();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let userId: string | null = null;
+    
+    async function getInitialCount() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        userId = session.user.id;
+        const { count } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', userId)
+          .eq('is_read', false);
+        setUnreadCount(count || 0);
+      }
+    }
+
+    getInitialCount();
+
+    const channel = supabase
+      .channel('unread-counts')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'messages',
+      }, async (payload) => {
+        if (!userId) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) userId = session.user.id;
+        }
+        
+        if (userId) {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', userId)
+            .eq('is_read', false);
+          setUnreadCount(count || 0);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const navItems = [
     { icon: Home, label: t('navigation.feed'), path: '/feed' },

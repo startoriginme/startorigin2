@@ -145,6 +145,7 @@ export default function Chat({ user }: { user: any }) {
   useEffect(() => {
     if (paramUserId) {
       fetchUserToChat(paramUserId);
+      markAsRead(paramUserId);
     }
   }, [paramUserId]);
 
@@ -156,7 +157,10 @@ export default function Chat({ user }: { user: any }) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      if (data) setSelectedChat(data);
+      if (data) {
+        setSelectedChat(data);
+        markAsRead(id);
+      }
     } catch (err) {
       console.error('Error fetching user to chat:', err);
     }
@@ -165,6 +169,7 @@ export default function Chat({ user }: { user: any }) {
   useEffect(() => {
     if (selectedChat) {
       fetchMessages(selectedChat.id);
+      markAsRead(selectedChat.id);
     }
   }, [selectedChat]);
 
@@ -178,10 +183,10 @@ export default function Chat({ user }: { user: any }) {
 
   async function fetchConversations() {
     try {
-      // Get unique users from messages where user is sender or receiver
+      // Get unique users and their unread counts
       const { data, error } = await supabase
         .from('messages')
-        .select('sender_id, receiver_id, content, created_at')
+        .select('sender_id, receiver_id, content, created_at, is_read')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -200,8 +205,15 @@ export default function Chat({ user }: { user: any }) {
           uniqueConversations.push({
             userId: otherId,
             lastMessage: msg.content,
-            timestamp: msg.created_at
+            timestamp: msg.created_at,
+            unreadCount: 0
           });
+        }
+        
+        // Count unread messages from other user to me
+        if (msg.sender_id !== user.id && !msg.is_read) {
+          const conv = uniqueConversations.find(c => c.userId === msg.sender_id);
+          if (conv) conv.unreadCount++;
         }
       });
 
@@ -225,6 +237,25 @@ export default function Chat({ user }: { user: any }) {
       console.error('Error fetching conversations:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function markAsRead(otherUserId: string) {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('receiver_id', user.id)
+        .eq('sender_id', otherUserId)
+        .eq('is_read', false);
+      
+      if (error) throw error;
+      
+      setConversations(prev => prev.map(c => 
+        c.userId === otherUserId ? { ...c, unreadCount: 0 } : c
+      ));
+    } catch (err) {
+      console.error('Error marking as read:', err);
     }
   }
 
@@ -491,8 +522,15 @@ export default function Chat({ user }: { user: any }) {
                           {formatDistanceToNow(new Date(c.timestamp), { addSuffix: false })}
                         </div>
                       </div>
-                      <div className={cn("text-xs truncate", selectedChat?.id === c.userId ? "text-white/60" : "text-slate-400 font-medium")}>
-                        {c.lastMessage}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className={cn("text-xs truncate", selectedChat?.id === c.userId ? "text-white/60" : "text-slate-400 font-medium")}>
+                          {c.lastMessage}
+                        </div>
+                        {c.unreadCount > 0 && selectedChat?.id !== c.userId && (
+                          <div className="min-w-[18px] h-[18px] px-1 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg shadow-emerald-500/20">
+                            {c.unreadCount}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -608,12 +646,22 @@ export default function Chat({ user }: { user: any }) {
                       )}
                       
                       <div className="mt-1 flex items-center justify-between gap-4">
-                        <span className={cn(
-                          "text-[9px] font-bold uppercase tracking-widest opacity-40",
-                          isMe ? "text-white" : "text-black"
-                        )}>
-                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase tracking-widest opacity-40",
+                            isMe ? "text-white" : "text-black"
+                          )}>
+                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                          </span>
+                          {isMe && (
+                            <div className={cn(
+                              "flex items-center ml-1",
+                              msg.is_read ? "text-emerald-400" : "text-white/20"
+                            )}>
+                              <CheckCircle2 size={10} className="fill-current" />
+                            </div>
+                          )}
+                        </div>
                         
                         <div className="flex items-center gap-1">
                           <button 

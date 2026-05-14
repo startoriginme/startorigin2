@@ -73,8 +73,20 @@ export interface Photo {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  is_wall_post?: boolean;
   owner?: Profile;
   likes?: { count: number }[];
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  media_url?: string;
+  reactions?: Record<string, string[]>; // emoji -> userIds[]
 }
 
 export interface Like {

@@ -1,20 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Profile } from '../types';
-import { Send, Search, User, ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
+import { Profile, Message } from '../types';
+import { 
+  Send, Search, User, ArrowLeft, Loader2, MessageSquare, 
+  Image as ImageIcon, Smile, Bell, BellOff, VolumeX, Volume2, 
+  MoreVertical, X, Camera, Edit2, Trash2, CheckCircle2
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  is_read: boolean;
-}
 
 export default function Chat({ user }: { user: any }) {
   const { userId: paramUserId } = useParams();
@@ -26,8 +21,73 @@ export default function Chat({ user }: { user: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // New features state
+  const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set());
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load local settings
+    const muted = localStorage.getItem(`muted_users_${user.id}`);
+    if (muted) setMutedUsers(new Set(JSON.parse(muted)));
+    
+    const notify = localStorage.getItem(`notifications_enabled_${user.id}`);
+    if (notify !== null) setNotificationsEnabled(JSON.parse(notify));
+  }, [user.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`muted_users_${user.id}`, JSON.stringify(Array.from(mutedUsers)));
+  }, [mutedUsers, user.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`notifications_enabled_${user.id}`, JSON.stringify(notificationsEnabled));
+  }, [notificationsEnabled, user.id]);
+
+  const toggleMute = (userId: string) => {
+    setMutedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (notificationsEnabled && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, [notificationsEnabled]);
+
+  const toggleNotifications = async () => {
+    const newState = !notificationsEnabled;
+    if (newState && "Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        alert("Please enable notifications in your browser settings to receive alerts.");
+        return;
+      }
+    }
+    setNotificationsEnabled(newState);
+  };
+
+  const handleNewMessageNotification = (msg: Message) => {
+    if (!notificationsEnabled || mutedUsers.has(msg.sender_id) || msg.sender_id === user.id) return;
+    
+    // Simple browser notification if supported
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("New Message", {
+        body: msg.content,
+        icon: "/logo.png"
+      });
+    }
+  };
 
   useEffect(() => {
     fetchConversations();
@@ -41,17 +101,39 @@ export default function Chat({ user }: { user: any }) {
         table: 'messages'
       }, (payload) => {
         const msg = payload.new as Message;
-        // Check if I am the receiver or the sender (relevant for other tabs/devices)
         if (msg.receiver_id === user.id || msg.sender_id === user.id) {
+          handleNewMessageNotification(msg);
           if (selectedChat && (msg.sender_id === selectedChat.id || msg.receiver_id === selectedChat.id)) {
             setMessages(prev => {
-              // Avoid duplicates from optimistic updates
               if (prev.find(m => m.id === msg.id)) return prev;
               return [...prev, msg];
             });
           }
           fetchConversations();
         }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        const msg = payload.new as Message;
+        if (msg.receiver_id === user.id || msg.sender_id === user.id) {
+          setMessages(prev => prev.map(m => m.id === msg.id ? msg : m));
+          if (!msg.reactions || Object.keys(msg.reactions).length === 0) {
+            // Check if it was an edit or just reaction change
+            fetchConversations();
+          }
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        const deletedId = payload.old.id;
+        setMessages(prev => prev.filter(m => m.id !== deletedId));
+        fetchConversations();
       })
       .subscribe();
 
@@ -146,6 +228,106 @@ export default function Chat({ user }: { user: any }) {
     }
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChat) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('photos')
+        .getPublicUrl(filePath);
+
+      await sendMessage(null as any, '', publicUrl);
+    } catch (err) {
+      console.error('Error uploading image:', err);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function addReaction(messageId: string, emoji: string) {
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return;
+
+    const reactions = { ...(msg.reactions || {}) };
+    if (!reactions[emoji]) reactions[emoji] = [];
+    
+    if (reactions[emoji].includes(user.id)) {
+      reactions[emoji] = reactions[emoji].filter(id => id !== user.id);
+      if (reactions[emoji].length === 0) delete reactions[emoji];
+    } else {
+      reactions[emoji].push(user.id);
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ reactions })
+        .eq('id', messageId);
+      
+      if (!error) {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reactions } : m));
+      }
+    } catch (err) {
+      console.error('Error adding reaction:', err);
+    }
+    setShowEmojiPicker(null);
+  }
+
+  async function deleteMessage(messageId: string) {
+    if (!confirm('Delete this message for everyone?')) return;
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+      
+      if (error) throw error;
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      fetchConversations();
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      alert('Failed to delete message');
+    }
+  }
+
+  async function startEditing(msg: Message) {
+    setEditingMessageId(msg.id);
+    setEditingContent(msg.content);
+  }
+
+  async function saveEdit() {
+    if (!editingMessageId || !editingContent.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ content: editingContent.trim() })
+        .eq('id', editingMessageId)
+        .eq('sender_id', user.id);
+      
+      if (error) throw error;
+      setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, content: editingContent.trim() } : m));
+      setEditingMessageId(null);
+      setEditingContent('');
+      fetchConversations();
+    } catch (err) {
+      console.error('Error editing message:', err);
+      alert('Failed to edit message');
+    }
+  }
+
   async function fetchMessages(otherUserId: string) {
     try {
       const { data, error } = await supabase
@@ -185,18 +367,20 @@ export default function Chat({ user }: { user: any }) {
     }
   }
 
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedChat) return;
+  async function sendMessage(e: React.FormEvent, content?: string, mediaUrl?: string) {
+    if (e) e.preventDefault();
+    if (!content?.trim() && !newMessage.trim() && !mediaUrl) return;
 
-    const messageContent = newMessage.trim();
-    setNewMessage(''); // Clear input early for better UX
+    const messageContent = content || newMessage.trim() || (mediaUrl ? 'Attachment' : '');
+    if (!mediaUrl) setNewMessage('');
 
     try {
       const messageData = {
         sender_id: user.id as string,
-        receiver_id: selectedChat.id as string,
+        receiver_id: selectedChat!.id as string,
         content: messageContent,
+        media_url: mediaUrl,
+        reactions: {}
       };
 
       console.log('Sending message:', messageData);
@@ -240,7 +424,7 @@ export default function Chat({ user }: { user: any }) {
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold tracking-tight text-black">Messages</h1>
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-50 rounded-xl transition-all md:hidden">
+            <button onClick={() => navigate('/feed')} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
               <ArrowLeft size={20} />
             </button>
           </div>
@@ -349,54 +533,188 @@ export default function Chat({ user }: { user: any }) {
                   <div className="text-[10px] uppercase font-bold text-emerald-500 tracking-widest">Active now</div>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2">
+                 <button 
+                   onClick={() => toggleMute(selectedChat.id)}
+                   className={cn(
+                     "p-3 rounded-2xl transition-all border",
+                     mutedUsers.has(selectedChat.id) 
+                       ? "bg-rose-50 border-rose-100 text-rose-500" 
+                       : "bg-slate-50 border-slate-100 text-slate-400 hover:text-black"
+                   )}
+                   title={mutedUsers.has(selectedChat.id) ? "Unmute User" : "Mute User"}
+                 >
+                   {mutedUsers.has(selectedChat.id) ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                 </button>
+                 <button 
+                   onClick={toggleNotifications}
+                   className={cn(
+                     "p-3 rounded-2xl transition-all border",
+                     notificationsEnabled
+                       ? "bg-emerald-50 border-emerald-100 text-emerald-500" 
+                       : "bg-slate-50 border-slate-100 text-slate-400 hover:text-black"
+                   )}
+                   title={notificationsEnabled ? "Disable Notifications" : "Enable Notifications"}
+                 >
+                   {notificationsEnabled ? <Bell size={18} /> : <BellOff size={18} />}
+                 </button>
+              </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30 custom-scrollbar">
               {messages.map((msg, i) => {
                 const isMe = msg.sender_id === user.id;
+                const hasReactions = msg.reactions && Object.keys(msg.reactions).length > 0;
+                
                 return (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    key={msg.id}
+                  <div 
+                    key={msg.id} 
                     className={cn(
-                      "flex",
-                      isMe ? "justify-end" : "justify-start"
+                      "flex flex-col max-w-[80%] pb-2",
+                      isMe ? "ml-auto items-end" : "mr-auto items-start"
                     )}
                   >
-                    <div className={cn(
-                      "max-w-[75%] px-5 py-3 rounded-[1.5rem] text-sm font-medium shadow-sm",
-                      isMe 
-                        ? "bg-black text-white rounded-br-none" 
-                        : "bg-white text-black border border-slate-100 rounded-bl-none"
-                    )}>
-                      {msg.content}
-                      <div className={cn(
-                        "text-[9px] mt-1 font-bold",
-                        isMe ? "text-white/40 text-right" : "text-slate-300"
-                      )}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <motion.div 
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "p-4 rounded-[1.5rem] relative group shadow-sm",
+                        isMe ? "bg-black text-white rounded-br-none" : "bg-white text-black border border-slate-100 rounded-bl-none"
+                      )}
+                    >
+                      {msg.media_url && (
+                        <div className="mb-2 rounded-xl overflow-hidden border border-slate-100/10">
+                           <img src={msg.media_url} alt="Attachment" className="max-w-full h-auto max-h-60 object-cover" />
+                        </div>
+                      )}
+                      
+                      {editingMessageId === msg.id ? (
+                        <div className="space-y-2 min-w-[200px]">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+                            autoFocus
+                          />
+                          <div className="flex justify-end gap-2">
+                             <button onClick={() => setEditingMessageId(null)} className="px-3 h-7 rounded-lg text-[10px] font-bold uppercase hover:bg-white/10 transition-all text-white/60">Cancel</button>
+                             <button onClick={saveEdit} className="px-3 h-7 rounded-lg bg-white text-black text-[10px] font-bold uppercase hover:opacity-90 transition-all">Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
+                      )}
+                      
+                      <div className="mt-1 flex items-center justify-between gap-4">
+                        <span className={cn(
+                          "text-[9px] font-bold uppercase tracking-widest opacity-40",
+                          isMe ? "text-white" : "text-black"
+                        )}>
+                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                        </span>
+                        
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
+                            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            <Smile size={12} className={isMe ? "text-white" : "text-slate-400"} />
+                          </button>
+                          
+                          {isMe && !editingMessageId && (
+                            <>
+                              <button 
+                                onClick={() => startEditing(msg)}
+                                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                                title="Edit message"
+                              >
+                                <Edit2 size={12} className="text-white/60 hover:text-white" />
+                              </button>
+                              <button 
+                                onClick={() => deleteMessage(msg.id)}
+                                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                                title="Delete message"
+                              >
+                                <Trash2 size={12} className="text-white/60 hover:text-red-400" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
+
+                      {showEmojiPicker === msg.id && (
+                        <div className={cn(
+                          "absolute top-full mt-2 z-50 bg-white border border-slate-100 p-2 rounded-2xl shadow-2xl flex gap-2 animate-in fade-in zoom-in duration-200",
+                          isMe ? "right-0" : "left-0"
+                        )}>
+                          {['❤️', '😂', '🔥', '👍', '😮', '🙏'].map(emoji => (
+                             <button 
+                               key={emoji}
+                               onClick={() => addReaction(msg.id, emoji)}
+                               className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-xl text-lg transition-colors"
+                             >
+                               {emoji}
+                             </button>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+
+                    {hasReactions && (
+                      <div className="flex flex-wrap gap-1 mt-1 px-1">
+                        {Object.entries(msg.reactions!).map(([emoji, users]) => (
+                          <button 
+                            key={emoji}
+                            onClick={() => addReaction(msg.id, emoji)}
+                            className={cn(
+                              "bg-white border rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 shadow-sm transition-all active:scale-90",
+                              (users as string[]).includes(user.id) ? "border-rose-200 bg-rose-50 text-rose-600" : "border-slate-100 hover:border-slate-200"
+                            )}
+                            title={(users as string[]).includes(user.id) ? "Remove reaction" : "Add reaction"}
+                          >
+                             <span>{emoji}</span>
+                             <span className={cn((users as string[]).includes(user.id) ? "text-rose-400" : "text-slate-400")}>
+                               {(users as string[]).length}
+                             </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
               <div ref={messagesEndRef} />
             </div>
 
             <div className="p-6 border-t border-slate-100 bg-white">
-              <form onSubmit={sendMessage} className="flex gap-4">
-                <input 
-                  type="text"
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] px-6 text-sm focus:outline-none focus:bg-white focus:border-black/5 transition-all font-medium"
-                />
+              <form onSubmit={sendMessage} className="flex gap-4 items-center max-w-4xl mx-auto">
+                <div className="relative flex-1">
+                  <input 
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] pl-6 pr-16 text-sm font-medium focus:outline-none focus:bg-white focus:border-black/5 transition-all text-black"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <label className="p-3 text-slate-300 hover:text-black transition-colors cursor-pointer">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                      {uploadingImage ? <Loader2 className="animate-spin" size={20} /> : <ImageIcon size={20} />}
+                    </label>
+                  </div>
+                </div>
                 <button 
                   type="submit"
-                  disabled={!newMessage.trim()}
-                  className="w-14 h-14 bg-black text-white rounded-[1.25rem] flex items-center justify-center hover:bg-black/90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-black/10"
+                  disabled={!newMessage.trim() && !uploadingImage}
+                  className="w-14 h-14 bg-black text-white rounded-[1.25rem] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:scale-100"
                 >
                   <Send size={20} />
                 </button>

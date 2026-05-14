@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { AlertCircle, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react';
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const modeParam = searchParams.get('mode');
@@ -138,9 +140,9 @@ export default function Auth() {
             <Mail className="text-white" size={32} />
           </div>
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-black">Check your mail</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-black">{t('auth.check_mail')}</h2>
             <p className="text-slate-400 text-sm font-medium leading-relaxed px-2">
-              We've sent you a confirmation email. Confirm your mail and login to explore StartOrigin.
+              {t('auth.check_mail_desc')}
             </p>
           </div>
           <button
@@ -150,7 +152,7 @@ export default function Auth() {
             }}
             className="w-full h-14 bg-black text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-black/90 active:scale-95 transition-all shadow-xl shadow-black/10 mt-4"
           >
-            <span>Back to Login</span>
+            <span>{t('auth.back_to_login')}</span>
             <ArrowRight size={18} />
           </button>
         </motion.div>
@@ -166,7 +168,7 @@ export default function Auth() {
       >
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold tracking-tight text-black">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            {isLogin ? t('auth.login') : t('auth.signup')}
           </h2>
           <p className="text-slate-500 text-sm font-medium">
             {isLogin ? 'Sign in to continue to StartOrigin' : 'Join our premium creative community'}
@@ -183,18 +185,18 @@ export default function Auth() {
                 className="space-y-5 overflow-hidden"
               >
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Name</label>
+                  <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">{t('auth.name')}</label>
                   <input
                     required
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-[15px] focus:outline-none focus:bg-white focus:border-black/10 transition-all font-medium placeholder:text-slate-300"
-                    placeholder="Your Name"
+                    placeholder={t('auth.name')}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Username</label>
+                  <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">{t('auth.username')}</label>
                   <input
                     required
                     type="text"
@@ -209,7 +211,7 @@ export default function Auth() {
           </AnimatePresence>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Email</label>
+            <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">{t('auth.email')}</label>
             <input
               required
               type="email"
@@ -221,7 +223,7 @@ export default function Auth() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">Password</label>
+            <label className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2">{t('auth.password')}</label>
             <div className="relative group/pass">
               <input
                 required
@@ -235,7 +237,7 @@ export default function Auth() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-black transition-colors"
-                title={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? t('auth.hide_password') : t('auth.show_password')}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -260,19 +262,25 @@ export default function Auth() {
           >
             {loading ? <Loader2 className="animate-spin" size={18} /> : (
               <>
-                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                <span>{isLogin ? t('auth.login') : t('auth.signup')}</span>
                 <ArrowRight size={18} />
               </>
             )}
           </button>
         </form>
 
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-slate-400 hover:text-black text-xs font-bold transition-colors"
+            className="text-slate-400 hover:text-black text-xs font-bold transition-colors block w-full"
           >
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+          </button>
+          <button
+            onClick={() => navigate('/help')}
+            className="text-slate-300 hover:text-black text-[10px] uppercase font-bold tracking-widest transition-colors"
+          >
+            Need help?
           </button>
         </div>
       </motion.div>

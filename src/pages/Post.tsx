@@ -6,15 +6,17 @@ import {
   Heart, ChevronLeft, User, MessageCircle, Share2, MoreHorizontal, Loader2, 
   Bookmark, Check, BadgeCheck, Snowflake, Monitor, Star, Crown, Diamond, 
   Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, 
-  Smile, Sparkles 
+  Smile, Sparkles, AlertCircle, X
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { cn, optimizeImage } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 import PhotoViewer from '../components/PhotoViewer';
 
 export default function Post({ user }: { user: any }) {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -25,6 +27,10 @@ export default function Post({ user }: { user: any }) {
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [viewer, setViewer] = useState<Photo | null>(null);
+
+  const [showOptions, setShowOptions] = useState(false);
+  const [showReportConfirm, setShowReportConfirm] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -188,21 +194,48 @@ export default function Post({ user }: { user: any }) {
                     </h2>
                   </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    {formatDistanceToNow(new Date(photo.created_at))} ago
+                    {formatDistanceToNow(new Date(photo.created_at))} {t('post.ago')}
                   </p>
                 </div>
               </Link>
               
-              <button className="p-3 text-slate-200 hover:text-black transition-colors">
-                <MoreHorizontal size={24} />
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  className="p-3 text-slate-200 hover:text-black transition-colors"
+                >
+                  <MoreHorizontal size={24} />
+                </button>
+
+                <AnimatePresence>
+                  {showOptions && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100]"
+                    >
+                      <button 
+                        onClick={() => {
+                          setShowOptions(false);
+                          setShowReportConfirm(true);
+                        }}
+                        className="w-full px-6 py-4 text-left text-sm font-bold text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-3"
+                      >
+                        <AlertCircle size={18} />
+                        Report Post
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             <div className="space-y-4">
                <h3 className="text-2xl font-bold text-black">{photo.name}</h3>
                <p className="text-slate-400 text-sm leading-relaxed">
-                 Captured at <span className="text-black font-medium">{new Date(photo.created_at).toLocaleDateString()}</span>. 
-                 This moment was preserved as part of the <span className="text-black font-medium">@{photo.owner?.username}</span> journey.
+                 {t('post.captured_at')} <span className="text-black font-medium">{new Date(photo.created_at).toLocaleDateString()}</span>. 
+                 {t('post.found')} <span className="text-black font-medium">@{photo.owner?.username}</span>{t('post.journey')}.
                </p>
             </div>
 
@@ -217,7 +250,7 @@ export default function Post({ user }: { user: any }) {
                 <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all", liked ? "bg-rose-50" : "bg-slate-50 group-hover:bg-black group-hover:text-white")}>
                   <Heart size={28} className={liked ? "fill-current" : ""} />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest">{likesCount} Likes</span>
+                <span className="text-xs font-bold uppercase tracking-widest">{likesCount} {t('post.likes')}</span>
               </button>
 
               <button 
@@ -231,7 +264,7 @@ export default function Post({ user }: { user: any }) {
                 <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center transition-all", isSaved ? "bg-emerald-50" : "bg-slate-50 group-hover:bg-black group-hover:text-white")}>
                   {saving ? <Loader2 className="animate-spin" size={24} /> : isSaved ? <Check size={28} /> : <Bookmark size={28} />}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest">{isSaved ? 'Saved' : 'Save Moment'}</span>
+                <span className="text-xs font-bold uppercase tracking-widest">{isSaved ? t('post.saved') : t('post.save')}</span>
               </button>
 
               <button 
@@ -244,7 +277,7 @@ export default function Post({ user }: { user: any }) {
                 <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center transition-all group-hover:bg-black group-hover:text-white">
                   <Share2 size={28} />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest">Share Link</span>
+                <span className="text-xs font-bold uppercase tracking-widest">{t('post.share')}</span>
               </button>
             </div>
           </div>
@@ -289,6 +322,72 @@ export default function Post({ user }: { user: any }) {
             photo={viewer} 
             onClose={() => setViewer(null)} 
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReportConfirm && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center space-y-6 shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto text-rose-500">
+                <AlertCircle size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-black">Report Post</h3>
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                  Are you sure you want to report this post for violating our community guidelines?
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowReportConfirm(false)}
+                  className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowReportConfirm(false);
+                    setShowReportForm(true);
+                  }}
+                  className="flex-1 h-12 bg-rose-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
+                >
+                  Report
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showReportForm && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-2xl h-[80vh] flex flex-col shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-black">Reporting Post</h3>
+                <button 
+                  onClick={() => setShowReportForm(false)}
+                  className="p-2 text-slate-300 hover:text-black transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <iframe 
+                src="https://docs.google.com/forms/d/e/1FAIpQLSekwMrb4LPb6GpgBsyBqjkx6ANAewibwZYDT7RmIBt7fP3pvw/viewform?usp=dialog" 
+                className="flex-1 w-full border-none"
+                title="Report Form"
+              />
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

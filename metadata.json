@@ -2,5 +2,5 @@
   "name": "StartOrigin",
   "description": "A minimalistic photography sanctuary for organizing your life in frames.",
   "requestFramePermissions": ["camera"],
-  "majorCapabilities": ["auth", "database", "storage"]
+  "majorCapabilities": ["auth", "database", "storage", "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

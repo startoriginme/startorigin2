@@ -28,6 +28,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 // BASE CONSTANTS
 import { 
@@ -41,6 +42,7 @@ import { useNotification } from '../context/NotificationContext';
 
 export default function Settings({ user, profile, onUpdate }: { user: any, profile: Profile | null, onUpdate: (id: string) => void }) {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { showAlert } = useNotification();
   const [loading, setLoading] = useState(false);
   const [showShop, setShowShop] = useState(false);
@@ -217,40 +219,40 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
-  async function handlePurchasePet(pet: any) {
-    if (currentBalance < pet.price) {
-      showAlert({ message: 'Insufficient Origins.', type: 'warning' });
-      return;
-    }
-
-    setLoading(true);
-
-    const { error: petError } = await supabase.from('user_pets').insert({
-      user_id: user.id,
-      pet_id_name: pet.id,
-      pet_name: pet.name,
-      is_active: true,
-      is_hidden: false
-    });
-
-    if (!petError) {
-      const newSpent = (profile?.spent_origins || 0) + pet.price;
-      const { error: profileError } = await supabase.from('profiles').update({
-        spent_origins: newSpent
-      }).eq('id', user.id);
-      
-      if (profileError) {
-        console.error("Profile update error:", profileError);
-      }
-
-      showAlert({ message: `${pet.name} joined your journey!`, type: 'success' });
-      onUpdate(user.id);
-    } else {
-      console.error("Adoption error:", petError);
-      showAlert({ message: 'Failed to adopt.', type: 'error' });
-    }
-    setLoading(false);
+async function handlePurchasePet(pet: any) {
+  if (currentBalance < pet.price) {
+    showAlert({ message: 'Insufficient Origins.', type: 'warning' });
+    return;
   }
+
+  setLoading(true);
+
+  const { error: petError } = await supabase.from('user_pets').insert({
+    user_id: user.id,
+    pet_id_name: pet.id,
+    pet_name: pet.id.charAt(0).toUpperCase() + pet.id.slice(1), // 'cat' → 'Cat', 'owl' → 'Owl'
+    is_active: true,
+    is_hidden: false
+  });
+
+  if (!petError) {
+    const newSpent = (profile?.spent_origins || 0) + pet.price;
+    const { error: profileError } = await supabase.from('profiles').update({
+      spent_origins: newSpent
+    }).eq('id', user.id);
+    
+    if (profileError) {
+      console.error("Profile update error:", profileError);
+    }
+
+    showAlert({ message: `${pet.id.charAt(0).toUpperCase() + pet.id.slice(1)} joined your journey!`, type: 'success' });
+    onUpdate(user.id);
+  } else {
+    console.error("Adoption error:", petError);
+    showAlert({ message: 'Failed to adopt.', type: 'error' });
+  }
+  setLoading(false);
+}
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files?.[0]) return;
@@ -299,8 +301,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     <div className="max-w-xl mx-auto p-4 md:p-8 space-y-12 min-h-screen">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-black">Settings</h1>
-          <p className="text-slate-400 font-medium text-sm">Make it yours</p>
+          <h1 className="text-3xl font-bold tracking-tight text-black">{t('settings.title')}</h1>
+          <p className="text-slate-400 font-medium text-sm">{t('settings.subtitle')}</p>
         </div>
         <div className="p-3 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 shadow-sm">
            <Coins size={18} className="text-amber-500" />
@@ -312,17 +314,17 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       <div className="grid grid-cols-2 gap-4">
          <button onClick={() => setShowShop(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={24}/></div>
-            <div className="text-xs font-bold uppercase tracking-widest">Origin Shop</div>
+            <div className="text-xs font-bold uppercase tracking-widest">{t('settings.shop')}</div>
          </button>
          <button onClick={() => setShowLeaderboard(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:scale-110 transition-all shadow-inner"><Trophy size={24}/></div>
-            <div className="text-xs font-bold uppercase tracking-widest">Leaderboard</div>
+            <div className="text-xs font-bold uppercase tracking-widest">{t('settings.leaderboard')}</div>
          </button>
       </div>
 
       {/* Edit Profile Section */}
       <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Account Details</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">{t('settings.profile_section')}</h2>
         <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
@@ -345,7 +347,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   value={editProfile.name}
                   onChange={(e) => setEditProfile({ ...editProfile, name: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-bold text-black shadow-inner"
-                  placeholder="Your display name"
+                  placeholder={t('settings.name_placeholder')}
                 />
              </div>
              <div className="space-y-2">
@@ -354,7 +356,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   value={editProfile.username}
                   onChange={(e) => setEditProfile({ ...editProfile, username: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-bold text-black shadow-inner"
-                  placeholder="Your username"
+                  placeholder={t('settings.username_placeholder')}
                 />
              </div>
              <div className="space-y-2">
@@ -363,7 +365,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   value={editProfile.bio}
                   onChange={(e) => setEditProfile({ ...editProfile, bio: e.target.value })}
                   className="w-full h-32 px-6 py-4 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-base font-medium text-black resize-none shadow-inner"
-                  placeholder="About you..."
+                  placeholder={t('settings.bio_placeholder')}
                 />
              </div>
           </div>
@@ -416,7 +418,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
       {/* Decoration Settings */}
       <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Decorations</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">{t('settings.appearance')}</h2>
         <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
            <div className="space-y-4">
               <div className="space-y-2">
@@ -426,53 +428,71 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   onChange={(e) => setEditProfile({ ...editProfile, theme_preference: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
                 >
-                  <option value="default">Default</option>
-                  {(profile?.unlocked_themes || []).map(t => (
-                    <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                  <option value="default">{t('landing.items.themes.default')}</option>
+                  {(profile?.unlocked_themes || []).map(themeId => (
+                    <option key={themeId} value={themeId}>{t(`landing.items.themes.${themeId}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Pattern</label>
+                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">{t('settings.appearance')}</label>
                 <select 
                   value={editProfile.pattern_preference}
                   onChange={(e) => setEditProfile({ ...editProfile, pattern_preference: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
                 >
-                  <option value="none">None</option>
+                  <option value="none">{t('landing.items.patterns.none')}</option>
                   {(profile?.unlocked_patterns || []).map(p => (
-                    <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                    <option key={p} value={p}>{t(`landing.items.patterns.${p}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Nickname Effect</label>
+                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">{t('settings.gradient')}</label>
                 <select 
                   value={editProfile.active_gradient || 'none'}
                   onChange={(e) => setEditProfile({ ...editProfile, active_gradient: e.target.value === 'none' ? null : e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
                 >
-                  <option value="none">None</option>
+                  <option value="none">{t('landing.items.patterns.none')}</option>
                   {(profile?.purchased_gradients || []).map(g => (
-                    <option key={g} value={g}>{GRADIENT_CONFIG[g]?.label || g}</option>
+                    <option key={g} value={g}>{t(`landing.items.gradients.${g}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">Typography Style</label>
+                <label className="text-[10px] uppercase font-bold text-slate-300 tracking-widest px-2">{t('settings.typography')}</label>
                 <select 
                   value={editProfile.active_font || 'modern'}
                   onChange={(e) => setEditProfile({ ...editProfile, active_font: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
                 >
-                  <option value="modern">Modern Sans</option>
-                  {(profile?.purchased_fonts || []).map(f => (
-                    <option key={f} value={f}>{FONT_CONFIG[f]?.label || f}</option>
+                  {(profile?.purchased_fonts || ['modern']).map(f => (
+                    <option key={f} value={f}>{t(`landing.items.fonts.${f}`)}</option>
                   ))}
                 </select>
               </div>
            </div>
-           <button onClick={handleUpdateProfile} className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Apply Style</button>
+           <button onClick={handleUpdateProfile} className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">{t('settings.apply')}</button>
+        </div>
+      </section>
+
+      {/* Language Selection */}
+      <section className="space-y-6">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">{t('settings.languages')}</h2>
+        <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] shadow-sm flex gap-4">
+           <button 
+             onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('language', 'en'); }}
+             className={cn("flex-1 h-12 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all", i18n.language === 'en' ? "bg-black text-white" : "bg-white text-slate-400")}
+           >
+             English
+           </button>
+           <button 
+             onClick={() => { i18n.changeLanguage('ru'); localStorage.setItem('language', 'ru'); }}
+             className={cn("flex-1 h-12 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all", i18n.language === 'ru' ? "bg-black text-white" : "bg-white text-slate-400")}
+           >
+             Русский
+           </button>
         </div>
       </section>
 
@@ -510,13 +530,34 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         </div>
       </section>
 
+      {/* Resources Section */}
+      <section className="space-y-4">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Resources</h2>
+        <div className="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden divide-y divide-slate-100 shadow-sm">
+           <ExternalLink icon={Book} label="Documentation" href="https://startorigin.gitbook.io/startorigin" value="View" />
+           <ExternalLink icon={Shield} label="Rules" href="https://startorigin.gitbook.io/startorigin/rules" value="Read" />
+           <div 
+             onClick={() => navigate('/help')}
+             className="w-full p-4 flex items-center justify-between hover:bg-white transition-all cursor-pointer group"
+           >
+              <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-black transition-colors shadow-sm">
+                    <Info size={16} />
+                 </div>
+                 <span className="text-[11px] font-bold text-black uppercase tracking-widest">Help Center</span>
+              </div>
+              <ChevronRight size={16} className="text-slate-300" />
+           </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <button 
         onClick={signOut}
         className="w-full h-16 flex items-center justify-center gap-3 text-rose-500 font-bold bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 rounded-[2rem] transition-all mb-24 shadow-sm"
       >
         <LogOut size={20} />
-        Depart to Void
+        {t('settings.logout')}
       </button>
 
       {/* SHOP MODAL */}
@@ -529,19 +570,19 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       <h2 className="text-3xl font-bold tracking-tight">Origin Shop</h2>
                       <div className="flex items-center gap-2 mt-1">
                          <Coins size={16} className="text-amber-500" />
-                         <span className="font-bold text-amber-500">{currentBalance.toFixed(0)} available</span>
+                         <span className="font-bold text-amber-500">{currentBalance.toFixed(0)} {t('shop.available')}</span>
                       </div>
                    </div>
                    <button onClick={() => setShowShop(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24}/></button>
                 </div>
 
                  <div className="flex gap-2 p-1 bg-white/5 rounded-2xl overflow-x-auto custom-scrollbar no-scrollbar">
-                     <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Badges</button>
-                    <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Pets</button>
-                    <button onClick={() => setActiveShopTab('gradients')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'gradients' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Gradients</button>
-                    <button onClick={() => setActiveShopTab('fonts')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'fonts' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Fonts</button>
-                    <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Styles</button>
-                    <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>Tasks</button>
+                     <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.badges')}</button>
+                    <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.pets')}</button>
+                    <button onClick={() => setActiveShopTab('gradients')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'gradients' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.gradients')}</button>
+                    <button onClick={() => setActiveShopTab('fonts')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'fonts' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.fonts')}</button>
+                    <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.styles')}</button>
+                    <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.tasks')}</button>
                  </div>
 
                  {activeShopTab === 'pets' && (
@@ -549,10 +590,10 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                        {PET_CONFIG.map((pet) => (
                           <div key={pet.id} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-6 group">
                              <div className={cn("w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center transition-all duration-700 group-hover:scale-110 shadow-2xl overflow-hidden", pet.color)}>
-                                <img src={pet.image} alt={pet.name} className="w-14 h-14 object-contain" />
+                                <img src={pet.image} alt={t(`landing.items.pets.${pet.key}`)} className="w-14 h-14 object-contain" />
                              </div>
                              <div className="text-center">
-                                <div className="text-white font-bold text-lg mb-1">{pet.name}</div>
+                                <div className="text-white font-bold text-lg mb-1">{t(`landing.items.pets.${pet.key}`)}</div>
                                 <div className="text-[10px] text-amber-500 font-bold uppercase tracking-[0.3em]">
   {pet.price} ORG
 </div>
@@ -561,7 +602,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                onClick={() => handlePurchasePet(pet)}
                                className="w-full h-12 bg-white text-black rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all"
                              >
-                               Adopt
+                               {t('shop.adopt')}
                              </button>
                           </div>
                        ))}
@@ -583,7 +624,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                  <cfg.icon size={28} />
                               </div>
                               <div>
-                                 <div className="text-white font-bold text-sm tracking-tight">{cfg.label}</div>
+                                 <div className="text-white font-bold text-sm tracking-tight">{t(`landing.items.badges.${cfg.key}`)}</div>
                                  <div className="text-[10px] text-white/40 font-bold mt-1 uppercase tracking-[0.2em]">
                                    {isPurchased ? 'Owned' : `${price} ORG`}
                                  </div>
@@ -635,7 +676,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                   <div className={cn("text-xl font-bold tracking-tight text-white", cfg.className)}>
                                     {profile?.name || profile?.username || 'Typography'}
                                   </div>
-                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{cfg.label}</div>
+                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t(`landing.items.fonts.${id}`)}</div>
                                </div>
                                {!isOwned ? (
                                  <button onClick={() => handlePurchase('font', id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">{price} ORG</button>
@@ -657,7 +698,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                   <div className={cn("text-xl font-black uppercase tracking-tighter italic", cfg.className)}>
                                     {profile?.username || 'Gradients'}
                                   </div>
-                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{cfg.label}</div>
+                                  <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t(`landing.items.gradients.${id}`)}</div>
                                </div>
                                {!isOwned ? (
                                  <button onClick={() => handlePurchase('gradient', id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">{price} ORG</button>
@@ -697,7 +738,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                                const isOwned = profile?.unlocked_patterns?.includes(id);
                                return (
                                  <div key={id} className="p-6 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-between group">
-                                    <div className="text-white font-bold text-sm uppercase tracking-widest">{id}</div>
+                                    <div className="text-white font-bold text-sm uppercase tracking-widest">{t(`landing.items.patterns.${id}`)}</div>
                                     {!isOwned ? (
                                       <button onClick={() => handlePurchase('pattern', id, price)} className="px-4 py-2 bg-white/10 text-white hover:bg-white text-black rounded-lg text-[10px] font-bold uppercase transition-all">{price}</button>
                                     ) : <Check className="text-emerald-500" size={16}/>}
@@ -755,6 +796,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 }
 
 function SortableBadgeItem({ id, badge, isHidden, onToggleVisibility, onMoveUp, onMoveDown }: any) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -781,7 +823,7 @@ function SortableBadgeItem({ id, badge, isHidden, onToggleVisibility, onMoveUp, 
         <div className={cn("w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center", badge.color)}>
           <badge.icon size={20} />
         </div>
-        <div className="text-sm font-bold text-black">{badge.label}</div>
+        <div className="text-sm font-bold text-black">{t(`landing.items.badges.${badge.key}`)}</div>
       </div>
       <div className="flex items-center gap-2">
         <div className="flex flex-col gap-0.5">

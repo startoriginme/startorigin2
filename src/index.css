@@ -22,7 +22,8 @@
 
 @layer base {
   body {
-    @apply bg-white text-[#1d1d1f] antialiased font-sans overflow-x-hidden min-h-screen relative selection:bg-black/5;
+    @apply bg-white text-[#1d1d1f] antialiased min-h-screen relative selection:bg-black/5;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
@@ -95,26 +96,4 @@
   opacity: 0;
   transform: translateY(-10px) scale(0.98);
   transition: opacity 300ms, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-
-    /* Фиксированное выравнивание для имени и бейджей */
-.profile-name-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.profile-name-wrapper h1,
-.profile-name-wrapper .badges-container {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-}
-
-.profile-name-wrapper .badges-container svg {
-  display: inline-block;
-  vertical-align: middle;
 }

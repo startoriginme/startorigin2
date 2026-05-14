@@ -7,8 +7,9 @@ import { Collection, Album, Photo, Profile } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PhotoViewer from '../components/PhotoViewer';
-import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
+import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 
 type SearchCategory = 'photos' | 'users';
 
@@ -23,6 +24,7 @@ const HONOR_BOARD = [
 ];
 
 export default function Search() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SearchCategory>('photos');
   const [results, setResults] = useState<any[]>([]);
@@ -85,15 +87,15 @@ export default function Search() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search StartOrigin discovery..."
+            placeholder={t('search.placeholder')}
             className="w-full h-18 bg-slate-50 border border-slate-100 rounded-[2rem] pl-16 pr-6 text-lg font-bold focus:outline-none focus:bg-white focus:border-black/10 transition-all shadow-sm placeholder:text-slate-300"
           />
           {loading && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 animate-spin text-slate-400" size={24} />}
         </div>
 
         <div className="flex gap-2 p-1.5 glass-card rounded-[1.25rem] w-fit mx-auto border border-black/5 shadow-sm">
-          <CategoryTab active={category === 'photos'} onClick={() => setCategory('photos')} label="Photos" icon={ImageIcon} />
-          <CategoryTab active={category === 'users'} onClick={() => setCategory('users')} label="Users" icon={User} />
+          <CategoryTab active={category === 'photos'} onClick={() => setCategory('photos')} label={t('navigation.gallery')} icon={ImageIcon} />
+          <CategoryTab active={category === 'users'} onClick={() => setCategory('users')} label={t('search.users_tab')} icon={User} />
         </div>
       </div>
 
@@ -101,8 +103,8 @@ export default function Search() {
         {!query && !loading && category === 'users' && honorUsers.length > 0 && (
           <div className="space-y-8">
             <div className="flex flex-col items-center text-center space-y-2">
-               <h2 className="text-2xl font-bold tracking-tight">Honor Board</h2>
-               <p className="text-slate-400 font-medium text-sm italic">The pioneers and friends of StartOrigin</p>
+               <h2 className="text-2xl font-bold tracking-tight">{t('search.honor_board')}</h2>
+               <p className="text-slate-400 font-medium text-sm italic">{t('search.honor_board_sub')}</p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -149,7 +151,7 @@ export default function Search() {
         {!query && !loading && (category === 'photos' || (category === 'users' && honorUsers.length === 0)) && (
            <div className="h-64 flex flex-col items-center justify-center space-y-4 text-slate-200">
               <SearchIcon size={64} strokeWidth={1.5} />
-              <p className="font-bold tracking-[0.3em] uppercase text-[10px]">Awaiting discovery</p>
+              <p className="font-bold tracking-[0.3em] uppercase text-[10px]">{t('search.awaiting')}</p>
            </div>
         )}
 
@@ -171,7 +173,7 @@ export default function Search() {
         </div>
 
         {query && results.length === 0 && !loading && (
-           <p className="text-center text-slate-400 font-medium font-italic italic">No matches found for "{query}"</p>
+           <p className="text-center text-slate-400 font-medium font-italic italic">{t('search.no_matches')} "{query}"</p>
         )}
       </div>
 
@@ -224,13 +226,23 @@ function SearchResultCard({ item, category, index, onClick }: any) {
           <div className="w-16 h-16 rounded-full bg-white border border-black/5 flex items-center justify-center overflow-hidden shadow-inner">
             {item.avatar_url ? <img src={item.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-1">
+          <div className="flex flex-col items-center justify-center min-h-[4.5rem] group w-full px-2">
+            <div className="flex items-center justify-center gap-1 mb-1 w-full">
               <div className={cn(
-                "font-bold text-[15px] truncate max-w-[120px]",
+                "font-bold text-[15px] truncate max-w-[120px] leading-none pr-1 py-1 flex items-center",
                 item.active_gradient ? GRADIENT_CONFIG[item.active_gradient]?.className : "text-black",
                 item.active_font ? FONT_CONFIG[item.active_font]?.className : ""
-              )}>{item.name || item.username}</div>
+              )}>
+                {item.name || item.username}
+              </div>
+              {item.badges && item.badges.length > 0 && (
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {item.badges.slice(0, 2).map((bid: string) => {
+                    const cfg = BADGE_CONFIG[bid];
+                    return cfg ? <cfg.icon key={bid} className={cn("w-4 h-4", cfg.color)} /> : null;
+                  })}
+                </div>
+              )}
             </div>
             <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">@{item.username}</div>
           </div>

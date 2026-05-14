@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo } from '../types';
 import { Tag, Image as ImageIcon, Plus, X, Upload, Check, Loader2, Globe, Lock } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Add({ user }: { user: any }) {
   const navigate = useNavigate();
-  const [view, setView] = useState<'options' | 'collection' | 'photo'>('options');
+  const location = useLocation();
+  const [view, setView] = useState<'options' | 'collection' | 'photo'>(location.state?.view || 'options');
   const [loading, setLoading] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string>('');
@@ -46,7 +47,6 @@ export default function Add({ user }: { user: any }) {
       .single();
     
     if (data) {
-      await supabase.from('albums').insert({ collection_id: data.id, name: 'Main', user_id: user.id });
       navigate('/gallery');
     }
     setLoading(false);
@@ -95,8 +95,8 @@ export default function Add({ user }: { user: any }) {
         file: f,
         name: f.name.split('.')[0],
         privacy: 'private' as const,
-        collection_id: '',
-        album_id: ''
+        collection_id: location.state?.collection_id || '',
+        album_id: location.state?.album_id || ''
       }));
       setFiles([...files, ...newFiles].slice(0, 10));
     }
@@ -266,7 +266,7 @@ export default function Add({ user }: { user: any }) {
                                    disabled={!fileItem.collection_id}
                                    className="w-full h-11 bg-slate-50 border border-slate-100 rounded-xl px-4 pr-10 text-[11px] font-bold appearance-none cursor-pointer disabled:opacity-30"
                                  >
-                                   <option value="">Main Album</option>
+                                   <option value="">No Album</option>
                                    {collections.find(c => c.id === fileItem.collection_id)?.albums?.map((a: any) => (
                                      <option key={a.id} value={a.id}>{a.name}</option>
                                    ))}

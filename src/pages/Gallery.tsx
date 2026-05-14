@@ -4,11 +4,15 @@ import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo } from '../types';
 import { Folder, ChevronRight, MoreHorizontal, Trash2, Edit3, Settings, Grid as GridIcon, Plus, LayoutGrid, Image as ImageIcon, X, Save, Eye, EyeOff, Move } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useNavigate } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
 import { SortableItem } from '../components/SortableItem';
+import { useTranslation } from 'react-i18next';
 
 export default function Gallery({ user }: { user: any }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
@@ -30,6 +34,26 @@ export default function Gallery({ user }: { user: any }) {
     fetchCollections();
     fetchUnsorted();
   }, []);
+
+  const [collectionPhotos, setCollectionPhotos] = useState<Photo[]>([]);
+
+  useEffect(() => {
+    if (selectedCollection && !selectedAlbum) {
+      fetchCollectionPhotos(selectedCollection.id);
+    }
+  }, [selectedCollection, selectedAlbum]);
+
+  async function fetchCollectionPhotos(colId: string) {
+    if (colId === 'unsorted') return;
+    const { data } = await supabase
+      .from('photos')
+      .select('*')
+      .eq('collection_id', colId)
+      .is('album_id', null)
+      .order('created_at', { ascending: false });
+    
+    if (data) setCollectionPhotos(data);
+  }
 
   async function fetchUnsorted() {
     const { data } = await supabase
@@ -180,7 +204,7 @@ export default function Gallery({ user }: { user: any }) {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight text-black">
-                {selectedCollection ? (selectedAlbum ? selectedAlbum.name : selectedCollection.name) : 'Your Gallery'}
+                {selectedCollection ? (selectedAlbum ? selectedAlbum.name : selectedCollection.name) : t('gallery.title')}
               </h1>
               {selectedCollection && !selectedAlbum && (
                 <button onClick={() => setEditingCollection(selectedCollection)} className="p-2 text-slate-400 hover:text-black transition-all">
@@ -195,8 +219,8 @@ export default function Gallery({ user }: { user: any }) {
             </div>
             <p className="text-slate-500 font-medium">
               {selectedCollection 
-                ? (selectedAlbum ? `Organizing ${selectedAlbum.photos?.length || 0} photos` : `Managing ${selectedCollection.albums?.length || 0} albums`)
-                : `You have ${collections.length} collections`}
+                ? (selectedAlbum ? t('gallery.organizing_photos', { count: selectedAlbum.photos?.length || 0 }) : t('gallery.managing_albums', { count: selectedCollection.albums?.length || 0 }))
+                : t('gallery.collections_count', { count: collections.length })}
             </p>
           </div>
         </div>
@@ -207,7 +231,7 @@ export default function Gallery({ user }: { user: any }) {
             className="btn-primary h-12 px-6 flex items-center gap-2"
           >
             <Plus size={18} />
-            <span>Create Collection</span>
+            <span>{t('gallery.create_collection')}</span>
           </a>
         )}
       </header>
@@ -226,11 +250,11 @@ export default function Gallery({ user }: { user: any }) {
                 className="glass-card group relative p-6 cursor-pointer flex flex-col justify-between min-h-[160px] border border-black/5 hover:border-black/10 transition-all bg-slate-50/50"
                 onClick={() => setSelectedCollection({
                   id: 'unsorted',
-                  name: 'Unsorted',
+                  name: t('gallery.unsorted'),
                   privacy: 'private',
                   albums: [{
                     id: 'unsorted-album',
-                    name: 'Recents',
+                    name: t('gallery.recents'),
                     photos: unsortedPhotos,
                     collection_id: 'unsorted',
                     user_id: user.id
@@ -243,12 +267,12 @@ export default function Gallery({ user }: { user: any }) {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-black">Unsorted</h3>
+                  <h3 className="text-lg font-bold text-black">{t('gallery.unsorted')}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-400">
                       Private
                     </span>
-                    <span className="text-xs text-slate-300 font-bold tracking-tight">• {unsortedPhotos.length} photos</span>
+                    <span className="text-xs text-slate-300 font-bold tracking-tight">• {t('gallery.photos_count', { count: unsortedPhotos.length })}</span>
                   </div>
                 </div>
               </div>
@@ -294,9 +318,9 @@ export default function Gallery({ user }: { user: any }) {
                         "text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-bold",
                         collection.privacy === 'public' ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
                       )}>
-                        {collection.privacy}
+                        {collection.privacy === 'public' ? t('add.public') : t('add.private')}
                       </span>
-                      <span className="text-xs text-slate-300 font-bold tracking-tight">• {collection.albums?.length || 0} albums</span>
+                      <span className="text-xs text-slate-300 font-bold tracking-tight">• {t('gallery.managing_albums', { count: collection.albums?.length || 0 })}</span>
                     </div>
                   </div>
                 </div>
@@ -306,7 +330,7 @@ export default function Gallery({ user }: { user: any }) {
             {collections.length === 0 && !loading && (
               <div className="md:col-span-3 flex flex-col items-center justify-center p-20 glass-card border-dashed border-slate-200">
                 <LayoutGrid size={48} className="text-slate-100 mb-4" />
-                <p className="text-slate-300 font-bold uppercase tracking-widest text-[10px]">No collections found. Creativity awaits.</p>
+                <p className="text-slate-300 font-bold uppercase tracking-widest text-[10px]">{t('gallery.no_collections')}</p>
               </div>
             )}
           </motion.div>
@@ -316,42 +340,66 @@ export default function Gallery({ user }: { user: any }) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"
+            className="space-y-12"
           >
-            {selectedCollection.albums?.map((album) => (
-              <div 
-                key={album.id}
-                onClick={() => setSelectedAlbum(album)}
-                className="glass-card group aspect-square flex flex-col items-center justify-center cursor-pointer space-y-3 p-4 hover:scale-[1.02] transition-transform border border-black/5 bg-white relative"
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {selectedCollection.albums?.map((album) => (
+                <div 
+                  key={album.id}
+                  onClick={() => setSelectedAlbum(album)}
+                  className="glass-card group aspect-square flex flex-col items-center justify-center cursor-pointer space-y-3 p-4 hover:scale-[1.02] transition-transform border border-black/5 bg-white relative"
+                >
+                  <div className="absolute top-2 right-2 flex gap-1 transition-opacity">
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setDeleteConfirm({ type: 'album', id: album.id, name: album.name });
+                      }}
+                      className="p-1.5 text-slate-200 hover:text-red-500 rounded-lg transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
+                    <GridIcon className="text-slate-300 group-hover:text-black transition-colors" size={32} />
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-sm truncate max-w-[120px] text-black">{album.name}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{t('gallery.photos_count', { count: album.photos?.length || 0 })}</div>
+                  </div>
+                </div>
+              ))}
+              
+              <button 
+                onClick={() => setIsCreatingAlbum(true)}
+                className="glass-card aspect-square border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity"
               >
-                <div className="absolute top-2 right-2 flex gap-1 transition-opacity">
+                <Plus size={24} className="text-slate-400" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">{t('gallery.add_album')}</span>
+              </button>
+            </div>
+
+            {selectedCollection.id !== 'unsorted' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-lg font-bold text-black">Sanctuary Photos</h3>
                   <button 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      setDeleteConfirm({ type: 'album', id: album.id, name: album.name });
-                    }}
-                    className="p-1.5 text-slate-200 hover:text-red-500 rounded-lg transition-all"
+                    onClick={() => navigate('/add', { state: { view: 'photo', collection_id: selectedCollection.id } })}
+                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-black transition-all"
                   >
-                    <Trash2 size={12} />
+                    <Plus size={14} />
+                    <span>Upload Here</span>
                   </button>
                 </div>
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
-                  <GridIcon className="text-slate-300 group-hover:text-black transition-colors" size={32} />
-                </div>
-                <div className="text-center">
-                  <div className="font-bold text-sm truncate max-w-[120px] text-black">{album.name}</div>
-                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{album.photos?.length || 0} photos</div>
-                </div>
+                <PhotoSortableGrid 
+                  photos={collectionPhotos} 
+                  collectionId={selectedCollection.id} 
+                  albums={selectedCollection.albums || []} 
+                  collections={collections} 
+                  albumId={null}
+                />
               </div>
-            ))}
-            
-            <button 
-              onClick={() => setIsCreatingAlbum(true)}
-              className="glass-card aspect-square border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity"
-            >
-              <Plus size={24} className="text-slate-400" />
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Add Album</span>
-            </button>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -360,7 +408,7 @@ export default function Gallery({ user }: { user: any }) {
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <PhotoSortableGrid photos={selectedAlbum.photos || []} collectionId={selectedCollection.id} albums={selectedCollection.albums || []} collections={collections} />
+            <PhotoSortableGrid photos={selectedAlbum.photos || []} collectionId={selectedCollection.id} albums={selectedCollection.albums || []} collections={collections} albumId={selectedAlbum.id} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -370,30 +418,30 @@ export default function Gallery({ user }: { user: any }) {
         <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-black">Edit Collection</h3>
+              <h3 className="text-xl font-bold text-black">{t('gallery.edit_collection')}</h3>
               <button onClick={() => setEditingCollection(null)} className="text-slate-300 hover:text-black transition-all">
                 <X size={24} />
               </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Name</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{t('add.photo_name')}</label>
                 <input 
                   type="text" 
                   value={editingCollection.name}
                   onChange={(e) => setEditingCollection({ ...editingCollection, name: e.target.value })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Privacy</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{t('add.privacy')}</label>
                 <select 
                   value={editingCollection.privacy}
                   onChange={(e) => setEditingCollection({ ...editingCollection, privacy: e.target.value as any })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 >
-                  <option value="private">Private</option>
-                  <option value="public">Public</option>
+                  <option value="private">{t('add.private')}</option>
+                  <option value="public">{t('add.public')}</option>
                 </select>
               </div>
               <button 
@@ -401,7 +449,7 @@ export default function Gallery({ user }: { user: any }) {
                 className="w-full h-14 btn-primary rounded-2xl flex items-center justify-center gap-2"
               >
                 <Save size={18} />
-                <span>Save Changes</span>
+                <span>{t('gallery.save_changes')}</span>
               </button>
             </div>
           </div>
@@ -413,19 +461,19 @@ export default function Gallery({ user }: { user: any }) {
         <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-black">Edit Album</h3>
+              <h3 className="text-xl font-bold text-black">{t('gallery.edit_album')}</h3>
               <button onClick={() => setEditingAlbum(null)} className="text-slate-300 hover:text-black transition-all">
                 <X size={24} />
               </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Name</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{t('add.album')}</label>
                 <input 
-                  type="text" 
+                   type="text" 
                   value={editingAlbum.name}
                   onChange={(e) => setEditingAlbum({ ...editingAlbum, name: e.target.value })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 />
               </div>
               <button 
@@ -433,7 +481,7 @@ export default function Gallery({ user }: { user: any }) {
                 className="w-full h-14 btn-primary rounded-2xl flex items-center justify-center gap-2"
               >
                 <Save size={18} />
-                <span>Save Changes</span>
+                <span>{t('gallery.save_changes')}</span>
               </button>
             </div>
           </div>
@@ -445,21 +493,21 @@ export default function Gallery({ user }: { user: any }) {
         <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-black">New Album</h3>
+              <h3 className="text-xl font-bold text-black">{t('gallery.new_album')}</h3>
               <button onClick={() => { setIsCreatingAlbum(false); setNewAlbumName(''); }} className="text-slate-300 hover:text-black transition-all">
                 <X size={24} />
               </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Album Name</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{t('add.album')}</label>
                 <input 
                   type="text" 
                   value={newAlbumName}
                   onChange={(e) => setNewAlbumName(e.target.value)}
-                  placeholder="e.g. Summer Memories"
+                  placeholder={t('add.new_album_placeholder')}
                   autoFocus
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 />
               </div>
               <button 
@@ -468,7 +516,7 @@ export default function Gallery({ user }: { user: any }) {
                 className="w-full h-14 btn-primary rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Plus size={18} />
-                <span>Create Album</span>
+                <span>{t('gallery.add_album')}</span>
               </button>
             </div>
           </div>
@@ -494,10 +542,9 @@ export default function Gallery({ user }: { user: any }) {
                 <Trash2 size={40} className="text-rose-500" />
               </div>
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-black tracking-tight">Delete {deleteConfirm.type}?</h3>
+                <h3 className="text-2xl font-bold text-black tracking-tight">{t('gallery.delete_confirm_title', { type: deleteConfirm.type })}</h3>
                 <p className="text-slate-500 font-medium leading-relaxed">
-                  Are you sure you want to delete <span className="font-bold text-black">"{deleteConfirm.name || 'this item'}"</span>? 
-                  This action is permanent and cannot be reversed.
+                  {t('gallery.delete_confirm_sub', { name: deleteConfirm.name || 'this item' })}
                 </p>
               </div>
               <div className="flex flex-col gap-3">
@@ -508,13 +555,13 @@ export default function Gallery({ user }: { user: any }) {
                   }}
                   className="w-full h-14 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
                 >
-                  Yes, delete it
+                  {t('gallery.yes_delete')}
                 </button>
                 <button 
                   onClick={() => setDeleteConfirm(null)}
                   className="w-full h-14 bg-slate-100 text-slate-900 font-bold rounded-2xl hover:bg-slate-200 transition-all"
                 >
-                  No, keep it
+                  {t('gallery.no_keep')}
                 </button>
               </div>
             </motion.div>
@@ -525,7 +572,8 @@ export default function Gallery({ user }: { user: any }) {
   );
 }
 
-function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collections }: { photos: Photo[], collectionId: string, albums: Album[], collections: Collection[] }) {
+function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collections, albumId }: { photos: Photo[], collectionId: string, albums: Album[], collections: Collection[], albumId: string | null }) {
+  const navigate = useNavigate();
   const [items, setItems] = useState(initialPhotos);
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState(collectionId);
@@ -649,10 +697,13 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                 </div>
               </SortableItem>
             ))}
-            <a href="/add" className="aspect-square glass-card border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity text-slate-400">
+            <button 
+              onClick={() => navigate('/add', { state: { view: 'photo', collection_id: collectionId, album_id: albumId || '' } })}
+              className="aspect-square glass-card border-dashed border-slate-200 bg-transparent flex flex-col items-center justify-center space-y-2 opacity-40 hover:opacity-100 transition-opacity text-slate-400"
+            >
               <Plus size={24} />
               <span className="text-[10px] uppercase font-bold tracking-widest">Add Photo</span>
-            </a>
+            </button>
           </div>
         </SortableContext>
       </DndContext>
@@ -716,7 +767,7 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                   type="text" 
                   value={editingPhoto.name}
                   onChange={(e) => setEditingPhoto({ ...editingPhoto, name: e.target.value })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 />
               </div>
               <div className="space-y-2">
@@ -724,7 +775,7 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                 <select 
                   value={editingPhoto.privacy}
                   onChange={(e) => setEditingPhoto({ ...editingPhoto, privacy: e.target.value as any })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 >
                   <option value="private">Private</option>
                   <option value="public">Public</option>
@@ -735,7 +786,7 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                 <select 
                   value={selectedCollectionId}
                   onChange={(e) => setSelectedCollectionId(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 >
                   <option value="unsorted">Unsorted (No Collection)</option>
                   {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -746,7 +797,7 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
                 <select 
                   value={editingPhoto.album_id || ''}
                   onChange={(e) => setEditingPhoto({ ...editingPhoto, album_id: e.target.value })}
-                  className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
+                  className="w-full h-12 px-4 rounded-xl bg-white border border-slate-100 focus:outline-none focus:border-black/10 font-bold"
                 >
                   <option value="">Main / General</option>
                   {availableAlbums.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}

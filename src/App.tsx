@@ -11,9 +11,12 @@ import Profile from './pages/Profile';
 import Follows from './pages/Follows';
 import Settings from './pages/Settings';
 import Chat from './pages/Chat';
+import Help from './pages/Help';
 import Auth from './pages/Auth';
 import Landing from './pages/Landing';
 import { Profile as ProfileType } from './types';
+
+import Admin from './pages/Admin';
 
 import Post from './pages/Post';
 
@@ -73,6 +76,7 @@ export default function App() {
           <main className="flex-1 relative pb-20 md:pb-0 overflow-x-hidden">
             <AnimatePresence mode="wait">
               <Routes>
+                <Route path="/admin67mavebomod" element={<Admin />} />
                 <Route path="/" element={session ? <Navigate to="/feed" /> : <Landing />} />
                 <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/feed" />} />
                 
@@ -87,6 +91,7 @@ export default function App() {
                 <Route path="/posts/:id" element={session ? <Post user={session.user} /> : <Navigate to="/auth" />} />
                 <Route path="/settings" element={session ? <Settings user={session.user} profile={profile} onUpdate={fetchProfile} /> : <Navigate to="/auth" />} />
                 <Route path="/chat/:userId?" element={session ? <Chat user={session.user} /> : <Navigate to="/auth" />} />
+                <Route path="/help" element={<Help />} />
                 
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

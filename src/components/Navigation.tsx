@@ -11,16 +11,19 @@ import {
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
+import { useTranslation } from 'react-i18next';
+
 export default function Navigation() {
+  const { t } = useTranslation();
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: 'Feed', path: '/feed' },
-    { icon: Search, label: 'Search', path: '/search' },
-    { icon: PlusSquare, label: 'Add', path: '/add' },
-    { icon: Grid, label: 'Gallery', path: '/gallery' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: Home, label: t('navigation.feed'), path: '/feed' },
+    { icon: Search, label: t('navigation.search'), path: '/search' },
+    { icon: PlusSquare, label: t('navigation.add'), path: '/add' },
+    { icon: Grid, label: t('navigation.gallery'), path: '/gallery' },
+    { icon: User, label: t('navigation.profile'), path: '/profile' },
+    { icon: Settings, label: t('navigation.settings'), path: '/settings' },
   ];
 
   if (location.pathname.startsWith('/chat')) {

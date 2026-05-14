@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn, optimizeImage } from '../lib/utils';
 import PhotoViewer from '../components/PhotoViewer';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
@@ -25,8 +26,9 @@ const SWIPE_ACHIEVEMENTS = [
 ];
 
 export default function Feed({ user }: { user: any }) {
-  const [followingPhotos, setFollowingPhotos] = useState<Photo[]>([]);
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
+  const { t } = useTranslation();
+  const [followingItems, setFollowingItems] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState<any[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [viewer, setViewer] = useState<Photo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function Feed({ user }: { user: any }) {
   const [page, setPage] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const lastPhotoRef = useRef<HTMLDivElement | null>(null);
-
+ 
   // Tinder Mode states
   const [tinderMode, setTinderMode] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -43,12 +45,12 @@ export default function Feed({ user }: { user: any }) {
   const [showAchievement, setShowAchievement] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-
-  const photos = showAll ? allPhotos : followingPhotos;
-  const isFollowingEmpty = !loading && followingPhotos.length === 0 && !showAll;
-
+ 
+  const items = showAll ? allItems : followingItems;
+  const isFollowingEmpty = !loading && followingItems.length === 0 && !showAll;
+ 
   useEffect(() => {
-    fetchInitialPhotos();
+    fetchInitialFeed();
     loadUserSwipeCount();
   }, [user.id]);
 
@@ -64,22 +66,30 @@ export default function Feed({ user }: { user: any }) {
     }
   }
 
-  async function fetchInitialPhotos() {
+  async function fetchInitialFeed() {
     setLoading(true);
     const [following, all] = await Promise.all([
-      fetchPhotos(false, 0),
-      fetchPhotos(true, 0)
+      fetchFeedItems(false, 0),
+      fetchFeedItems(true, 0)
     ]);
-    setFollowingPhotos(following);
-    setAllPhotos(all);
+    setFollowingItems(following);
+    setAllItems(all);
     setLoading(false);
   }
 
-  async function fetchPhotos(isAll: boolean, offset: number) {
-    let query = supabase
+  async function fetchFeedItems(isAll: boolean, offset: number) {
+    // Fetch photos
+    let photosQuery = supabase
       .from('photos')
       .select('*, owner:profiles(*), likes:likes(count)')
       .eq('privacy', 'public')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + 11);
+
+    // Fetch posts (wall posts)
+    let postsQuery = supabase
+      .from('posts')
+      .select('*, owner:profiles(*)')
       .order('created_at', { ascending: false })
       .range(offset, offset + 11);
 
@@ -90,22 +100,40 @@ export default function Feed({ user }: { user: any }) {
         .eq('follower_id', user.id);
       
       const followingIds = [user.id, ...(follows?.map(f => f.following_id) || [])];
-      query = query.in('user_id', followingIds);
+      photosQuery = photosQuery.in('user_id', followingIds);
+      postsQuery = postsQuery.in('user_id', followingIds);
     }
 
-    const { data } = await query;
-    return (data || []) as Photo[];
+    try {
+      const [{ data: photosData, error: photosError }, { data: postsData, error: postsError }] = await Promise.all([
+        photosQuery,
+        postsQuery
+      ]);
+
+      if (photosError) console.error('Error fetching photos:', photosError);
+      if (postsError) console.error('Error fetching posts:', postsError);
+
+      const items = [
+        ...((photosData as any[]) || []).map(p => ({ ...p, type: 'photo' })),
+        ...((postsData as any[]) || []).map(p => ({ ...p, type: 'post' }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return items;
+    } catch (err) {
+      console.error('Feed fetch error:', err);
+      return [];
+    }
   }
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
-    const newPhotos = await fetchPhotos(showAll, nextPage * 12);
+    const newItems = await fetchFeedItems(showAll, nextPage * 12);
     
-    if (newPhotos.length > 0) {
-      if (showAll) setAllPhotos(prev => [...prev, ...newPhotos]);
-      else setFollowingPhotos(prev => [...prev, ...newPhotos]);
+    if (newItems.length > 0) {
+      if (showAll) setAllItems(prev => [...prev, ...newItems]);
+      else setFollowingItems(prev => [...prev, ...newItems]);
       setPage(nextPage);
     } else {
       setHasMore(false);
@@ -123,7 +151,7 @@ export default function Feed({ user }: { user: any }) {
 
     observerRef.current.observe(lastPhotoRef.current);
     return () => observerRef.current?.disconnect();
-  }, [photos, loadMore, tinderMode]);
+  }, [items, loadMore, tinderMode]);
 
   async function updateSwipeCount(newCount: number) {
     // Attempting update - if column doesn't exist it fails silently
@@ -136,7 +164,7 @@ export default function Feed({ user }: { user: any }) {
   }
 
   const handleSwipe = (direction: 'left' | 'right') => {
-    const nextIndex = (currentPhotoIndex + 1) % (allPhotos.length || 1);
+    const nextIndex = (currentPhotoIndex + 1) % (allItems.length || 1);
     setCurrentPhotoIndex(nextIndex);
     const newCount = swipeCount + 1;
     setSwipeCount(newCount);
@@ -145,7 +173,7 @@ export default function Feed({ user }: { user: any }) {
   };
 
   if (tinderMode) {
-    const currentPhoto = allPhotos[currentPhotoIndex];
+    const currentPhoto = allItems[currentPhotoIndex];
     
     return (
       <div className="fixed inset-0 z-[500] bg-white flex flex-col items-center justify-center p-4">
@@ -230,17 +258,23 @@ export default function Feed({ user }: { user: any }) {
     <div className="max-w-xl mx-auto p-4 md:p-8 space-y-12 min-h-screen">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-black">Feed</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-black">{t('navigation.feed')}</h1>
     
         </div>
         <div className="flex gap-2">
+          <Link 
+            to="/chat"
+            className="p-3 bg-slate-50 rounded-2xl text-slate-400 border border-slate-100 hover:bg-white hover:text-black transition-all font-bold text-xs flex items-center justify-center"
+            title="Messages"
+          >
+            <MessageSquare size={20} />
+          </Link>
           <button 
             onClick={() => setTinderMode(true)}
-            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all font-bold text-xs flex items-center gap-2"
+            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all font-bold text-xs flex items-center justify-center"
             title="Tinder Mode"
           >
             <Flame size={20} />
-
           </button>
           <div className="flex p-1 bg-slate-50 rounded-2xl border border-slate-100">
             <button 
@@ -250,7 +284,7 @@ export default function Feed({ user }: { user: any }) {
                 !showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
               )}
             >
-              Circle
+              {t('feed.circle')}
             </button>
             <button 
               onClick={() => { setShowAll(true); setPage(0); setHasMore(true); }}
@@ -259,7 +293,7 @@ export default function Feed({ user }: { user: any }) {
                 showAll ? "bg-white text-black shadow-sm" : "text-slate-400"
               )}
             >
-              Global
+              {t('feed.global')}
             </button>
           </div>
         </div>
@@ -276,13 +310,17 @@ export default function Feed({ user }: { user: any }) {
         </div>
       ) : (
         <div className="space-y-16">
-          {photos.map((photo, i) => (
-            <div key={photo.id} ref={i === photos.length - 1 ? lastPhotoRef : null}>
-              <PhotoCard 
-                photo={photo} 
-                user={user} 
-                onOpen={() => setViewer(photo)} 
-              />
+          {items.map((item: any, i) => (
+            <div key={item.id} ref={i === items.length - 1 ? lastPhotoRef : null}>
+              {item.type === 'photo' ? (
+                 <PhotoCard 
+                   photo={item} 
+                   user={user} 
+                   onOpen={() => setViewer(item)} 
+                 />
+              ) : (
+                 <WallPostCard post={item} user={user} />
+              )}
             </div>
           ))}
           
@@ -292,14 +330,14 @@ export default function Feed({ user }: { user: any }) {
                 <Grid size={40} />
               </div>
               <div className="space-y-2">
-                <p className="text-black font-bold">Your circle is quiet</p>
-                <p className="text-slate-400 text-sm max-w-xs mx-auto">Try Discovering some ancient beings.</p>
+                <p className="text-black font-bold">{t('feed.empty_following')}</p>
+                <p className="text-slate-400 text-sm max-w-xs mx-auto">{t('feed.empty_following_sub')}</p>
               </div>
               <button 
                 onClick={() => setShowAll(true)}
                 className="btn-primary h-12 px-8 uppercase tracking-widest text-[10px]"
               >
-                Explore Globally
+                {t('feed.explore_globally')}
               </button>
             </div>
           )}
@@ -381,7 +419,12 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
         onClick={onOpen}
         className="aspect-[4/3] rounded-[2.5rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in relative group/image shadow-sm"
       >
-        <img src={optimizeImage(photo.url, 800)} alt="" className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/image:scale-110" loading="lazy" />
+        <img 
+          src={optimizeImage(photo.url, 800)} 
+          alt="" 
+          className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover/image:scale-110" 
+          loading="lazy" 
+        />
       </div>
 
       <div className="flex items-center justify-between px-6">
@@ -395,6 +438,85 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
           </button>
         </div>
         <Link to={`/posts/${photo.id}`} className="text-[10px] font-bold text-black uppercase tracking-[0.3em] hover:underline underline-offset-4 max-w-[150px] truncate block text-right">{photo.name}</Link>
+      </div>
+    </div>
+  );
+}
+
+function WallPostCard({ post, user }: { post: any, user: any }) {
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+
+  useEffect(() => {
+    checkIfLiked();
+  }, [post.id, user.id]);
+
+  async function checkIfLiked() {
+    const { data } = await supabase
+      .from('post_likes')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('post_id', post.id)
+      .single();
+    if (data) setLiked(true);
+  }
+
+  async function toggleLike(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (liked) {
+      await supabase.from('post_likes').delete().eq('user_id', user.id).eq('post_id', post.id);
+      setLikesCount(prev => Math.max(0, prev - 1));
+    } else {
+      await supabase.from('post_likes').insert({ user_id: user.id, post_id: post.id });
+      setLiked(true);
+      setLikesCount(prev => prev + 1);
+    }
+    setLiked(!liked);
+  }
+
+  return (
+    <div className="space-y-6 group">
+      <div className="flex items-center justify-between px-2">
+        <Link to={`/profile/${post.owner?.username}`} className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full overflow-hidden bg-white border border-slate-100 p-0.5">
+            <div className="w-full h-full rounded-full overflow-hidden bg-white">
+               {post.owner?.avatar_url ? (
+                 <img src={post.owner.avatar_url} className="w-full h-full object-cover" />
+               ) : <User className="w-full h-full p-2 text-slate-300" />}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-1">
+              <div className={cn(
+                "text-sm font-bold group-hover:underline underline-offset-4",
+                post.owner?.active_gradient ? GRADIENT_CONFIG[post.owner.active_gradient]?.className : "text-black",
+                post.owner?.active_font ? FONT_CONFIG[post.owner.active_font]?.className : ""
+              )}>
+                {post.owner?.name || post.owner?.username}
+              </div>
+            </div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+              {formatDistanceToNow(new Date(post.created_at))} ago
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <div className="bg-slate-50 border border-slate-100 p-8 rounded-[2.5rem] shadow-sm relative group/image">
+        <p className="text-black font-medium leading-relaxed">{post.content}</p>
+      </div>
+
+      <div className="flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleLike}
+            className={cn("flex items-center gap-2 transition-all active:scale-75", liked ? "text-rose-500 scale-110" : "text-slate-300 hover:text-slate-900")}
+          >
+            <Heart size={24} className={liked ? "fill-current" : ""} />
+            <span className="text-xs font-bold">{likesCount}</span>
+          </button>
+        </div>
+        <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Wall Post</div>
       </div>
     </div>
   );

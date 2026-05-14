@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, User as UserIcon, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Profile } from '../types';
+import { useTranslation } from 'react-i18next';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 export default function Follows() {
+  const { t } = useTranslation();
   const { username } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ export default function Follows() {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-black">@{username}</h1>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-            {activeTab === 'followers' ? `${followers.length} Followers` : `${following.length} Following`}
+            {activeTab === 'followers' ? `${followers.length} ${t('profile.followers')}` : `${following.length} ${t('profile.following')}`}
           </p>
         </div>
       </header>
@@ -81,7 +83,7 @@ export default function Follows() {
             activeTab === 'followers' ? "text-white" : "text-slate-400 hover:text-black"
           )}
         >
-          Followers
+          {t('profile.followers')}
           {activeTab === 'followers' && (
             <motion.div layoutId="follow-tab-active" className="absolute inset-0 bg-black rounded-xl -z-10" />
           )}
@@ -93,7 +95,7 @@ export default function Follows() {
             activeTab === 'following' ? "text-white" : "text-slate-400 hover:text-black"
           )}
         >
-          Following
+          {t('profile.following')}
           {activeTab === 'following' && (
             <motion.div layoutId="follow-tab-active" className="absolute inset-0 bg-black rounded-xl -z-10" />
           )}
@@ -137,8 +139,8 @@ export default function Follows() {
             ))
           ) : (
             <div className="py-20 text-center space-y-2">
-              <p className="text-slate-200 font-bold uppercase tracking-[0.2em] text-[10px]">Nothing to see here yet</p>
-              <p className="text-sm text-slate-400">@{username} hasn't gathered a circle yet.</p>
+              <p className="text-slate-200 font-bold uppercase tracking-[0.2em] text-[10px]">{t('profile.nothing_to_see')}</p>
+              <p className="text-sm text-slate-400">{t('profile.empty_followers_sub', { username })}</p>
             </div>
           )}
         </AnimatePresence>

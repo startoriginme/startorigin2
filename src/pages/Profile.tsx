@@ -7,12 +7,14 @@ import {
   Settings, Trophy, Flame, Camera, Sparkles, X, Search, Upload, Eye, 
   EyeOff, Edit2, Minus, Plus, Coins, Glasses, Crown, Diamond, Heart, 
   Award, ShoppingCart, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, 
-  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark
+  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
 import { cn, formatCount, optimizeImage } from '../lib/utils';
-import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
+import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
+import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Pet {
   id: string;
@@ -36,79 +38,56 @@ interface UserPet {
   gifter?: { username: string; name: string };
 }
 
-// РАСШИРЕННАЯ КОНФИГУРАЦИЯ ЗНАЧКОВ
-const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  verified: { icon: BadgeCheck, color: 'text-blue-500', label: 'Verified' },
-  snowflake: { icon: Snowflake, color: 'text-cyan-400', label: 'Snowflake' },
-  computer: { icon: Monitor, color: 'text-violet-500', label: 'Computer' },
-  star: { icon: Star, color: 'text-amber-400', label: 'Star' },
-  crown: { icon: Crown, color: 'text-yellow-500', label: 'Crown' },
-  diamond: { icon: Diamond, color: 'text-sky-400', label: 'Diamond' },
-  heart: { icon: Heart, color: 'text-pink-500', label: 'Heart' },
-  award: { icon: Award, color: 'text-emerald-500', label: 'Award' },
-  rocket: { icon: Rocket, color: 'text-red-500', label: 'Rocket' },
-  leaf: { icon: Leaf, color: 'text-green-600', label: 'Leaf' },
-  moon: { icon: Moon, color: 'text-indigo-400', label: 'Moon' },
-  sun: { icon: Sun, color: 'text-orange-500', label: 'Sun' },
-  music: { icon: Music, color: 'text-pink-600', label: 'Music' },
-  book: { icon: Book, color: 'text-amber-700', label: 'Book' },
-  coffee: { icon: Coffee, color: 'text-amber-700', label: 'Coffee' },
-  gamepad: { icon: Gamepad, color: 'text-purple-600', label: 'Gamepad' },
-  gift: { icon: Gift, color: 'text-red-500', label: 'Gift' },
-  smile: { icon: Smile, color: 'text-yellow-500', label: 'Smile' },
-  sparkles: { icon: Sparkles, color: 'text-purple-400', label: 'Sparkles' },
-};
-
 // Ачивки за свайпы
-const SWIPE_ACHIEVEMENTS = [
-  { count: 10, title: "Photo Explorer", icon: Camera, color: "text-green-500", description: "Swiped 10 photos" },
-  { count: 30, title: "Photo Hunter", icon: Search, color: "text-blue-500", description: "Swiped 30 photos" },
-  { count: 60, title: "Photo Master", icon: Star, color: "text-purple-500", description: "Swiped 60 photos" },
-  { count: 120, title: "Photo Legend", icon: Flame, color: "text-orange-500", description: "Swiped 120 photos" },
-  { count: 250, title: "Photo Guru", icon: Sparkles, color: "text-yellow-500", description: "Swiped 250 photos" },
-  { count: 500, title: "Photo God", icon: Trophy, color: "text-cyan-500", description: "Swiped 500 photos" },
+const SWIPE_ACHIEVEMENTS = (t: any) => [
+  { count: 10, title: t('profile.achievements_list.photo_explorer'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.photo_explorer_desc') },
+  { count: 30, title: t('profile.achievements_list.photo_hunter'), icon: Search, color: "text-blue-500", description: t('profile.achievements_list.photo_hunter_desc') },
+  { count: 60, title: t('profile.achievements_list.photo_master'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photo_master_desc') },
+  { count: 120, title: t('profile.achievements_list.photo_legend'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.photo_legend_desc') },
+  { count: 250, title: t('profile.achievements_list.photo_guru'), icon: Sparkles, color: "text-yellow-500", description: t('profile.achievements_list.photo_guru_desc') },
+  { count: 500, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-cyan-500", description: t('profile.achievements_list.photo_god_desc') },
 ];
 
 // Ачивки за загруженные фотки
-const UPLOAD_ACHIEVEMENTS = [
-  { count: 1, title: "First Step", icon: Upload, color: "text-gray-500", description: "Uploaded first photo" },
-  { count: 5, title: "Getting Started", icon: Camera, color: "text-green-500", description: "Uploaded 5 photos" },
-  { count: 10, title: "Photo Enthusiast", icon: Camera, color: "text-green-500", description: "Uploaded 10 photos" },
-  { count: 15, title: "Shutterbug", icon: Camera, color: "text-emerald-500", description: "Uploaded 15 photos" },
-  { count: 20, title: "Getting Serious", icon: Flame, color: "text-orange-500", description: "Uploaded 20 photos" },
-  { count: 25, title: "Dedicated", icon: Flame, color: "text-orange-500", description: "Uploaded 25 photos" },
-  { count: 30, title: "Photography Addict", icon: Star, color: "text-purple-500", description: "Uploaded 30 photos" },
-  { count: 35, title: "Photo Lover", icon: Star, color: "text-purple-500", description: "Uploaded 35 photos" },
-  { count: 40, title: "Creative Eye", icon: Star, color: "text-purple-500", description: "Uploaded 40 photos" },
-  { count: 45, title: "Visual Artist", icon: Star, color: "text-indigo-500", description: "Uploaded 45 photos" },
-  { count: 50, title: "Photography Pro", icon: Trophy, color: "text-yellow-500", description: "Uploaded 50 photos" },
-  { count: 55, title: "Expert", icon: Trophy, color: "text-yellow-500", description: "Uploaded 55 photos" },
-  { count: 60, title: "Master Photographer", icon: Trophy, color: "text-yellow-500", description: "Uploaded 60 photos" },
-  { count: 65, title: "Visionary", icon: Trophy, color: "text-amber-500", description: "Uploaded 65 photos" },
-  { count: 70, title: "Photo Virtuoso", icon: Trophy, color: "text-amber-500", description: "Uploaded 70 photos" },
-  { count: 75, title: "Artistic Soul", icon: Sparkles, color: "text-pink-500", description: "Uploaded 75 photos" },
-  { count: 80, title: "Photo Legend", icon: Sparkles, color: "text-pink-500", description: "Uploaded 80 photos" },
-  { count: 85, title: "Iconic", icon: Sparkles, color: "text-rose-500", description: "Uploaded 85 photos" },
-  { count: 90, title: "Masterpiece Creator", icon: Sparkles, color: "text-rose-500", description: "Uploaded 90 photos" },
-  { count: 95, title: "Photography Guru", icon: Trophy, color: "text-purple-500", description: "Uploaded 95 photos" },
-  { count: 100, title: "Photo God", icon: Trophy, color: "text-cyan-500", description: "Uploaded 100 photos" },
+const UPLOAD_ACHIEVEMENTS = (t: any) => [
+  { count: 1, title: t('profile.achievements_list.first_step'), icon: Upload, color: "text-gray-500", description: t('profile.achievements_list.first_step_desc') },
+  { count: 5, title: t('profile.achievements_list.getting_started'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.getting_started_desc') },
+  { count: 10, title: t('profile.achievements_list.photo_enthusiast'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.photo_enthusiast_desc') },
+  { count: 15, title: t('profile.achievements_list.shutterbug'), icon: Camera, color: "text-emerald-500", description: t('profile.achievements_list.shutterbug_desc') },
+  { count: 20, title: t('profile.achievements_list.getting_serious'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.getting_serious_desc') },
+  { count: 25, title: t('profile.achievements_list.dedicated'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.dedicated_desc') },
+  { count: 30, title: t('profile.achievements_list.photography_addict'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photography_addict_desc') },
+  { count: 35, title: t('profile.achievements_list.photo_lover'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photo_lover_desc') },
+  { count: 40, title: t('profile.achievements_list.creative_eye'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.creative_eye_desc') },
+  { count: 45, title: t('profile.achievements_list.visual_artist'), icon: Star, color: "text-indigo-500", description: t('profile.achievements_list.visual_artist_desc') },
+  { count: 50, title: t('profile.achievements_list.photography_pro'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.photography_pro_desc') },
+  { count: 55, title: t('profile.achievements_list.expert'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.expert_desc') },
+  { count: 60, title: t('profile.achievements_list.master_photographer'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.master_photographer_desc') },
+  { count: 65, title: t('profile.achievements_list.visionary'), icon: Trophy, color: "text-amber-500", description: t('profile.achievements_list.visionary_desc') },
+  { count: 70, title: t('profile.achievements_list.photo_virtuoso'), icon: Trophy, color: "text-amber-500", description: t('profile.achievements_list.photo_virtuoso_desc') },
+  { count: 75, title: t('profile.achievements_list.artistic_soul'), icon: Sparkles, color: "text-pink-500", description: t('profile.achievements_list.artistic_soul_desc') },
+  { count: 80, title: t('profile.achievements_list.photo_legend'), icon: Sparkles, color: "text-pink-500", description: t('profile.achievements_list.photo_legend_desc') },
+  { count: 85, title: t('profile.achievements_list.iconic'), icon: Sparkles, color: "text-rose-500", description: t('profile.achievements_list.iconic_desc') },
+  { count: 90, title: t('profile.achievements_list.masterpiece_creator'), icon: Sparkles, color: "text-rose-500", description: t('profile.achievements_list.masterpiece_creator_desc') },
+  { count: 95, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-purple-500", description: t('profile.achievements_list.photo_god_desc') },
+  { count: 100, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-cyan-500", description: t('profile.achievements_list.photo_god_desc') },
 ];
 
-// Ачивки из магазина (РАСШИРЕННЫЕ)
-const SHOP_ACHIEVEMENTS = [
-  { title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-purple-500", description: "Spent 500 Origins in shop" },
-  { title: "Buyer", icon: ShoppingBag, color: "text-green-500", description: "Made first purchase" },
-  { title: "Shopping", icon: Zap, color: "text-yellow-500", description: "Bought 3 items" },
-  { title: "Collector", icon: Star, color: "text-amber-500", description: "Collected 5 badges" },
-  { title: "Big Spender", icon: Trophy, color: "text-red-500", description: "Spent 2000 Origins in shop" },
-  { title: "Legendary", icon: Crown, color: "text-yellow-500", description: "Bought a legendary item" },
-  { title: "Completionist", icon: Award, color: "text-emerald-500", description: "Collected all badges" },
-  { title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-500", description: "Bought something 3 days in a row" },
+// Ачивки из магазина
+const SHOP_ACHIEVEMENTS = (t: any) => [
+  { title: t('profile.achievements_list.shopkeeper'), icon: ShoppingCart, color: "text-purple-500", description: t('profile.achievements_list.shopkeeper_desc') },
+  { title: t('profile.achievements_list.buyer'), icon: ShoppingBag, color: "text-green-500", description: t('profile.achievements_list.buyer_desc') },
+  { title: t('profile.achievements_list.shopping'), icon: Zap, color: "text-yellow-500", description: t('profile.achievements_list.shopping_desc') },
+  { title: t('profile.achievements_list.collector'), icon: Star, color: "text-amber-500", description: t('profile.achievements_list.collector_desc') },
+  { title: t('profile.achievements_list.big_spender'), icon: Trophy, color: "text-red-500", description: t('profile.achievements_list.big_spender_desc') },
+  { title: t('profile.achievements_list.legendary'), icon: Crown, color: "text-yellow-500", description: t('profile.achievements_list.legendary_desc') },
+  { title: t('profile.achievements_list.completionist'), icon: Award, color: "text-emerald-500", description: t('profile.achievements_list.completionist_desc') },
+  { title: t('profile.achievements_list.daily_shopper'), icon: ShoppingBag, color: "text-blue-500", description: t('profile.achievements_list.daily_shopper_desc') },
 ];
 
 // Секретные ачивки
-const SECRET_ACHIEVEMENTS = [
-  { title: "Secret Agent: 1st Quest", icon: Glasses, color: "text-purple-500", description: "Completed the first secret quest" },
+const SECRET_ACHIEVEMENTS = (t: any) => [
+  { title: t('profile.achievements_list.secret_agent'), icon: Glasses, color: "text-purple-500", description: t('profile.achievements_list.secret_agent_desc') },
 ];
 
 type Achievement = {
@@ -143,7 +122,7 @@ const PATTERNS: Record<string, string> = {
   stars: 'bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpolygon%20fill%3D%22%23999%22%20fill-opacity%3D%220.15%22%20points%3D%2210%200%2013%207%2020%207%2015%2011%2017%2018%2010%2014%203%2018%205%2011%200%207%207%207%22%2F%3E%3C%2Fsvg%3E")] bg-[length:20px_20px]',
 };
 
-// РАСШИРЕННАЯ КОНФИГУРАЦИЯ ПИТОМЦЕВ
+// Конфигурация питомцев
 const PET_ICONS: Record<string, any> = {
   cat: { image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100', price: 100 },
   dog: { image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100', price: 150 },
@@ -152,6 +131,7 @@ const PET_ICONS: Record<string, any> = {
 };
 
 export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id: string) => void }) {
+  const { t } = useTranslation();
   const { username } = useParams();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -192,7 +172,11 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
   const [savedPhotos, setSavedPhotos] = useState<Photo[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'photos' | 'pets' | 'achievements' | 'saved'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'wall' | 'pets' | 'achievements' | 'saved'>('photos');
+  const [wallPosts, setWallPosts] = useState<any[]>([]);
+  const [loadingWall, setLoadingWall] = useState(false);
+  const [newWallContent, setNewWallContent] = useState('');
+  const [postingWall, setPostingWall] = useState(false);
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [gifting, setGifting] = useState(false);
   const [giftSearchQuery, setGiftSearchQuery] = useState('');
@@ -202,6 +186,12 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [newName, setNewName] = useState('');
   const [selling, setSelling] = useState(false);
   const [showSellConfirm, setShowSellConfirm] = useState(false);
+
+  // Wall posts new states
+  const [postLikes, setPostLikes] = useState<Record<string, boolean>>({});
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editPostContent, setEditPostContent] = useState('');
+  const [deletingPost, setDeletingPost] = useState<string | null>(null);
 
   const isOwn = !username || (user && profile?.id === user.id);
 
@@ -219,6 +209,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         loadBadgeSettings(),
         loadPets(),
         fetchPhotos(),
+        fetchWallPosts(),
         checkFollowStatus()
       ]);
     }
@@ -251,31 +242,207 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!profile) return;
     const { data } = await supabase
       .from('photos')
-      .select('*')
+      .select('*, owner:profiles(*), likes:likes(count)')
       .eq('user_id', profile.id)
+      .eq('is_wall_post', false)
       .eq('privacy', 'public')
       .order('created_at', { ascending: false });
-    if (data) setPhotos(data);
+    if (data) setPhotos(data as any);
+  }
+
+  // Обновленная функция fetchWallPosts с загрузкой стилей пользователя
+  async function fetchWallPosts() {
+    if (!profile) return;
+    setLoadingWall(true);
+    
+    const { data: postsData } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', profile.id)
+      .order('created_at', { ascending: false });
+    
+    if (postsData) {
+      const postsWithProfiles = await Promise.all(
+        postsData.map(async (post) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', post.user_id)
+            .single();
+          
+          return {
+            ...post,
+            name: post.content,
+            owner: profileData,
+            owner_avatar: profileData?.avatar_url,
+            owner_name: profileData?.name || profileData?.username,
+            owner_username: profileData?.username,
+            owner_gradient: profileData?.active_gradient,
+            owner_font: profileData?.active_font
+          };
+        })
+      );
+      
+      setWallPosts(postsWithProfiles);
+      await loadPostLikes(postsWithProfiles);
+    }
+    setLoadingWall(false);
+  }
+
+  // Проверка лайка поста
+  async function checkPostLike(postId: string) {
+    if (!user) return false;
+    const { data } = await supabase
+      .from('post_likes')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    return !!data;
+  }
+
+  // Загрузка лайков всех постов
+  async function loadPostLikes(postsList: any[]) {
+    if (!user || postsList.length === 0) return;
+    
+    const likesStatus: Record<string, boolean> = {};
+    for (const post of postsList) {
+      likesStatus[post.id] = await checkPostLike(post.id);
+    }
+    setPostLikes(likesStatus);
+  }
+
+  // Лайк/анлайк поста
+  async function togglePostLike(postId: string) {
+    if (!user) return;
+    
+    const isLiked = postLikes[postId];
+    
+    if (isLiked) {
+      const { error } = await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id);
+      
+      if (!error) {
+        setPostLikes(prev => ({ ...prev, [postId]: false }));
+        setWallPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, likes_count: Math.max(0, (post.likes_count || 0) - 1) }
+            : post
+        ));
+      }
+    } else {
+      const { error } = await supabase
+        .from('post_likes')
+        .insert({ post_id: postId, user_id: user.id });
+      
+      if (!error) {
+        setPostLikes(prev => ({ ...prev, [postId]: true }));
+        setWallPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, likes_count: (post.likes_count || 0) + 1 }
+            : post
+        ));
+      }
+    }
+  }
+
+  // Обновление поста
+  async function updatePost(postId: string, newContent: string) {
+    if (!user || !newContent.trim()) return;
+    
+    const { error } = await supabase
+      .from('posts')
+      .update({ content: newContent.trim(), updated_at: new Date().toISOString() })
+      .eq('id', postId)
+      .eq('user_id', user.id);
+    
+    if (!error) {
+      setWallPosts(prev => prev.map(post => 
+        post.id === postId 
+          ? { ...post, name: newContent.trim(), content: newContent.trim() }
+          : post
+      ));
+      setEditingPost(null);
+      setEditPostContent('');
+    } else {
+      console.error('Error updating post:', error);
+      alert('Failed to update post');
+    }
+  }
+
+  // Удаление поста
+  async function deletePost(postId: string) {
+    if (!user) return;
+    setDeletingPost(postId);
+    
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId)
+      .eq('user_id', user.id);
+    
+    if (!error) {
+      setWallPosts(prev => prev.filter(post => post.id !== postId));
+    } else {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    }
+    setDeletingPost(null);
+  }
+
+  async function handlePostToWall() {
+    if (!user || !profile || !newWallContent.trim()) return;
+    setPostingWall(true);
+    try {
+      const { data: postData, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: profile.id,
+          content: newWallContent.trim()
+        })
+        .select()
+        .single();
+
+      if (postError) throw postError;
+      
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profile.id)
+        .single();
+      
+      if (postData) {
+        const newPost = {
+          ...postData,
+          name: postData.content,
+          owner: profileData,
+          owner_avatar: profileData?.avatar_url,
+          owner_name: profileData?.name || profileData?.username,
+          owner_username: profileData?.username,
+          owner_gradient: profileData?.active_gradient,
+          owner_font: profileData?.active_font,
+          likes_count: 0
+        };
+        setWallPosts(prev => [newPost, ...prev]);
+        setNewWallContent('');
+        await loadPostLikes([newPost]);
+      }
+    } catch (err) {
+      console.error('Error posting to wall:', err);
+    } finally {
+      setPostingWall(false);
+    }
   }
 
   async function checkFollowStatus() {
     if (!user || !profile) return;
-    const { data } = await supabase.from('follows').select('*').eq('follower_id', user.id).eq('following_id', profile.id).maybeSingle();
+    const { data } = await supabase.from('follows').select('*').eq('follower_id', user.id).eq('following_id', profile.id).single();
     setFollowing(!!data);
-    
-    const { data: freshProfile } = await supabase
-      .from('profiles')
-      .select('followers_count, following_count')
-      .eq('id', profile.id)
-      .single();
-    
-    if (freshProfile) {
-      setFollowersCount(freshProfile.followers_count || 0);
-      setFollowingCount(freshProfile.following_count || 0);
-    } else {
-      setFollowersCount(profile.followers_count || 0);
-      setFollowingCount(profile.following_count || 0);
-    }
+    setFollowersCount(profile.followers_count || 0);
+    setFollowingCount(profile.following_count || 0);
   }
 
   async function fetchFollows(type: 'followers' | 'following') {
@@ -471,6 +638,11 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     let targetIndex = direction === 'left' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= pinnedPets.length) return;
 
+    const newPinned = [...pinnedPets];
+    const temp = newPinned[index];
+    newPinned[index] = newPinned[targetIndex];
+    newPinned[targetIndex] = temp;
+
     const targetPet = pinnedPets[targetIndex];
     const currentPet = pinnedPets[index];
 
@@ -576,7 +748,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   }
 
   async function checkAndAddSwipeAchievements(currentCount: number) {
-    for (const ach of SWIPE_ACHIEVEMENTS) {
+    for (const ach of SWIPE_ACHIEVEMENTS(t)) {
       if (currentCount >= ach.count) {
         if (!achievements.some(a => a.achievement_name === ach.title)) {
           await supabase.from('achievements').insert({ user_id: profile!.id, achievement_type: 'swipe', achievement_name: ach.title });
@@ -587,7 +759,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   }
 
   async function checkAndAddUploadAchievements() {
-    for (const ach of UPLOAD_ACHIEVEMENTS) {
+    for (const ach of UPLOAD_ACHIEVEMENTS(t)) {
       if (uploadCount >= ach.count) {
         if (!achievements.some(a => a.achievement_name === ach.title)) {
           await supabase.from('achievements').insert({ user_id: profile!.id, achievement_type: 'upload', achievement_name: ach.title });
@@ -629,14 +801,14 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const allAchievements = [...achievements];
   purchasedAch.forEach(aid => {
     let name = '';
-    if (aid === 'shopkeeper') name = "Shopkeepers' Favorite";
-    else if (aid === 'buyer') name = 'Buyer';
-    else if (aid === 'shopping') name = 'Shopping';
-    else if (aid === 'collector') name = 'Collector';
-    else if (aid === 'big_spender') name = 'Big Spender';
-    else if (aid === 'legendary') name = 'Legendary';
-    else if (aid === 'completionist') name = 'Completionist';
-    else if (aid === 'daily_shopper') name = 'Daily Shopper';
+    if (aid === 'shopkeeper') name = t('profile.achievements_list.shopkeeper');
+    else if (aid === 'buyer') name = t('profile.achievements_list.buyer');
+    else if (aid === 'shopping') name = t('profile.achievements_list.shopping');
+    else if (aid === 'collector') name = t('profile.achievements_list.collector');
+    else if (aid === 'big_spender') name = t('profile.achievements_list.big_spender');
+    else if (aid === 'legendary') name = t('profile.achievements_list.legendary');
+    else if (aid === 'completionist') name = t('profile.achievements_list.completionist');
+    else if (aid === 'daily_shopper') name = t('profile.achievements_list.daily_shopper');
 
     if (name && !allAchievements.some(a => a.achievement_name === name)) {
       allAchievements.push({ 
@@ -653,10 +825,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const hiddenAchievementsList = allAchievements.filter(ach => hiddenAchievements.has(ach.id));
 
   const getAchievementConfig = (name: string) => {
-    return SECRET_ACHIEVEMENTS.find(a => a.title === name) || 
-           SHOP_ACHIEVEMENTS.find(a => a.title === name) || 
-           SWIPE_ACHIEVEMENTS.find(a => a.title === name) || 
-           UPLOAD_ACHIEVEMENTS.find(a => a.title === name);
+    return SECRET_ACHIEVEMENTS(t).find(a => a.title === name) || 
+           SHOP_ACHIEVEMENTS(t).find(a => a.title === name) || 
+           SWIPE_ACHIEVEMENTS(t).find(a => a.title === name) || 
+           UPLOAD_ACHIEVEMENTS(t).find(a => a.title === name);
   };
 
   const currentTheme = THEMES[themePreference] || THEMES.default;
@@ -715,24 +887,22 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           </div>
 
           <div className="space-y-3">
-            <div className="flex justify-center">
-              <div className="flex items-center gap-2">
-                <h1 className={cn(
-                  "text-2xl font-bold tracking-tight",
-                  profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-                  profile.active_font && FONT_CONFIG[profile.active_font]?.className
-                )}>
-                  {profile.name || profile.username}
-                </h1>
-                <div className="flex gap-0.5">
-                  {visibleBadges.map(bid => {
-                    const cfg = BADGE_CONFIG[bid];
-                    return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5", cfg.color)} title={cfg.label} /> : null;
-                  })}
-                </div>
+            <div className="flex items-center justify-center gap-2 group min-h-[3rem]">
+              <h1 className={cn(
+                "text-2xl font-bold tracking-tight transform-gpu leading-none flex items-center pr-2 py-1",
+                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+                profile.active_font && FONT_CONFIG[profile.active_font]?.className
+              )}>
+                {profile.name || profile.username}
+              </h1>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {visibleBadges.map(bid => {
+                   const cfg = BADGE_CONFIG[bid];
+                   return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5 flex-shrink-0", cfg.color)} title={t(`landing.items.badges.${cfg.key}`)} /> : null;
+                })}
               </div>
             </div>
-            <p className="text-sm font-bold opacity-40 uppercase tracking-widest">@{profile.username}</p>
+            <p className="text-sm font-bold opacity-30 uppercase tracking-[0.2em] font-sans -mt-1">@{profile.username}</p>
             {profile.bio && (
               <div className={cn(
                 "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
@@ -750,7 +920,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 className={cn("text-center transition-opacity p-2", isOwn ? "hover:opacity-60 cursor-pointer" : "cursor-default")}
               >
                 <div className="text-base font-bold tracking-tight">{formatCount(followersCount)}</div>
-                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Followers</div>
+                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider font-sans">{t('profile.followers')}</div>
              </button>
              <button 
                 onClick={() => { if (isOwn) fetchFollows('following'); }} 
@@ -758,11 +928,11 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 className={cn("text-center transition-opacity p-2", isOwn ? "hover:opacity-60 cursor-pointer" : "cursor-default")}
               >
                 <div className="text-base font-bold tracking-tight">{formatCount(followingCount)}</div>
-                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Following</div>
+                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider font-sans">{t('profile.following')}</div>
              </button>
              <div className="text-center p-2">
                 <div className="text-base font-bold tracking-tight">{formatCount(uploadCount)}</div>
-                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Photos</div>
+                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider font-sans">{t('profile.photos')}</div>
              </div>
              <div className="text-center p-2">
                 <div className="flex items-center justify-center gap-1">
@@ -772,7 +942,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                      <button onClick={() => { setTempSwipeValue(swipeCount); setShowSwipeEditor(true); }} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><Edit2 size={8} /></button>
                    )}
                 </div>
-                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider">Swipes</div>
+                <div className="text-[8px] uppercase font-bold opacity-40 tracking-wider font-sans">{t('profile.swipes')}</div>
              </div>
           </div>
 
@@ -781,7 +951,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               <div className="flex items-center justify-center gap-2">
                 <Coins className="w-4 h-4 text-amber-500" />
                 <p className="text-sm font-bold">
-                  {originsBalance.toFixed(1)} <span className="opacity-60">Origins</span>
+                  {originsBalance.toFixed(1)} <span className="opacity-60">{t('profile.origins')}</span>
                 </p>
               </div>
             </div>
@@ -791,7 +961,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
             {isOwn ? (
               <Link to="/settings" className="h-10 px-6 flex items-center gap-2 bg-white text-black rounded-2xl font-bold text-xs shadow-lg hover:opacity-90 transition-all border border-slate-100">
                 <Settings size={14} />
-                <span>Settings</span>
+                <span>{t('profile.settings')}</span>
               </Link>
             ) : (
               <div className="flex gap-2">
@@ -802,7 +972,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                     following && "opacity-60"
                   )}
                 >
-                   {following ? 'In Circle' : 'Join Circle'}
+                   {following ? t('profile.in_circle') : t('profile.join_circle')}
                 </button>
               </div>
             )}
@@ -811,25 +981,157 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       </div>
 
       <div className="space-y-6">
-        <div className="flex gap-2 p-1.5 bg-slate-50 border border-slate-100 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-hide">
-           <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Moments</button>
-           <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Achievements</button>
-           {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Companions</button>}
-           {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Saved</button>}
+        <div className="flex gap-2 p-1.5 bg-white border border-slate-100 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-hide">
+           <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.moments')}</button>
+           <button onClick={() => setActiveTab('wall')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'wall' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Wall</button>
+           <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.achievements')}</button>
+           {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.companions')}</button>}
+           {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.saved')}</button>}
         </div>
+
+        {activeTab === 'wall' && (
+          <div className="space-y-6">
+            {isOwn && (
+              <div className="bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
+                <textarea 
+                  value={newWallContent}
+                  onChange={(e) => setNewWallContent(e.target.value)}
+                  placeholder="Post something to the wall..."
+                  className="w-full h-32 bg-white border border-slate-100 rounded-[1.5rem] p-6 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none text-sm font-medium"
+                />
+                <div className="flex justify-end">
+                  <button 
+                    onClick={handlePostToWall}
+                    disabled={postingWall || !newWallContent.trim()}
+                    className="px-8 h-10 bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {postingWall ? <Loader2 className="animate-spin" size={14} /> : 'Post'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {loadingWall ? (
+                <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
+              ) : wallPosts.map(post => (
+                <div key={post.id} className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Link to={`/profile/${post.owner_username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-slate-100">
+                        {post.owner_avatar ? (
+                          <img src={post.owner_avatar} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300 font-bold">
+                            {post.owner_name?.[0] || post.owner_username?.[0]}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className={cn(
+                          "text-sm font-bold",
+                          post.owner_gradient && GRADIENT_CONFIG[post.owner_gradient]?.className,
+                          post.owner_font && FONT_CONFIG[post.owner_font]?.className
+                        )}>
+                          {post.owner_name}
+                        </div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@{post.owner_username}</div>
+                      </div>
+                    </Link>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                        {formatDistanceToNow(new Date(post.created_at))} ago
+                        {post.updated_at !== post.created_at && ' (edited)'}
+                      </div>
+                      
+                      {isOwn && post.user_id === user?.id && (
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={() => {
+                              setEditingPost(post.id);
+                              setEditPostContent(post.content);
+                            }}
+                            className="p-2 text-slate-300 hover:text-purple-500 transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => deletePost(post.id)}
+                            disabled={deletingPost === post.id}
+                            className="p-2 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
+                          >
+                            {deletingPost === post.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {editingPost === post.id ? (
+                    <div className="space-y-3">
+                      <textarea 
+                        value={editPostContent}
+                        onChange={(e) => setEditPostContent(e.target.value)}
+                        className="w-full min-h-[100px] bg-white border border-slate-100 rounded-[1.5rem] p-4 focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none text-sm font-medium"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button 
+                          onClick={() => updatePost(post.id, editPostContent)}
+                          className="px-4 h-8 bg-purple-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-purple-600 transition-all"
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={() => setEditingPost(null)}
+                          className="px-4 h-8 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-black font-medium leading-relaxed">{post.name}</p>
+                  )}
+                  
+                  <div className="flex items-center gap-4 pt-2 border-t border-slate-50">
+                    <button 
+                      onClick={() => togglePostLike(post.id)}
+                      className="flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                    >
+                      {postLikes[post.id] ? (
+                        <Heart size={18} className="text-red-500 fill-red-500" />
+                      ) : (
+                        <Heart size={18} className="text-slate-400 hover:text-red-400 transition-colors" />
+                      )}
+                      <span className="text-xs font-bold text-slate-500">{post.likes_count || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {!loadingWall && wallPosts.length === 0 && (
+                <div className="py-10 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+                  No posts on the wall yet.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'saved' && isOwn && (
           <div className="grid grid-cols-2 gap-4">
             {loadingSaved ? (
               <div className="col-span-full py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
             ) : savedPhotos.map(p => (
-              <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm">
+              <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-white border border-slate-100 cursor-zoom-in group shadow-sm relative">
                 <img src={optimizeImage(p.url, 400)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
               </div>
             ))}
             {!loadingSaved && savedPhotos.length === 0 && (
               <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">
-                Your collection of saved moments is empty.
+                {t('profile.empty_saved')}
               </div>
             )}
           </div>
@@ -838,11 +1140,11 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         {activeTab === 'photos' && (
           <div className="grid grid-cols-2 gap-4">
              {photos.map(p => (
-               <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm">
+               <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-white border border-slate-100 cursor-zoom-in group shadow-sm relative">
                   <img src={optimizeImage(p.url, 400)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
                </div>
              ))}
-             {photos.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">The sanctuary is quiet.</div>}
+             {photos.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">{t('profile.empty_photos')}</div>}
           </div>
         )}
 
@@ -852,7 +1154,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               {visibleAchievements.map(ach => {
                 const cfg = getAchievementConfig(ach.achievement_name);
                 return cfg ? (
-                  <div key={ach.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] group hover:bg-white transition-all shadow-sm">
+                  <div key={ach.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-[1.5rem] group hover:bg-slate-50 transition-all shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-inner">
                         <cfg.icon className={cn("w-6 h-6", cfg.color)} />
@@ -876,7 +1178,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
             {isOwn && hiddenAchievementsList.length > 0 && (
               <div className="pt-4 border-t border-slate-100">
                 <button onClick={() => setShowHiddenAchievements(!showHiddenAchievements)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-500 transition-all px-2 mb-4">
-                  {showHiddenAchievements ? 'Hide' : 'Show'} Hidden Milestones ({hiddenAchievementsList.length})
+                  {showHiddenAchievements ? 'Hide' : 'Show'} ({hiddenAchievementsList.length})
                 </button>
                 {showHiddenAchievements && (
                   <div className="grid grid-cols-1 gap-3 opacity-50">
@@ -916,7 +1218,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 const displayName = up.pet_name === typeName ? up.pet_name : `${typeName} (${up.pet_name})`;
                 
                 return (
-                  <div key={up.id} onClick={() => { setSelectedPet(up); setNewName(up.pet_name || ''); setEditingName(false); }} className={cn("bg-slate-50 border border-slate-100 rounded-[2rem] p-8 flex flex-col items-center gap-6 cursor-pointer hover:bg-white transition-all shadow-sm group relative", up.is_hidden && "opacity-40", up.is_pinned && "border-amber-200 bg-amber-50/30")}>
+                  <div key={up.id} onClick={() => { setSelectedPet(up); setNewName(up.pet_name || ''); setEditingName(false); }} className={cn("bg-white border border-slate-100 rounded-[2rem] p-8 flex flex-col items-center gap-6 cursor-pointer hover:bg-slate-50 transition-all shadow-sm group relative", up.is_hidden && "opacity-40", up.is_pinned && "border-amber-200 bg-amber-50/30")}>
                     <div className="absolute top-4 right-4 flex gap-1">
                       {up.is_pinned && <div className="text-amber-500"><Zap size={14} fill="currentColor"/></div>}
                       {up.is_hidden && <div className="text-slate-400"><EyeOff size={14}/></div>}
@@ -941,15 +1243,15 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
            <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full space-y-6 shadow-2xl">
               <div className="flex justify-between items-center">
-                 <h3 className="text-xl font-bold text-black">Manage Swipes</h3>
+                 <h3 className="text-xl font-bold text-black">{t('profile.manage_swipes')}</h3>
                  <button onClick={() => setShowSwipeEditor(false)} className="text-slate-300 hover:text-black"><X/></button>
               </div>
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100">
                  <button onClick={() => setTempSwipeValue(Math.max(0, tempSwipeValue - 1))} className="p-2 hover:bg-white rounded-lg transition-all"><Minus/></button>
                  <span className="text-2xl font-bold">{tempSwipeValue}</span>
                  <button onClick={() => setTempSwipeValue(Math.min(originalSwipeCount, tempSwipeValue + 1))} className="p-2 hover:bg-white rounded-lg transition-all"><Plus/></button>
               </div>
-              <button onClick={() => updateSwipeCount(tempSwipeValue)} className="btn-primary h-14 w-full">Apply Essence</button>
+              <button onClick={() => updateSwipeCount(tempSwipeValue)} className="btn-primary h-14 w-full">{t('profile.apply_essence')}</button>
            </div>
         </div>
       )}
@@ -958,7 +1260,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedPet(null)}>
           <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-6 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="relative group/petimage">
-              <div className={cn("w-32 h-32 rounded-[3.5rem] bg-slate-50 mx-auto flex items-center justify-center shadow-inner overflow-hidden", PET_ICONS[selectedPet.pet_id_name || 'cat']?.color)}>
+              <div className={cn("w-32 h-32 rounded-[3.5rem] bg-white mx-auto flex items-center justify-center shadow-inner overflow-hidden", PET_ICONS[selectedPet.pet_id_name || 'cat']?.color)}>
                  <img src={PET_ICONS[selectedPet.pet_id_name || 'cat']?.image} className="w-24 h-24 object-contain" />
               </div>
               
@@ -1014,14 +1316,14 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => toggleHidePet(selectedPet.id)}
-                  className="h-12 bg-slate-50 hover:bg-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  className="h-12 bg-white border border-slate-100 hover:bg-slate-50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   {selectedPet.is_hidden ? <Eye size={12}/> : <EyeOff size={12}/>}
                   {selectedPet.is_hidden ? 'Show' : 'Hide'}
                 </button>
                 <button 
                   onClick={() => togglePinPet(selectedPet.id)}
-                  className={cn("h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2", selectedPet.is_pinned ? "bg-amber-100 text-amber-600" : "bg-slate-50 hover:bg-slate-100")}
+                  className={cn("h-12 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2", selectedPet.is_pinned ? "bg-amber-100 text-amber-600" : "bg-white border border-slate-100 hover:bg-slate-50")}
                 >
                   <Zap size={12} fill={selectedPet.is_pinned ? 'currentColor' : 'none'} />
                   {selectedPet.is_pinned ? 'Unpin' : 'Pin'}
@@ -1040,7 +1342,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                   onClick={() => {
                     const up = selectedPet;
                     const config = PET_ICONS[up.pet_id_name || 'cat'];
-                    const sellPrice = Math.floor(config.price * 0.8);
                     setShowSellConfirm(true);
                   }}
                   disabled={selling}
@@ -1059,7 +1360,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       {showSellConfirm && selectedPet && (
         <div className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowSellConfirm(false)}>
           <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full text-center space-y-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 bg-white border border-slate-100 text-red-500 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
               <ShoppingCart size={32} />
             </div>
             <div>
@@ -1068,21 +1369,21 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 Sell <span className="text-black font-bold">{selectedPet.pet_name}</span> for <span className="text-emerald-500 font-bold">{Math.floor(PET_ICONS[selectedPet.pet_id_name || 'cat'].price * 0.8)} Origins</span>?
               </p>
             </div>
-            <div className="space-y-2">
-              <button 
-                onClick={() => handleSellPet(selectedPet.id)}
-                disabled={selling}
-                className="w-full h-12 bg-red-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-red-600 disabled:opacity-50"
-              >
-                {selling ? 'Selling...' : 'Yes, Sell Companion'}
-              </button>
-              <button 
-                onClick={() => setShowSellConfirm(false)}
-                className="w-full h-12 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-            </div>
+              <div className="space-y-2">
+                <button 
+                  onClick={() => handleSellPet(selectedPet.id)}
+                  disabled={selling}
+                  className="w-full h-12 bg-red-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-red-600 disabled:opacity-50"
+                >
+                  {selling ? 'Selling...' : 'Yes, Sell Companion'}
+                </button>
+                <button 
+                  onClick={() => setShowSellConfirm(false)}
+                  className="w-full h-12 bg-white border border-slate-100 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
           </div>
         </div>
       )}
@@ -1105,7 +1406,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                   setGiftSearchQuery(e.target.value);
                   searchUsersForGift(e.target.value);
                 }}
-                className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold focus:outline-none focus:bg-white focus:border-purple-500 transition-all"
+                className="w-full h-12 pl-12 pr-4 bg-white border border-slate-100 rounded-2xl text-base font-bold focus:outline-none focus:bg-white focus:border-purple-500 transition-all"
               />
             </div>
             
@@ -1118,10 +1419,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                      key={p.id} 
                      disabled={gifting}
                      onClick={() => handleGiftPet(p.id)}
-                     className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-purple-50 hover:border-purple-200 transition-all group disabled:opacity-50"
+                     className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:bg-purple-50 hover:border-purple-200 transition-all group disabled:opacity-50 shadow-sm"
                    >
                      <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-inner">
-                       {p.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-200 bg-slate-50">{p.username[0]}</div>}
+                       {p.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-200 bg-white">{p.username[0]}</div>}
                      </div>
                      <div className="text-left flex-1">
                        <div className="text-sm font-bold text-black">{p.name || p.username}</div>
@@ -1147,7 +1448,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                       <h2 className="text-2xl font-bold tracking-tight capitalize">{followsTab}</h2>
                       <p className="text-slate-400 text-xs font-medium">People in this circle</p>
                    </div>
-                   <button onClick={() => setShowFollows(false)} className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 transition-all"><X size={24}/></button>
+                   <button onClick={() => setShowFollows(false)} className="p-3 bg-white border border-slate-100 rounded-full hover:bg-slate-50 transition-all shadow-sm"><X size={24}/></button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-[300px]">
@@ -1155,7 +1456,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                      <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
                    ) : followsList.length > 0 ? (
                      followsList.map((p) => (
-                       <Link key={p.id} to={`/profile/${p.username}`} onClick={() => setShowFollows(false)} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white transition-all group">
+                       <Link key={p.id} to={`/profile/${p.username}`} onClick={() => setShowFollows(false)} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:bg-slate-50 transition-all group shadow-sm">
                          <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-inner">
                            {p.avatar_url ? <img src={p.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-200">{p.username[0]}</div>}
                          </div>
@@ -1183,4 +1484,3 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     </div>
   );
 }
-  

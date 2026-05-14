@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Camera, ArrowRight, Heart, Menu, X, Users, Flame, Palette, Star, ShoppingBag, Image, Trophy, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function Landing() {
+  const { t } = useTranslation();
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -15,61 +17,61 @@ export default function Landing() {
   const features = [
     {
       icon: Camera,
-      title: "Publish photos",
-      description: "Share your moments with meaningful titles",
+      title: t('landing.features.publish'),
+      description: t('landing.features.publish_desc'),
       color: "text-blue-500"
     },
     {
       icon: Users,
-      title: "Follow people",
-      description: "Build your personal feed",
+      title: t('landing.features.follow'),
+      description: t('landing.features.follow_desc'),
       color: "text-blue-500"
     },
     {
       icon: Heart,
-      title: "Stay inspired",
-      description: "No algorithms, just pure photography",
+      title: t('landing.features.inspire'),
+      description: t('landing.features.inspire_desc'),
       color: "text-blue-500"
     },
     {
       icon: Flame,
-      title: "Tinder Mode",
-      description: "Swipe through photos like never before",
+      title: t('landing.features.swipe'),
+      description: t('landing.features.swipe_desc'),
       color: "text-orange-500",
       highlight: true
     },
     {
       icon: Palette,
-      title: "Decorations",
-      description: "Customize your profile with themes & patterns",
+      title: t('landing.features.decorations'),
+      description: t('landing.features.decorations_desc'),
       color: "text-purple-500",
       highlight: true
     },
     {
       icon: Star,
-      title: "Badges",
-      description: "Collect unique badges and show off",
+      title: t('landing.features.badges'),
+      description: t('landing.features.badges_desc'),
       color: "text-amber-400",
       highlight: true
     },
     {
       icon: ShoppingBag,
-      title: "Shop",
-      description: "Spend Origins on exclusive items",
+      title: t('landing.features.shop'),
+      description: t('landing.features.shop_desc'),
       color: "text-green-500",
       highlight: true
     },
     {
       icon: Image,
-      title: "Gallery",
-      description: "Showcase your best photos in style",
+      title: t('landing.features.gallery'),
+      description: t('landing.features.gallery_desc'),
       color: "text-blue-500",
       highlight: true
     },
     {
       icon: Trophy,
-      title: "Achievements",
-      description: "Unlock rewards for your activity",
+      title: t('landing.features.achievements'),
+      description: t('landing.features.achievements_desc'),
       color: "text-yellow-500",
       highlight: true
     }
@@ -92,7 +94,7 @@ export default function Landing() {
               to="/auth"
               className="px-6 py-2.5 bg-black text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg shadow-black/5"
             >
-              Get Started
+              {t('landing.get_started')}
             </Link>
           </div>
 
@@ -118,7 +120,7 @@ export default function Landing() {
                   className="px-6 py-3 bg-black text-white rounded-xl text-center font-bold"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Get Started
+                  {t('landing.get_started')}
                 </Link>
               </div>
             </motion.div>
@@ -158,7 +160,7 @@ export default function Landing() {
               transition={{ delay: 0.2 }}
               className="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto font-medium"
             >
-              Discovering new possibilities of photographing.
+              {t('landing.subtitle')}
             </motion.p>
             
             <motion.div 
@@ -171,7 +173,7 @@ export default function Landing() {
                 to="/auth"
                 className="inline-flex items-center justify-center gap-3 px-10 py-5 bg-black text-white rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-2xl shadow-black/10"
               >
-                Get Started
+                {t('landing.get_started')}
                 <ArrowRight size={20} />
               </Link>
             </motion.div>
@@ -182,8 +184,8 @@ export default function Landing() {
         <section className="py-24 px-6 bg-slate-50">
           <div className="max-w-6xl mx-auto space-y-16">
             <div className="text-center space-y-4">
-              <h2 className="text-4xl font-bold text-black tracking-tight">What you can do</h2>
-              <p className="text-slate-400 font-medium">Powerful features for every photographer</p>
+              <h2 className="text-4xl font-bold text-black tracking-tight">{t('landing.features_title')}</h2>
+              <p className="text-slate-400 font-medium">{t('landing.features_sub')}</p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,7 +203,7 @@ export default function Landing() {
                   </div>
                   <h3 className="text-xl font-bold text-black">{feature.title}</h3>
                   <p className="text-slate-500 font-medium leading-relaxed">{feature.description}</p>
-                  {feature.highlight && feature.title !== "Tinder Mode" && (
+                  {feature.highlight && feature.title !== t('landing.features.swipe') && (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 text-black text-[10px] font-bold uppercase tracking-widest">
                       <Sparkles size={10} />
                       <span>New Era</span>
@@ -226,11 +228,10 @@ export default function Landing() {
             
             <div className="space-y-4">
               <h2 className="text-5xl font-bold text-black tracking-tighter">
-                Tinder Mode 🔥
+                {t('landing.tinder_title')}
               </h2>
               <p className="text-xl text-slate-500 font-medium max-w-2xl mx-auto">
-                Swipe through photos like never before. Like or pass — it's that simple. 
-                Unlock achievements with every swipe!
+                {t('landing.tinder_sub')}
               </p>
             </div>
 
@@ -256,16 +257,16 @@ export default function Landing() {
           <div className="max-w-4xl mx-auto rounded-[4rem] bg-black p-12 md:p-20 text-center space-y-8 shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
             <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-              Ready to start?
+              {t('landing.ready')}
             </h2>
             <p className="text-white/40 text-lg font-medium max-w-md mx-auto">
-              Join the community of photographers and start your resonance today.
+              {t('landing.ready_sub')}
             </p>
             <Link
               to="/auth"
               className="inline-flex items-center gap-3 px-10 py-5 bg-white text-black rounded-2xl font-bold text-lg hover:scale-105 transition-all"
             >
-              Create Account
+              {t('landing.create_account')}
               <ArrowRight size={20} />
             </Link>
           </div>
@@ -281,8 +282,13 @@ export default function Landing() {
               <span className="text-sm font-bold text-black tracking-tight">StartOrigin</span>
             </div>
             
+            <div className="flex items-center gap-6">
+              <a href="https://startorigin.gitbook.io/startorigin" target="_blank" rel="noreferrer" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-black transition-colors">Documentation</a>
+              <a href="https://startorigin.gitbook.io/startorigin/rules" target="_blank" rel="noreferrer" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-black transition-colors">Rules</a>
+            </div>
+            
             <p className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-              © {currentYear} StartOrigin — Crafted with 
+              © {currentYear} StartOrigin — {t('landing.footer', { heart: '' })}
               <Heart size={12} className="text-rose-500 fill-rose-500" /> 
               for creators
             </p>

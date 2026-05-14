@@ -1,4 +1,4 @@
-import { Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Trophy, Zap, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { BadgeCheck, Snowflake, Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Trophy, Zap, ShoppingBag, ShoppingCart } from 'lucide-react';
 import React from 'react';
 
 export const BADGE_PRICES: Record<string, number> = {
@@ -64,33 +64,33 @@ export const SHOP_ACHIEVEMENTS = [
   { id: 'daily_shopper', title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-500", description: "Bought 3 days in a row" },
 ];
 
-export const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  verified: { icon: Shield, color: 'text-blue-500', label: 'Verified' },
-  snowflake: { icon: Sparkles, color: 'text-cyan-400', label: 'Snowflake' },
-  computer: { icon: Hash, color: 'text-slate-500', label: 'Compute' },
-  star: { icon: Star, color: 'text-amber-400', label: 'Star' },
-  crown: { icon: Crown, color: 'text-yellow-500', label: 'Crown' },
-  diamond: { icon: Diamond, color: 'text-sky-400', label: 'Diamond' },
-  heart: { icon: Heart, color: 'text-pink-500', label: 'Heart' },
-  award: { icon: Award, color: 'text-emerald-500', label: 'Award' },
-  rocket: { icon: Rocket, color: 'text-red-500', label: 'Rocket' },
-  leaf: { icon: Leaf, color: 'text-green-600', label: 'Leaf' },
-  moon: { icon: Moon, color: 'text-indigo-400', label: 'Moon' },
-  sun: { icon: Sun, color: 'text-orange-500', label: 'Sun' },
-  music: { icon: Music, color: 'text-pink-600', label: 'Music' },
-  book: { icon: Book, color: 'text-amber-700', label: 'Book' },
-  coffee: { icon: Coffee, color: 'text-amber-700', label: 'Coffee' },
-  gamepad: { icon: Gamepad, color: 'text-purple-600', label: 'Gamepad' },
-  gift: { icon: Gift, color: 'text-red-500', label: 'Gift' },
-  smile: { icon: Smile, color: 'text-yellow-500', label: 'Smile' },
-  sparkles: { icon: Sparkles, color: 'text-purple-400', label: 'Sparkles' },
+export const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; key: string }> = {
+  verified: { icon: BadgeCheck, color: 'text-blue-500', key: 'verified' },
+  snowflake: { icon: Snowflake, color: 'text-cyan-400', key: 'snowflake' },
+  computer: { icon: Hash, color: 'text-slate-500', key: 'computer' },
+  star: { icon: Star, color: 'text-amber-400', key: 'star' },
+  crown: { icon: Crown, color: 'text-yellow-500', key: 'crown' },
+  diamond: { icon: Diamond, color: 'text-sky-400', key: 'diamond' },
+  heart: { icon: Heart, color: 'text-pink-500', key: 'heart' },
+  award: { icon: Award, color: 'text-emerald-500', key: 'award' },
+  rocket: { icon: Rocket, color: 'text-red-500', key: 'rocket' },
+  leaf: { icon: Leaf, color: 'text-green-600', key: 'leaf' },
+  moon: { icon: Moon, color: 'text-indigo-400', key: 'moon' },
+  sun: { icon: Sun, color: 'text-orange-500', key: 'sun' },
+  music: { icon: Music, color: 'text-pink-600', key: 'music' },
+  book: { icon: Book, color: 'text-amber-700', key: 'book' },
+  coffee: { icon: Coffee, color: 'text-amber-700', key: 'coffee' },
+  gamepad: { icon: Gamepad, color: 'text-purple-600', key: 'gamepad' },
+  gift: { icon: Gift, color: 'text-red-500', key: 'gift' },
+  smile: { icon: Smile, color: 'text-yellow-500', key: 'smile' },
+  sparkles: { icon: Sparkles, color: 'text-purple-400', key: 'sparkles' },
 };
 
 export const PET_CONFIG = [
-  { id: 'cat', name: 'Cat', price: 100, image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100' },
-  { id: 'dog', name: 'Dog', price: 150, image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100' },
-  { id: 'bat', name: 'Bat', price: 300, image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100' },
-  { id: 'owl', name: 'Owl', price: 500, image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100' },
+  { id: 'cat', key: 'cat', price: 100, image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100' },
+  { id: 'dog', key: 'dog', price: 150, image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100' },
+  { id: 'bat', key: 'bat', price: 300, image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100' },
+  { id: 'owl', key: 'owl', price: 500, image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100' },
 ];
 
 export const GRADIENT_PRICES: Record<string, number> = {
@@ -101,12 +101,12 @@ export const GRADIENT_PRICES: Record<string, number> = {
   neon: 5000
 };
 
-export const GRADIENT_CONFIG: Record<string, { label: string; className: string }> = {
-  soft_blue: { label: 'Soft Blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
-  sunset: { label: 'Sunset Glow', className: 'bg-gradient-to-r from-orange-400 to-rose-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
-  emerald: { label: 'Emerald Isle', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
-  royal: { label: 'Royal Majesty', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' },
-  neon: { label: 'Neon Pulse', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block pr-2 py-1' }
+export const GRADIENT_CONFIG: Record<string, { key: string; className: string }> = {
+  soft_blue: { key: 'soft_blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
+  sunset: { key: 'sunset', className: 'bg-gradient-to-r from-orange-400 to-rose-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
+  emerald: { key: 'emerald', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
+  royal: { key: 'royal', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
+  neon: { key: 'neon', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' }
 };
 
 export const FONT_PRICES: Record<string, number> = {
@@ -123,16 +123,16 @@ export const FONT_PRICES: Record<string, number> = {
   sf_italic: 5000
 };
 
-export const FONT_CONFIG: Record<string, { label: string; className: string }> = {
-  modern: { label: 'Modern Sans', className: 'font-sans' },
-  serif: { label: 'Display Serif', className: 'font-serif-display' },
-  retro: { label: 'Retro Mono', className: 'font-retro-mono' },
-  futuristic: { label: 'Futuristic', className: 'font-futuristic' },
-  elegant: { label: 'Elegant', className: 'font-elegant' },
-  handwritten: { label: 'Handwritten', className: 'font-handwritten' },
-  comic: { label: 'Comic Hero', className: 'font-comic tracking-wider' },
-  cute: { label: 'Sweet Candy', className: 'font-cute' },
-  scifi: { label: 'Neural Link', className: 'font-scifi tracking-tight' },
-  marker: { label: 'Wild Spirit', className: 'font-marker' },
-  sf_italic: { label: 'SF Bold Italic', className: 'font-[var(--font-sf)] italic uppercase font-bold tracking-tight' }
+export const FONT_CONFIG: Record<string, { key: string; className: string }> = {
+  modern: { key: 'modern', className: 'font-sans' },
+  serif: { key: 'serif', className: 'font-serif-display' },
+  retro: { key: 'retro', className: 'font-retro-mono' },
+  futuristic: { key: 'futuristic', className: 'font-futuristic' },
+  elegant: { key: 'elegant', className: 'font-elegant' },
+  handwritten: { key: 'handwritten', className: 'font-handwritten' },
+  comic: { key: 'comic', className: 'font-comic tracking-wider' },
+  cute: { key: 'cute', className: 'font-cute' },
+  scifi: { key: 'scifi', className: 'font-scifi tracking-tight' },
+  marker: { key: 'marker', className: 'font-marker' },
+  sf_italic: { key: 'sf_italic', className: 'font-[var(--font-sf)] italic uppercase font-bold tracking-tight' }
 };

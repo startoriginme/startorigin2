@@ -14,6 +14,7 @@ import { cn, optimizeImage } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 import PhotoViewer from '../components/PhotoViewer';
+import LinkifiedText from '../components/LinkifiedText';
 
 export default function Post({ user }: { user: any }) {
   const { t } = useTranslation();
@@ -160,7 +161,9 @@ export default function Post({ user }: { user: any }) {
           >
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold text-black truncate">{photo.name}</h1>
+          <h1 className="text-xl font-bold text-black truncate">
+            <LinkifiedText text={photo.name} />
+          </h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 pb-8">
@@ -232,7 +235,9 @@ export default function Post({ user }: { user: any }) {
             </div>
 
             <div className="space-y-4">
-               <h3 className="text-2xl font-bold text-black">{photo.name}</h3>
+               <h3 className="text-2xl font-bold text-black">
+                 <LinkifiedText text={photo.name} />
+               </h3>
                <p className="text-slate-400 text-sm leading-relaxed">
                  {t('post.captured_at')} <span className="text-black font-medium">{new Date(photo.created_at).toLocaleDateString()}</span>. 
                  {t('post.found')} <span className="text-black font-medium">@{photo.owner?.username}</span>{t('post.journey')}.
@@ -293,16 +298,18 @@ export default function Post({ user }: { user: any }) {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
               {similarPhotos.map((p) => (
-                <Link 
+                <div 
                   key={p.id} 
-                  to={`/posts/${p.id}`}
-                  className="group space-y-4"
+                  onClick={() => navigate(`/posts/${p.id}`)}
+                  className="group space-y-4 cursor-pointer"
                 >
                   <div className="aspect-[4/3] rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm transition-all group-hover:scale-[1.02] group-hover:shadow-xl">
                     <img src={optimizeImage(p.url, 400)} alt="" className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <div className="px-2">
-                    <div className="text-[10px] font-bold text-black uppercase tracking-widest truncate">{p.name}</div>
+                    <div className="text-[10px] font-bold text-black uppercase tracking-widest truncate">
+                      <LinkifiedText text={p.name} />
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="w-4 h-4 rounded-full overflow-hidden bg-slate-100">
                         {p.owner?.avatar_url && <img src={p.owner.avatar_url} className="w-full h-full object-cover" />}
@@ -310,7 +317,7 @@ export default function Post({ user }: { user: any }) {
                       <span className="text-[10px] font-medium text-slate-400">@{p.owner?.username}</span>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>

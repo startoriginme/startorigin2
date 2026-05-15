@@ -136,3 +136,18 @@ export const FONT_CONFIG: Record<string, { key: string; className: string }> = {
   marker: { key: 'marker', className: 'font-marker' },
   sf_italic: { key: 'sf_italic', className: 'font-[var(--font-sf)] italic uppercase font-bold tracking-tight' }
 };
+
+export const ALIAS_PRICES: Record<number, number> = {
+  1: 10000,
+  2: 8000,
+  3: 6000,
+  4: 4000,
+  5: 2000,
+  6: 900,
+  7: 700
+};
+
+export function calculateAliasPrice(length: number): number {
+  if (length === 0) return 0;
+  return ALIAS_PRICES[length] || 500;
+}

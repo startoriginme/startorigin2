@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Share2, ZoomIn, Bookmark, Check, Loader2 } from 'lucide-react';
 import { Photo } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import LinkifiedText from './LinkifiedText';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -12,6 +13,7 @@ interface PhotoViewerProps {
 }
 
 export default function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
+  const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -95,9 +97,14 @@ export default function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
         </div>
 
         <div className="text-center space-y-1 mb-10">
-           <Link to={`/posts/${photo.id}`} className="block">
-             <h2 className="text-xl font-bold text-white tracking-tight hover:underline underline-offset-4">{photo.name || 'Untitled Moment'}</h2>
-           </Link>
+           <div 
+             onClick={() => navigate(`/posts/${photo.id}`)}
+             className="block cursor-pointer"
+           >
+             <h2 className="text-xl font-bold text-white tracking-tight hover:underline underline-offset-4">
+               <LinkifiedText text={photo.name || 'Untitled Moment'} />
+             </h2>
+           </div>
            {photo.owner && (
              <p className="text-white/20 font-bold text-[10px] uppercase tracking-[0.2em]">
                @{photo.owner.username}

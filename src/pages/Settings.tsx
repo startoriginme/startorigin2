@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { Profile, BadgeType } from '../types';
@@ -8,7 +8,8 @@ import {
   EyeOff, Search, Flame, Star, Coins, Crown, Diamond, Heart, 
   Award, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, Music, 
   Book, Coffee, Gamepad, Gift, Smile, X, Medal, Target, 
-  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown
+  Compass, Shield, Hash, MapPin, GripVertical, ChevronUp, ChevronDown,
+  AtSign, Tags, DollarSign, Plus, Trash2, Edit2
 } from 'lucide-react';
 import {
   DndContext,
@@ -27,16 +28,15 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 // BASE CONSTANTS
 import { 
   BADGE_PRICES, THEME_PRICES, PATTERN_PRICES, ACHIEVEMENT_PRICES, 
   SHOP_ACHIEVEMENTS, BADGE_CONFIG, PET_CONFIG, GRADIENT_PRICES, 
-  GRADIENT_CONFIG, FONT_PRICES, FONT_CONFIG 
+  GRADIENT_CONFIG, FONT_PRICES, FONT_CONFIG, calculateAliasPrice 
 } from '../constants/shop';
-
 
 import { useNotification } from '../context/NotificationContext';
 
@@ -47,10 +47,14 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [loading, setLoading] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showMiniGames, setShowMiniGames] = useState(false);
+  const [showBadgesExpanded, setShowBadgesExpanded] = useState(false);
   const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
-  
-  // Secret quest state
+
+  // Mini Games State
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [lastSpinResult, setLastSpinResult] = useState<number | null>(null);
   const [showSecretInput, setShowSecretInput] = useState(false);
   const [secretCode, setSecretCode] = useState('');
 
@@ -99,18 +103,26 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
   async function handleUpdateProfile() {
     setLoading(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update(editProfile)
-      .eq('id', user.id);
+    const updatedUsername = editProfile.username.toLowerCase().trim();
     
-    if (error) {
-      showAlert({ message: error.message, type: 'error' });
-    } else {
-      showAlert({ message: 'Profile updated!', type: 'success' });
-      onUpdate(user.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ...editProfile, username: updatedUsername })
+        .eq('id', user.id);
+      
+      if (error) {
+        showAlert({ message: error.message, type: 'error' });
+      } else {
+        setEditProfile(prev => ({ ...prev, username: updatedUsername }));
+        showAlert({ message: 'Profile updated!', type: 'success' });
+        onUpdate(user.id);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleBadgeUpdate(newOrder: string[], newHidden: string[]) {
@@ -151,21 +163,21 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   }
 
   async function handleSecretQuest() {
-    if (secretCode.toLowerCase() === 'origin2026') {
-      const purchased = profile?.purchased_achievements || [];
-      if (!purchased.includes('secret_agent_1')) {
+    if (secretCode === 'StartOrigin') {
+      if (!profile?.used_secret_quest) {
         const { error } = await supabase
           .from('profiles')
           .update({ 
-            purchased_achievements: [...purchased, 'secret_agent_1'],
-            received_origins: (profile?.received_origins || 0) + 500
+            used_secret_quest: true,
+            received_origins: (profile?.received_origins || 0) + 100
           })
           .eq('id', user.id);
         
         if (!error) {
-          showAlert({ message: 'Secret discovered! + 500 ORG', type: 'success' });
+          showAlert({ message: 'Secret discovered! + 100 ORG', type: 'success' });
           onUpdate(user.id);
           setShowSecretInput(false);
+          setSecretCode('');
         }
       } else {
         showAlert({ message: 'Secret already claimed.', type: 'warning' });
@@ -173,6 +185,61 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     } else {
       showAlert({ message: 'Incorrect code.', type: 'error' });
     }
+  }
+
+  async function handleWheelSpin() {
+    if (isSpinning) return;
+
+    const lastSpinDate = profile?.last_free_spin ? new Date(profile.last_free_spin).toDateString() : null;
+    const today = new Date().toDateString();
+    const isFree = lastSpinDate !== today;
+
+    if (!isFree && currentBalance < 20) {
+      showAlert({ message: 'Insufficient Origins for spin (20 ORG).', type: 'warning' });
+      return;
+    }
+
+    setIsSpinning(true);
+    setLastSpinResult(null);
+
+    // Simulate spin
+    setTimeout(async () => {
+      const prizes = [5, 10, 25, 50, 100];
+      const weights = [40, 30, 20, 8, 2]; // Probabilities
+      let random = Math.random() * 100;
+      let prize = 5;
+      let sum = 0;
+      for (let i = 0; i < prizes.length; i++) {
+        sum += weights[i];
+        if (random <= sum) {
+          prize = prizes[i];
+          break;
+        }
+      }
+
+      setLastSpinResult(prize);
+      
+      const updates: any = {
+        received_origins: (profile?.received_origins || 0) + prize
+      };
+
+      if (isFree) {
+        updates.last_free_spin = new Date().toISOString();
+      } else {
+        updates.spent_origins = (profile?.spent_origins || 0) + 20;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (!error) {
+        onUpdate(user.id);
+        showAlert({ message: `Won ${prize} Origins!`, type: 'success' });
+      }
+      setIsSpinning(false);
+    }, 2000);
   }
 
   async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient' | 'font', item: string, price: number) {
@@ -184,7 +251,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(true);
     const newSpent = (profile?.spent_origins || 0) + price;
     
-    // Formula: photos + swipes * 0.5 + received - spent
     const newBalance = (profile?.photo_count || 0) + 
                       ((profile?.swipe_count || 0) * 0.5) + 
                       (profile?.received_origins || 0) - 
@@ -219,64 +285,98 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     setLoading(false);
   }
 
-async function handlePurchasePet(pet: any) {
-  if (currentBalance < pet.price) {
-    showAlert({ message: 'Insufficient Origins.', type: 'warning' });
-    return;
-  }
-
-  setLoading(true);
-
-  const { error: petError } = await supabase.from('user_pets').insert({
-    user_id: user.id,
-    pet_id_name: pet.id,
-    pet_name: pet.id.charAt(0).toUpperCase() + pet.id.slice(1), // 'cat' → 'Cat', 'owl' → 'Owl'
-    is_active: true,
-    is_hidden: false
-  });
-
-  if (!petError) {
-    const newSpent = (profile?.spent_origins || 0) + pet.price;
-    const { error: profileError } = await supabase.from('profiles').update({
-      spent_origins: newSpent
-    }).eq('id', user.id);
-    
-    if (profileError) {
-      console.error("Profile update error:", profileError);
+  async function handlePurchasePet(pet: any) {
+    if (currentBalance < pet.price) {
+      showAlert({ message: 'Insufficient Origins.', type: 'warning' });
+      return;
     }
 
-    showAlert({ message: `${pet.id.charAt(0).toUpperCase() + pet.id.slice(1)} joined your journey!`, type: 'success' });
-    onUpdate(user.id);
-  } else {
-    console.error("Adoption error:", petError);
-    showAlert({ message: 'Failed to adopt.', type: 'error' });
-  }
-  setLoading(false);
-}
-
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files?.[0]) return;
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const filePath = `avatars/${user.id}.${fileExt}`;
-
     setLoading(true);
+
+    const { error: petError } = await supabase.from('user_pets').insert({
+      user_id: user.id,
+      pet_id_name: pet.id,
+      pet_name: pet.id.charAt(0).toUpperCase() + pet.id.slice(1),
+      is_active: true,
+      is_hidden: false
+    });
+
+    if (!petError) {
+      const newSpent = (profile?.spent_origins || 0) + pet.price;
+      const { error: profileError } = await supabase.from('profiles').update({
+        spent_origins: newSpent
+      }).eq('id', user.id);
+      
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+      }
+
+      showAlert({ message: `${pet.id.charAt(0).toUpperCase() + pet.id.slice(1)} joined your journey!`, type: 'success' });
+      onUpdate(user.id);
+    } else {
+      console.error("Adoption error:", petError);
+      showAlert({ message: 'Failed to adopt.', type: 'error' });
+    }
+    setLoading(false);
+  }
+
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ АВАТАРКИ
+ async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  if (!e.target.files?.[0]) return;
+  const file = e.target.files[0];
+  const fileExt = file.name.split('.').pop();
+  const filePath = `${user.id}.${fileExt}`;
+
+  setLoading(true);
+  
+  try {
+    // Загружаем в бакет 'avatars'
     const { error: uploadError } = await supabase.storage
-      .from('photos')
+      .from('avatars')
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
+      console.error('Upload error:', uploadError);
       showAlert({ message: uploadError.message, type: 'error' });
       setLoading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(filePath);
-    setEditProfile({ ...editProfile, avatar_url: publicUrl });
+    // Получаем публичный URL с добавлением timestamp для обхода кэша
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+    
+    // Добавляем timestamp к URL чтобы браузер не кэшировал старую аватарку
+    const avatarUrlWithCache = `${publicUrl}?t=${Date.now()}`;
+    
+    // Обновляем профиль
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrlWithCache })
+      .eq('id', user.id);
+    
+    if (updateError) {
+      console.error('Update error:', updateError);
+      showAlert({ message: updateError.message, type: 'error' });
+      setLoading(false);
+      return;
+    }
+    
+    // Обновляем локальное состояние
+    setEditProfile(prev => ({ ...prev, avatar_url: avatarUrlWithCache }));
+    
+    // Обновляем основной профиль через onUpdate
+    onUpdate(user.id);
+    
     showAlert({ message: 'Avatar uploaded!', type: 'success' });
+  } catch (err: any) {
+    console.error('Avatar error:', err);
+    showAlert({ message: err.message || 'Failed to upload avatar', type: 'error' });
+  } finally {
     setLoading(false);
   }
-
+}
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
@@ -311,26 +411,26 @@ async function handlePurchasePet(pet: any) {
       </header>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-         <button onClick={() => setShowShop(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={24}/></div>
-            <div className="text-xs font-bold uppercase tracking-widest">{t('settings.shop')}</div>
+      <div className="grid grid-cols-2 gap-3">
+         <button onClick={() => setShowShop(true)} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group hover:bg-white transition-all shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={20}/></div>
+            <div className="text-[10px] font-bold uppercase tracking-widest">{t('settings.shop')}</div>
          </button>
-         <button onClick={() => setShowLeaderboard(true)} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex flex-col items-center gap-3 group hover:bg-white transition-all shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:scale-110 transition-all shadow-inner"><Trophy size={24}/></div>
-            <div className="text-xs font-bold uppercase tracking-widest">{t('settings.leaderboard')}</div>
+         <button onClick={() => setShowLeaderboard(true)} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group hover:bg-white transition-all shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:scale-110 transition-all shadow-inner"><Trophy size={20}/></div>
+            <div className="text-[10px] font-bold uppercase tracking-widest">{t('settings.leaderboard')}</div>
          </button>
       </div>
 
       {/* Edit Profile Section */}
-      <section className="space-y-6">
+      <section className="space-y-4">
         <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">{t('settings.profile_section')}</h2>
-        <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-8 shadow-sm">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
-              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-200" />}
+        <div className="bg-slate-50 border border-slate-100 p-5 rounded-[2rem] space-y-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center relative group shadow-inner border border-slate-100">
+              {editProfile.avatar_url ? <img src={editProfile.avatar_url} className="w-full h-full object-cover" /> : <User size={28} className="text-slate-200" />}
               <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                 <Camera size={24} className="text-white" />
+                 <Camera size={20} className="text-white" />
                  <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
               </label>
             </div>
@@ -382,38 +482,61 @@ async function handlePurchasePet(pet: any) {
 
       {/* Badge Management */}
       <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">My Badges</h2>
-        <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-6 shadow-sm">
-           <DndContext 
-             sensors={sensors}
-             collisionDetection={closestCenter}
-             onDragEnd={handleDragEnd}
-           >
-             <SortableContext 
-               items={badgesOrder.filter(id => allAvailableBadges.includes(id))}
-               strategy={verticalListSortingStrategy}
-             >
-               <div className="space-y-2">
-                 {badgesOrder.filter(id => allAvailableBadges.includes(id)).map((id) => (
-                   <SortableBadgeItem 
-                     key={id} 
-                     id={id} 
-                     badge={BADGE_CONFIG[id]} 
-                     isHidden={hiddenBadges.includes(id)}
-                     onToggleVisibility={() => toggleBadgeVisibility(id)}
-                      onMoveUp={() => handleMoveBadge(id, 'up')}
-                      onMoveDown={() => handleMoveBadge(id, 'down')}
-                   />
-                 ))}
-                 {allAvailableBadges.length === 0 && (
-                   <div className="py-10 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">
-                     No badges earned yet.
-                   </div>
-                 )}
-               </div>
-             </SortableContext>
-           </DndContext>
-        </div>
+        <button 
+          onClick={() => setShowBadgesExpanded(!showBadgesExpanded)}
+          className="w-full h-16 flex items-center justify-between px-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white transition-all shadow-sm group"
+        >
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 group-hover:text-purple-500 transition-colors shadow-inner">
+               <Medal size={20} />
+             </div>
+             <span className="text-xs font-bold uppercase tracking-widest text-black">My Badges</span>
+          </div>
+          {showBadgesExpanded ? <ChevronUp size={20} className="text-slate-300" /> : <ChevronDown size={20} className="text-slate-300" />}
+        </button>
+
+        <AnimatePresence>
+          {showBadgesExpanded && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-6 shadow-sm mt-4">
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext 
+                    items={badgesOrder.filter(id => allAvailableBadges.includes(id))}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {badgesOrder.filter(id => allAvailableBadges.includes(id)).map((id) => (
+                        <SortableBadgeItem 
+                          key={id} 
+                          id={id} 
+                          badge={BADGE_CONFIG[id]} 
+                          isHidden={hiddenBadges.includes(id)}
+                          onToggleVisibility={() => toggleBadgeVisibility(id)}
+                          onMoveUp={() => handleMoveBadge(id, 'up')}
+                          onMoveDown={() => handleMoveBadge(id, 'down')}
+                        />
+                      ))}
+                      {allAvailableBadges.length === 0 && (
+                        <div className="py-10 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">
+                          No badges earned yet.
+                        </div>
+                      )}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Decoration Settings */}
@@ -477,48 +600,92 @@ async function handlePurchasePet(pet: any) {
         </div>
       </section>
 
-      {/* Language Selection */}
+      {/* Mini Games Section */}
       <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">{t('settings.languages')}</h2>
-        <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] shadow-sm flex gap-4">
-           <button 
-             onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('language', 'en'); }}
-             className={cn("flex-1 h-12 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all", i18n.language === 'en' ? "bg-black text-white" : "bg-white text-slate-400")}
-           >
-             English
-           </button>
-           <button 
-             onClick={() => { i18n.changeLanguage('ru'); localStorage.setItem('language', 'ru'); }}
-             className={cn("flex-1 h-12 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all", i18n.language === 'ru' ? "bg-black text-white" : "bg-white text-slate-400")}
-           >
-             Русский
-           </button>
-        </div>
-      </section>
-
-      {/* Secret Section */}
-      <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Hidden Resonance</h2>
-        <div className="p-1 px-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between">
-           <div className="flex items-center gap-3">
-              <Compass className="text-slate-300" size={16} />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secret Quest</span>
-           </div>
-           <button onClick={() => setShowSecretInput(!showSecretInput)} className="text-[10px] font-bold text-purple-500 uppercase tracking-widest px-4 py-3">Initiate</button>
-        </div>
-        
-        {showSecretInput && (
-          <div className="bg-purple-500/[0.03] border border-purple-500/10 p-6 rounded-[2rem] space-y-4 shadow-sm">
-             <input 
-               value={secretCode}
-               onChange={(e) => setSecretCode(e.target.value)}
-               className="w-full h-12 px-6 bg-white border border-purple-500/10 rounded-xl focus:ring-0 text-base font-bold text-black"
-               placeholder="Enter secret code..."
-               onKeyDown={(e) => e.key === 'Enter' && handleSecretQuest()}
-             />
-             <button onClick={handleSecretQuest} className="w-full h-10 bg-purple-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-[0.2em]">Verify Essence</button>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Mini Games</h2>
+        <button 
+          onClick={() => setShowMiniGames(!showMiniGames)}
+          className="w-full h-16 flex items-center justify-between px-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white transition-all shadow-sm group"
+        >
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 group-hover:text-amber-500 transition-colors shadow-inner">
+               <Gamepad size={20} />
+             </div>
+             <span className="text-xs font-bold uppercase tracking-widest text-black">Play & Earn</span>
           </div>
-        )}
+          {showMiniGames ? <ChevronUp size={20} className="text-slate-300" /> : <ChevronDown size={20} className="text-slate-300" />}
+        </button>
+
+        <AnimatePresence>
+          {showMiniGames && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="space-y-4 overflow-hidden mt-4"
+            >
+              {/* Wheel of Origins */}
+              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
+                <div className="flex items-center gap-3 mb-2">
+                   <Sparkles className="text-amber-500" size={20} />
+                   <span className="text-sm font-bold text-black uppercase tracking-widest">Wheel of Origins</span>
+                </div>
+                <div className="relative aspect-square max-w-[200px] mx-auto bg-white rounded-full border-4 border-slate-100 shadow-xl flex items-center justify-center overflow-hidden">
+                   <motion.div 
+                     animate={{ rotate: isSpinning ? 3600 : 0 }}
+                     transition={{ duration: 2, ease: "easeInOut" }}
+                     className="absolute inset-0 flex items-center justify-center"
+                   >
+                     {[0, 72, 144, 216, 288].map((deg, i) => (
+                       <div key={deg} style={{ transform: `rotate(${deg}deg) translateY(-60px)` }} className="absolute text-[10px] font-bold text-slate-300">
+                         {[5, 10, 25, 50, 100][i]}
+                       </div>
+                     ))}
+                   </motion.div>
+                   <div className="z-10 text-center">
+                     {lastSpinResult ? (
+                       <div className="text-3xl font-black text-amber-500 animate-bounce">+{lastSpinResult}</div>
+                     ) : (
+                       <Coins size={40} className="text-slate-100" />
+                     )}
+                   </div>
+                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-6 bg-black rounded-b-full z-20 shadow-lg" />
+                </div>
+                <button 
+                  onClick={handleWheelSpin}
+                  disabled={isSpinning}
+                  className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {isSpinning ? 'Spinning...' : (new Date(profile?.last_free_spin || 0).toDateString() === new Date().toDateString() ? 'Spin (20 ORG)' : 'Free Daily Spin')}
+                </button>
+              </div>
+
+              {/* Secret Quest */}
+              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <Compass className="text-slate-300" size={20} />
+                      <span className="text-sm font-bold text-black uppercase tracking-widest">Secret Quest</span>
+                   </div>
+                   <button onClick={() => setShowSecretInput(!showSecretInput)} className="text-[10px] font-bold text-purple-500 uppercase tracking-widest px-4 py-2 bg-purple-50 rounded-xl">Initiate</button>
+                </div>
+                {showSecretInput && (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                     <input 
+                       value={secretCode}
+                       onChange={(e) => setSecretCode(e.target.value)}
+                       className="w-full h-12 px-6 bg-white border border-slate-100 rounded-xl focus:ring-0 text-base font-bold text-black"
+                       placeholder="Enter secret code..."
+                       onKeyDown={(e) => e.key === 'Enter' && handleSecretQuest()}
+                     />
+                     <button onClick={handleSecretQuest} className="w-full h-10 bg-purple-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Verify Essence</button>
+                  </div>
+                )}
+              </div>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Info Section */}
@@ -585,7 +752,7 @@ async function handlePurchasePet(pet: any) {
                     <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.tasks')}</button>
                  </div>
 
-                 {activeShopTab === 'pets' && (
+                  {activeShopTab === 'pets' && (
                     <div className="grid grid-cols-2 gap-4">
                        {PET_CONFIG.map((pet) => (
                           <div key={pet.id} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] flex flex-col items-center gap-6 group">
@@ -615,7 +782,6 @@ async function handlePurchasePet(pet: any) {
                          const isPurchased = profile?.purchased_badges?.includes(id);
                          const price = BADGE_PRICES[id] || 0;
                          
-                         // Special case: verified badge is no longer in the shop but owners keep it
                          if (id === 'verified' && !isPurchased) return null;
                          
                          return (

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
+import LinkifiedText from '../components/LinkifiedText';
 import { cn, formatCount, optimizeImage } from '../lib/utils';
 import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 import { useTranslation } from 'react-i18next';
@@ -177,21 +178,25 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [loadingWall, setLoadingWall] = useState(false);
   const [newWallContent, setNewWallContent] = useState('');
   const [postingWall, setPostingWall] = useState(false);
-  const [showGiftPanel, setShowGiftPanel] = useState(false);
-  const [gifting, setGifting] = useState(false);
-  const [giftSearchQuery, setGiftSearchQuery] = useState('');
-  const [giftSearchResults, setGiftSearchResults] = useState<any[]>([]);
-  const [searchingUsers, setSearchingUsers] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [selling, setSelling] = useState(false);
-  const [showSellConfirm, setShowSellConfirm] = useState(false);
-
-  // Wall posts new states
+  
+  // Post states
   const [postLikes, setPostLikes] = useState<Record<string, boolean>>({});
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editPostContent, setEditPostContent] = useState('');
   const [deletingPost, setDeletingPost] = useState<string | null>(null);
+
+  // Shop/Gifting states
+  const [showGiftPanel, setShowGiftPanel] = useState(false);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [giftSearchResults, setGiftSearchResults] = useState<any[]>([]);
+  const [giftSearchQuery, setGiftSearchQuery] = useState('');
+  const [gifting, setGifting] = useState(false);
+  const [selling, setSelling] = useState(false);
+  const [showSellConfirm, setShowSellConfirm] = useState(false);
+  
+  // Edit Pet state
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
 
   const isOwn = !username || (user && profile?.id === user.id);
 
@@ -355,7 +360,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     
     const { error } = await supabase
       .from('posts')
-      .update({ content: newContent.trim(), updated_at: new Date().toISOString() })
+      .update({ 
+        content: newContent.trim(), 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', postId)
       .eq('user_id', user.id);
     
@@ -403,7 +411,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           user_id: profile.id,
           content: newWallContent.trim()
         })
-        .select()
+        .select('*')
         .single();
 
       if (postError) throw postError;
@@ -887,28 +895,33 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 group min-h-[3rem]">
-              <h1 className={cn(
-                "text-2xl font-bold tracking-tight transform-gpu leading-none flex items-center pr-2 py-1",
-                profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
-                profile.active_font && FONT_CONFIG[profile.active_font]?.className
-              )}>
-                {profile.name || profile.username}
-              </h1>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                {visibleBadges.map(bid => {
-                   const cfg = BADGE_CONFIG[bid];
-                   return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5 flex-shrink-0", cfg.color)} title={t(`landing.items.badges.${cfg.key}`)} /> : null;
-                })}
+            <div className="flex flex-col items-center justify-center -space-y-1">
+              <div className="flex items-center justify-center gap-2 group min-h-[3rem]">
+                <h1 className={cn(
+                  "text-2xl font-bold tracking-tight transform-gpu leading-none flex items-center pr-2 py-1",
+                  profile.active_gradient && GRADIENT_CONFIG[profile.active_gradient]?.className,
+                  profile.active_font && FONT_CONFIG[profile.active_font]?.className
+                )}>
+                  {profile.name || profile.username}
+                </h1>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {visibleBadges.map(bid => {
+                    const cfg = BADGE_CONFIG[bid];
+                    return cfg ? <cfg.icon key={bid} className={cn("w-5 h-5 flex-shrink-0", cfg.color)} title={t(`landing.items.badges.${cfg.key}`)} /> : null;
+                  })}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-sm text-sm font-bold opacity-30 lowercase tracking-[0.2em] font-sans">
+                <span>@{profile.username.toLowerCase()}</span>
               </div>
             </div>
-            <p className="text-sm font-bold opacity-30 uppercase tracking-[0.2em] font-sans -mt-1">@{profile.username}</p>
             {profile.bio && (
               <div className={cn(
                 "text-sm font-bold leading-relaxed max-w-xs mx-auto transition-all",
                 themePreference === 'black' ? "text-white" : "text-black"
               )}>
-                {profile.bio}
+                <LinkifiedText text={profile.bio} />
               </div>
             )}
           </div>
@@ -999,6 +1012,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                   placeholder="Post something to the wall..."
                   className="w-full h-32 bg-white border border-slate-100 rounded-[1.5rem] p-6 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none text-sm font-medium"
                 />
+
                 <div className="flex justify-end">
                   <button 
                     onClick={handlePostToWall}
@@ -1035,7 +1049,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                         )}>
                           {post.owner_name}
                         </div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@{post.owner_username}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                          @{post.owner_username}
+                        </div>
                       </div>
                     </Link>
                     
@@ -1092,7 +1108,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                       </div>
                     </div>
                   ) : (
-                    <p className="text-black font-medium leading-relaxed">{post.name}</p>
+                    <p className="text-black font-medium leading-relaxed">
+                      <LinkifiedText text={post.name} />
+                    </p>
                   )}
                   
                   <div className="flex items-center gap-4 pt-2 border-t border-slate-50">

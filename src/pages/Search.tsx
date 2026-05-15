@@ -62,19 +62,24 @@ export default function Search() {
 
   async function handleSearch() {
     setLoading(true);
-    let promise;
     
-    switch (category) {
-      case 'photos':
-        promise = supabase.from('photos').select('*, owner:profiles(*)').eq('privacy', 'public').ilike('name', `%${query}%`);
-        break;
-      case 'users':
-        promise = supabase.from('profiles').select('*').ilike('username', `%${query}%`);
-        break;
+    if (category === 'photos') {
+      const { data } = await supabase
+        .from('photos')
+        .select('*, owner:profiles(*)')
+        .eq('privacy', 'public')
+        .ilike('name', `%${query}%`);
+      if (data) setResults(data);
+    } else {
+      // Users search
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('username', `%${query}%`);
+      
+      setResults(data || []);
     }
-
-    const { data } = await promise;
-    if (data) setResults(data);
+    
     setLoading(false);
   }
 

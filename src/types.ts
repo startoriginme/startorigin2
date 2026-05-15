@@ -34,6 +34,8 @@ export interface Profile {
   active_gradient: string | null;
   purchased_fonts: string[] | null;
   active_font: string | null;
+  last_free_spin: string | null;
+  used_secret_quest: boolean | null;
   // UI helpers
   following_count?: number;
   is_following?: boolean;
@@ -132,4 +134,14 @@ export interface Achievement {
   achievement_type: string;
   achievement_name: string;
   achieved_at: string | null;
+}
+
+export interface Post {
+  id: string;
+  user_id: string;
+  content: string;
+  likes_count: number;
+  created_at: string;
+  updated_at: string;
+  owner?: Profile;
 }

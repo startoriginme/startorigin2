@@ -591,12 +591,6 @@ function PhotoSortableGrid({ photos: initialPhotos, collectionId, albums, collec
 
   useEffect(() => {
     if (editingPhoto) {
-      setSelectedCollectionId(editingPhoto.collection_id || 'unsorted');
-    }
-  }, [editingPhoto]);
-
-  useEffect(() => {
-    if (editingPhoto) {
       if (selectedCollectionId === 'unsorted') {
         setAvailableAlbums([]);
       } else {

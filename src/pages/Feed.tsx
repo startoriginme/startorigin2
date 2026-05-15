@@ -5,14 +5,15 @@ import {
   Heart, Globe, Users, X, Flame, Trophy, Sparkles, Camera, Star, Search, 
   Loader2, User, Grid, MessageSquare, BadgeCheck, Snowflake, Monitor, 
   Crown, Diamond, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, 
-  Gamepad, Gift, Smile 
+  Gamepad, Gift, Smile, Layout
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn, optimizeImage } from '../lib/utils';
 import PhotoViewer from '../components/PhotoViewer';
+import LinkifiedText from '../components/LinkifiedText';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 // Swipe Achievement thresholds
@@ -27,9 +28,10 @@ const SWIPE_ACHIEVEMENTS = [
 
 export default function Feed({ user }: { user: any }) {
   const { t } = useTranslation();
-  const [followingItems, setFollowingItems] = useState<any[]>([]);
-  const [allItems, setAllItems] = useState<any[]>([]);
-  const [showAll, setShowAll] = useState(false);
+  const [items, setItems] = useState<any[]>([]);
+  const [source, setSource] = useState<'circle' | 'global'>('global');
+  const [showSourceSelector, setShowSourceSelector] = useState(false);
+  
   const [viewer, setViewer] = useState<Photo | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -37,7 +39,7 @@ export default function Feed({ user }: { user: any }) {
   const [page, setPage] = useState(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const lastPhotoRef = useRef<HTMLDivElement | null>(null);
- 
+  
   // Tinder Mode states
   const [tinderMode, setTinderMode] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -46,9 +48,7 @@ export default function Feed({ user }: { user: any }) {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
- 
-  const items = showAll ? allItems : followingItems;
-  const isFollowingEmpty = !loading && followingItems.length === 0 && !showAll;
+  const isFollowingEmpty = !loading && items.length === 0;
   
   useEffect(() => {
     fetchInitialFeed();
@@ -68,7 +68,7 @@ export default function Feed({ user }: { user: any }) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user.id]);
+  }, [user.id, source]);
 
   async function fetchUnreadCount() {
     const { count } = await supabase
@@ -93,57 +93,54 @@ export default function Feed({ user }: { user: any }) {
 
   async function fetchInitialFeed() {
     setLoading(true);
-    const [following, all] = await Promise.all([
-      fetchFeedItems(false, 0),
-      fetchFeedItems(true, 0)
-    ]);
-    setFollowingItems(following);
-    setAllItems(all);
+    setPage(0);
+    setHasMore(true);
+    const initialItems = await fetchFeedItems(0);
+    setItems(initialItems);
     setLoading(false);
   }
 
-  async function fetchFeedItems(isAll: boolean, offset: number) {
-    // Fetch photos
+  async function fetchFeedItems(offset: number) {
+    // 1. Prepare queries
     let photosQuery = supabase
       .from('photos')
       .select('*, owner:profiles(*), likes:likes(count)')
-      .eq('privacy', 'public')
       .order('created_at', { ascending: false })
       .range(offset, offset + 11);
 
-    // Fetch posts (wall posts)
     let postsQuery = supabase
       .from('posts')
       .select('*, owner:profiles(*)')
       .order('created_at', { ascending: false })
       .range(offset, offset + 11);
 
-    if (!isAll) {
+    // 2. Apply Source Filters
+    if (source === 'circle') {
       const { data: follows } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
-      
       const followingIds = [user.id, ...(follows?.map(f => f.following_id) || [])];
       photosQuery = photosQuery.in('user_id', followingIds);
       postsQuery = postsQuery.in('user_id', followingIds);
+    } else {
+      // Global: photos need to be public
+      photosQuery = photosQuery.eq('privacy', 'public');
+      // For global posts, we show all since they are usually public or wall posts
     }
 
     try {
-      const [{ data: photosData, error: photosError }, { data: postsData, error: postsError }] = await Promise.all([
+      const [{ data: photosData }, { data: postsData }] = await Promise.all([
         photosQuery,
         postsQuery
       ]);
 
-      if (photosError) console.error('Error fetching photos:', photosError);
-      if (postsError) console.error('Error fetching posts:', postsError);
-
-      const items = [
+      let combined = [
         ...((photosData as any[]) || []).map(p => ({ ...p, type: 'photo' })),
         ...((postsData as any[]) || []).map(p => ({ ...p, type: 'post' }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      ];
 
-      return items;
+      return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } catch (err) {
       console.error('Feed fetch error:', err);
       return [];
@@ -154,17 +151,16 @@ export default function Feed({ user }: { user: any }) {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
-    const newItems = await fetchFeedItems(showAll, nextPage * 12);
+    const newItems = await fetchFeedItems(nextPage * 12);
     
     if (newItems.length > 0) {
-      if (showAll) setAllItems(prev => [...prev, ...newItems]);
-      else setFollowingItems(prev => [...prev, ...newItems]);
+      setItems(prev => [...prev, ...newItems]);
       setPage(nextPage);
     } else {
       setHasMore(false);
     }
     setLoadingMore(false);
-  }, [page, showAll, loadingMore, hasMore]);
+  }, [page, source, loadingMore, hasMore]);
 
   useEffect(() => {
     if (!lastPhotoRef.current || tinderMode) return;
@@ -189,7 +185,7 @@ export default function Feed({ user }: { user: any }) {
   }
 
   const handleSwipe = (direction: 'left' | 'right') => {
-    const nextIndex = (currentPhotoIndex + 1) % (allItems.length || 1);
+    const nextIndex = (currentPhotoIndex + 1) % (items.length || 1);
     setCurrentPhotoIndex(nextIndex);
     const newCount = swipeCount + 1;
     setSwipeCount(newCount);
@@ -198,7 +194,8 @@ export default function Feed({ user }: { user: any }) {
   };
 
   if (tinderMode) {
-    const currentPhoto = allItems[currentPhotoIndex];
+    const photosOnly = items.filter(i => i.type === 'photo');
+    const currentPhoto = photosOnly[currentPhotoIndex];
     
     return (
       <div className="fixed inset-0 z-[500] bg-white flex flex-col items-center justify-center p-4">
@@ -249,7 +246,9 @@ export default function Feed({ user }: { user: any }) {
             >
               <img src={currentPhoto.url} alt="" className="w-full h-full object-cover pointer-events-none" />
               <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-white/90 to-transparent">
-                <h3 className="text-xl font-bold text-black">{currentPhoto.name}</h3>
+                <h3 className="text-xl font-bold text-black">
+                  <LinkifiedText text={currentPhoto.name} />
+                </h3>
                 <p className="text-black/60 font-medium text-sm">@{currentPhoto.owner?.username}</p>
               </div>
             </motion.div>
@@ -286,7 +285,7 @@ export default function Feed({ user }: { user: any }) {
           <h1 className="text-3xl font-bold tracking-tight text-black">{t('navigation.feed')}</h1>
     
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           <Link 
             to="/chat"
             className="p-3 bg-slate-50 rounded-2xl text-slate-400 border border-slate-100 hover:bg-white hover:text-black transition-all font-bold text-xs flex items-center justify-center relative"
@@ -306,22 +305,45 @@ export default function Feed({ user }: { user: any }) {
           >
             <Flame size={20} />
           </button>
-          <button 
-            onClick={() => { setShowAll(!showAll); setPage(0); setHasMore(true); }}
-            className="h-12 px-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 hover:bg-white transition-all shadow-sm group"
-          >
-            {showAll ? (
-              <>
-                <Globe size={18} className="text-black group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-black">{t('feed.global')}</span>
-              </>
-            ) : (
-              <>
-                <Users size={18} className="text-black group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-black">{t('feed.circle')}</span>
-              </>
-            )}
-          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowSourceSelector(!showSourceSelector)}
+              className="h-12 px-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 hover:bg-white transition-all shadow-sm group"
+            >
+              {source === 'global' ? <Globe size={18} className="text-black" /> : <Users size={18} className="text-black" />}
+              <span className="text-[10px] font-bold uppercase tracking-widest text-black hidden sm:inline">
+                {source}
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {showSourceSelector && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-3 w-48 bg-white border border-slate-100 rounded-3xl shadow-2xl z-[600] overflow-hidden py-1"
+                >
+                  {[
+                    { id: 'global', icon: Globe, label: 'Global' },
+                    { id: 'circle', icon: Users, label: 'Circle' }
+                  ].map(s => (
+                    <button 
+                      key={s.id}
+                      onClick={() => { setSource(s.id as any); setShowSourceSelector(false); }}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-4 transition-all font-bold text-[11px] uppercase tracking-wider",
+                        source === s.id ? "bg-black text-white" : "hover:bg-slate-50 text-slate-400"
+                      )}
+                    >
+                      <s.icon size={16} /> {s.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
@@ -337,7 +359,10 @@ export default function Feed({ user }: { user: any }) {
       ) : (
         <div className="space-y-16">
           {items.map((item: any, i) => (
-            <div key={item.id} ref={i === items.length - 1 ? lastPhotoRef : null}>
+            <div 
+              key={item.id} 
+              ref={i === items.length - 1 ? lastPhotoRef : null}
+            >
               {item.type === 'photo' ? (
                  <PhotoCard 
                    photo={item} 
@@ -360,7 +385,7 @@ export default function Feed({ user }: { user: any }) {
                 <p className="text-slate-400 text-sm max-w-xs mx-auto">{t('feed.empty_following_sub')}</p>
               </div>
               <button 
-                onClick={() => setShowAll(true)}
+                onClick={() => setSource('global')}
                 className="btn-primary h-12 px-8 uppercase tracking-widest text-[10px]"
               >
                 {t('feed.explore_globally')}
@@ -380,6 +405,7 @@ export default function Feed({ user }: { user: any }) {
 }
 
 function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () => void }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
@@ -463,7 +489,12 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
             <span className="text-xs font-bold">{likesCount}</span>
           </button>
         </div>
-        <Link to={`/posts/${photo.id}`} className="text-[10px] font-bold text-black uppercase tracking-[0.3em] hover:underline underline-offset-4 max-w-[150px] truncate block text-right">{photo.name}</Link>
+        <div 
+          onClick={() => navigate(`/posts/${photo.id}`)}
+          className="text-[10px] font-bold text-black uppercase tracking-[0.3em] hover:underline underline-offset-4 max-w-[150px] truncate block text-right cursor-pointer"
+        >
+          <LinkifiedText text={photo.name} />
+        </div>
       </div>
     </div>
   );
@@ -529,7 +560,9 @@ function WallPostCard({ post, user }: { post: any, user: any }) {
       </div>
 
       <div className="bg-slate-50 border border-slate-100 p-8 rounded-[2.5rem] shadow-sm relative group/image">
-        <p className="text-black font-medium leading-relaxed">{post.content}</p>
+        <p className="text-black font-medium leading-relaxed">
+          <LinkifiedText text={post.content} />
+        </p>
       </div>
 
       <div className="flex items-center justify-between px-6">

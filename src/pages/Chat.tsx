@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
+import LinkifiedText from '../components/LinkifiedText';
 
 export default function Chat({ user }: { user: any }) {
   const { userId: paramUserId } = useParams();
@@ -80,11 +81,20 @@ export default function Chat({ user }: { user: any }) {
   const handleNewMessageNotification = (msg: Message) => {
     if (!notificationsEnabled || mutedUsers.has(msg.sender_id) || msg.sender_id === user.id) return;
     
-    // Simple browser notification if supported
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("New Message", {
+    // Only notify if tab is backgrounded or we are not in the chat with this user
+    const shouldNotify = document.visibilityState !== 'visible' || (selectedChat?.id !== msg.sender_id);
+    
+    if (shouldNotify && "Notification" in window && Notification.permission === "granted") {
+      // Try to find the sender's name in the existing conversations
+      const senderConv = conversations.find(c => c.userId === msg.sender_id);
+      const senderName = senderConv?.profile?.name || senderConv?.profile?.username || "New Message";
+      const icon = senderConv?.profile?.avatar_url || "/logo.png";
+
+      new Notification(senderName, {
         body: msg.content,
-        icon: "/logo.png"
+        icon: icon,
+        badge: "/logo.png",
+        tag: msg.sender_id // Group by sender
       });
     }
   };
@@ -446,11 +456,11 @@ export default function Chat({ user }: { user: any }) {
   }
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-white overflow-hidden">
+    <div className="fixed inset-0 flex flex-col md:relative md:h-screen md:flex-row bg-white overflow-hidden">
       {/* Sidebar: Conversations */}
       <div className={cn(
-        "w-full md:w-80 border-r border-slate-100 flex flex-col h-full bg-white transition-all overflow-hidden",
-        selectedChat && "hidden md:flex"
+        "w-full md:w-80 border-r border-slate-100 flex flex-col bg-white transition-all overflow-hidden",
+        selectedChat ? "hidden md:flex" : "flex h-full pb-20 md:pb-0"
       )}>
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
@@ -553,12 +563,12 @@ export default function Chat({ user }: { user: any }) {
 
       {/* Main Chat Area */}
       <div className={cn(
-        "flex-1 flex flex-col h-full bg-white transition-all",
-        !selectedChat && "hidden md:flex"
+        "flex-1 flex flex-col h-full bg-white transition-all relative overflow-hidden",
+        !selectedChat ? "hidden md:flex" : "flex"
       )}>
         {selectedChat ? (
           <>
-            <header className="h-20 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-10 flex items-center justify-between px-6">
+            <header className="h-20 border-b border-slate-100 bg-white/80 backdrop-blur-xl z-20 flex items-center justify-between px-6 flex-shrink-0">
               <div className="flex items-center gap-4">
                 <button onClick={() => setSelectedChat(null)} className="p-2 hover:bg-slate-50 rounded-xl transition-all md:hidden">
                   <ArrowLeft size={20} />
@@ -600,7 +610,7 @@ export default function Chat({ user }: { user: any }) {
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-50/30 custom-scrollbar">
               {messages.map((msg, i) => {
                 const isMe = msg.sender_id === user.id;
                 const hasReactions = msg.reactions && Object.keys(msg.reactions).length > 0;
@@ -642,7 +652,9 @@ export default function Chat({ user }: { user: any }) {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
+                        <p className="text-sm font-medium leading-relaxed break-words">
+                          <LinkifiedText text={msg.content} />
+                        </p>
                       )}
                       
                       <div className="mt-1 flex items-center justify-between gap-4">
@@ -736,18 +748,18 @@ export default function Chat({ user }: { user: any }) {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-6 border-t border-slate-100 bg-white">
-              <form onSubmit={sendMessage} className="flex gap-4 items-center max-w-4xl mx-auto">
+            <div className="p-3 border-t border-slate-100 bg-white">
+              <form onSubmit={sendMessage} className="flex gap-2 items-center max-w-4xl mx-auto">
                 <div className="relative flex-1">
                   <input 
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-[1.25rem] pl-6 pr-16 text-sm font-medium focus:outline-none focus:bg-white focus:border-black/5 transition-all text-black"
+                    className="w-full h-10 bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-10 text-sm font-medium focus:outline-none focus:bg-white focus:border-black/5 transition-all text-black"
                   />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <label className="p-3 text-slate-300 hover:text-black transition-colors cursor-pointer">
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                    <label className="p-1.5 text-slate-300 hover:text-black transition-colors cursor-pointer">
                       <input 
                         type="file" 
                         accept="image/*" 
@@ -762,9 +774,9 @@ export default function Chat({ user }: { user: any }) {
                 <button 
                   type="submit"
                   disabled={!newMessage.trim() && !uploadingImage}
-                  className="w-14 h-14 bg-black text-white rounded-[1.25rem] flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:scale-100"
+                  className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:scale-100"
                 >
-                  <Send size={20} />
+                  <Send size={16} />
                 </button>
               </form>
             </div>

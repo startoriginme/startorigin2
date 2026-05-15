@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     photo_count INTEGER DEFAULT 0,
     followers_count INTEGER DEFAULT 0,
     following_count INTEGER DEFAULT 0,
+    sent_origins DOUBLE PRECISION DEFAULT 0,
+    received_origins DOUBLE PRECISION DEFAULT 0,
     purchased_gradients TEXT[] DEFAULT '{}',
     active_gradient TEXT,
     purchased_fonts TEXT[] DEFAULT '{}',
@@ -155,7 +157,47 @@ CREATE TABLE IF NOT EXISTS public.messages (
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_receiver ON public.messages(receiver_id);
 
+-- Seen Items table for tracking new posts/photos
+CREATE TABLE IF NOT EXISTS public.seen_items (
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    item_id UUID NOT NULL,
+    item_type TEXT CHECK (item_type IN ('photo', 'post')),
+    seen_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (user_id, item_id, item_type)
+);
+ALTER TABLE public.seen_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage seen items" ON public.seen_items FOR ALL USING (auth.uid() = user_id);
+
+-- Posts table
+CREATE TABLE IF NOT EXISTS public.posts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    content TEXT NOT NULL,
+    likes_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view posts" ON public.posts FOR SELECT USING (true);
+-- Posts
+CREATE POLICY "Users can manage their own posts" ON public.posts FOR ALL USING (auth.uid() = user_id);
+
+-- Post Likes table
+CREATE TABLE IF NOT EXISTS public.post_likes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, post_id)
+);
+ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view post likes" ON public.post_likes FOR SELECT USING (true);
+CREATE POLICY "Users can manage their own post likes" ON public.post_likes FOR ALL USING (auth.uid() = user_id);
+
 -- Row Level Security (RLS)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_free_spin TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS used_secret_quest BOOLEAN DEFAULT FALSE;
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.albums ENABLE ROW LEVEL SECURITY;

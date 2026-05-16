@@ -412,10 +412,13 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   async function updatePost(postId: string, newContent: string) {
     if (!user || !newContent.trim()) return;
     
+    const tags = parseTags(newContent);
+    
     const { error } = await supabase
       .from('posts')
       .update({ 
         content: newContent.trim(), 
+        tags: tags,
         updated_at: new Date().toISOString() 
       })
       .eq('id', postId)
@@ -424,7 +427,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!error) {
       setWallPosts(prev => prev.map(post => 
         post.id === postId 
-          ? { ...post, name: newContent.trim(), content: newContent.trim() }
+          ? { ...post, name: newContent.trim(), content: newContent.trim(), tags: tags }
           : post
       ));
       setEditingPost(null);
@@ -1282,18 +1285,20 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                                   {post.pinned_at ? 'Unpin' : 'Pin to Wall'}
                                 </button>
                               )}
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
-                                  alert('Link copied!');
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors"
-                              >
-                                <LinkIcon size={14} />
-                                Copy Link
-                              </button>
+                              {post.user_id === user?.id && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingPost(post.id);
+                                    setEditPostContent(post.content);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors"
+                                >
+                                  <Edit2 size={14} />
+                                  Edit Post
+                                </button>
+                              )}
                               {(isOwn || post.user_id === user?.id) && (
                                 <button 
                                   onClick={(e) => {

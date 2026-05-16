@@ -44,7 +44,7 @@ export default function Landing() {
       icon: Palette,
       title: t('landing.features.decorations'),
       description: t('landing.features.decorations_desc'),
-      color: "text-purple-500",
+      color: "text-blue-500",
       highlight: true
     },
     {
@@ -141,6 +141,15 @@ export default function Landing() {
               <span>StartOrigin v1.0 is here</span>
             </motion.div>
             
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="text-[10px] md:text-xs text-slate-400 max-w-2xl mx-auto font-bold uppercase tracking-[0.3em] mb-4"
+            >
+              {t('landing.subtitle')}
+            </motion.p>
+
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -158,9 +167,9 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto font-medium"
+              className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium"
             >
-              {t('landing.subtitle')}
+              Step into the new era of creative expression.
             </motion.p>
             
             <motion.div 

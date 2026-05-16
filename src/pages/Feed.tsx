@@ -30,7 +30,7 @@ export default function Feed({ user }: { user: any }) {
   const { t } = useTranslation();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
-  const [source, setSource] = useState<'circle' | 'global' | 'clan'>('global');
+  const [source, setSource] = useState<'circle' | 'global'>('global');
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   
   const [viewer, setViewer] = useState<Photo | null>(null);
@@ -122,11 +122,6 @@ export default function Feed({ user }: { user: any }) {
       const followingIds = [user.id, ...(follows?.map(f => f.following_id) || [])];
       photosQuery = photosQuery.in('user_id', followingIds);
       postsQuery = postsQuery.in('user_id', followingIds);
-    } else if (source === 'clan' && userProfile?.clan) {
-      const { data: clanMembers } = await supabase.from('profiles').select('id').eq('clan', userProfile.clan);
-      const memberIds = clanMembers?.map(m => m.id) || [];
-      photosQuery = photosQuery.in('user_id', memberIds);
-      postsQuery = postsQuery.in('user_id', memberIds);
     } else {
       photosQuery = photosQuery.eq('privacy', 'public');
     }
@@ -314,7 +309,7 @@ export default function Feed({ user }: { user: any }) {
               onClick={() => setShowSourceSelector(!showSourceSelector)}
               className="h-12 px-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 hover:bg-white transition-all shadow-sm group"
             >
-              {source === 'global' ? <Globe size={18} className="text-black" /> : source === 'clan' ? <span className="text-lg">{userProfile?.clan || 'Clans'}</span> : <Users size={18} className="text-black" />}
+              {source === 'global' ? <Globe size={18} className="text-black" /> : <Users size={18} className="text-black" />}
               <span className="text-[10px] font-bold uppercase tracking-widest text-black hidden sm:inline">
                 {source}
               </span>
@@ -330,17 +325,14 @@ export default function Feed({ user }: { user: any }) {
                 >
                   {[
                     { id: 'global', icon: Globe, label: 'Global' },
-                    { id: 'circle', icon: Users, label: 'Circle' },
-                    { id: 'clan', icon: () => <span className="text-lg">{userProfile?.clan || '🛡️'}</span>, label: 'Clan' }
+                    { id: 'circle', icon: Users, label: 'Circle' }
                   ].map(s => (
                     <button 
                       key={s.id}
-                      disabled={s.id === 'clan' && !userProfile?.clan}
                       onClick={() => { setSource(s.id as any); setShowSourceSelector(false); }}
                       className={cn(
                         "w-full flex items-center gap-3 p-4 transition-all font-bold text-[11px] uppercase tracking-wider",
-                        source === s.id ? "bg-black text-white" : "hover:bg-slate-50 text-slate-400",
-                        s.id === 'clan' && !userProfile?.clan && "opacity-30 cursor-not-allowed"
+                        source === s.id ? "bg-black text-white" : "hover:bg-slate-50 text-slate-400"
                       )}
                     >
                       {typeof s.icon === 'function' ? <s.icon /> : <s.icon size={16} />} {s.label}
@@ -467,7 +459,6 @@ function PhotoCard({ photo, user, onOpen }: { photo: any, user: any, onOpen: () 
               )}>
                 {photo.owner?.name || photo.owner?.username}
               </div>
-              {photo.owner?.clan && <span className="text-sm">{photo.owner.clan}</span>}
             </div>
             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
               {formatDistanceToNow(new Date(photo.created_at))} ago
@@ -560,7 +551,6 @@ function WallPostCard({ post, user }: { post: any, user: any }) {
               )}>
                 {post.owner?.name || post.owner?.username}
               </div>
-              {post.owner?.clan && <span className="text-lg" title={`Member of ${post.owner.clan} clan`}>{post.owner.clan}</span>}
             </div>
             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
               {formatDistanceToNow(new Date(post.created_at))} ago

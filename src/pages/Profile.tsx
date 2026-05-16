@@ -18,14 +18,6 @@ import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 
-const CLAN_EMOJIS = [
-  '🐉', '🐲', '🦁', '🦅', '🐺', '🐻', '🗡️', '🛡️', '⚔️', '🏰', '🔮', '🧙', '👑', '💎', '🌋',
-  '🤖', '👾', '💻', '⌨️', '🖥️', '📡', '🛸', '🔫', '🎮', '🧬', '⚡', '🔋', '🌐', '💊', '🎛️',
-  '🎨', '🖌️', '✏️', '🎭', '🎬', '🎧', '🎵', '🎸', '🥁', '📸', '🎞️', '🖼️', '✂️', '🧵', '🪡',
-  '🏆', '🥇', '⚽', '🏀', '🎾', '🏈', '💪', '🥊', '🚴', '🏋️', '🧗', '🏊', '⛷️', '🏅',
-  '🌿', '🍃', '🌸', '🌻', '🍄', '🪶', '🐾', '🕊️', '🐝', '🦋', '🌙', '✨', '⭐', '☕', '🍜'
-];
-
 interface Pet {
   id: string;
   name: string;
@@ -52,7 +44,7 @@ interface UserPet {
 const SWIPE_ACHIEVEMENTS = (t: any) => [
   { count: 10, title: t('profile.achievements_list.photo_explorer'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.photo_explorer_desc') },
   { count: 30, title: t('profile.achievements_list.photo_hunter'), icon: Search, color: "text-blue-500", description: t('profile.achievements_list.photo_hunter_desc') },
-  { count: 60, title: t('profile.achievements_list.photo_master'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photo_master_desc') },
+  { count: 60, title: t('profile.achievements_list.photo_master'), icon: Star, color: "text-blue-400", description: t('profile.achievements_list.photo_master_desc') },
   { count: 120, title: t('profile.achievements_list.photo_legend'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.photo_legend_desc') },
   { count: 250, title: t('profile.achievements_list.photo_guru'), icon: Sparkles, color: "text-yellow-500", description: t('profile.achievements_list.photo_guru_desc') },
   { count: 500, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-cyan-500", description: t('profile.achievements_list.photo_god_desc') },
@@ -66,9 +58,9 @@ const UPLOAD_ACHIEVEMENTS = (t: any) => [
   { count: 15, title: t('profile.achievements_list.shutterbug'), icon: Camera, color: "text-emerald-500", description: t('profile.achievements_list.shutterbug_desc') },
   { count: 20, title: t('profile.achievements_list.getting_serious'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.getting_serious_desc') },
   { count: 25, title: t('profile.achievements_list.dedicated'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.dedicated_desc') },
-  { count: 30, title: t('profile.achievements_list.photography_addict'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photography_addict_desc') },
-  { count: 35, title: t('profile.achievements_list.photo_lover'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.photo_lover_desc') },
-  { count: 40, title: t('profile.achievements_list.creative_eye'), icon: Star, color: "text-purple-500", description: t('profile.achievements_list.creative_eye_desc') },
+  { count: 30, title: t('profile.achievements_list.photography_addict'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.photography_addict_desc') },
+  { count: 35, title: t('profile.achievements_list.photo_lover'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.photo_lover_desc') },
+  { count: 40, title: t('profile.achievements_list.creative_eye'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.creative_eye_desc') },
   { count: 45, title: t('profile.achievements_list.visual_artist'), icon: Star, color: "text-indigo-500", description: t('profile.achievements_list.visual_artist_desc') },
   { count: 50, title: t('profile.achievements_list.photography_pro'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.photography_pro_desc') },
   { count: 55, title: t('profile.achievements_list.expert'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.expert_desc') },
@@ -85,7 +77,7 @@ const UPLOAD_ACHIEVEMENTS = (t: any) => [
 
 // Ачивки из магазина
 const SHOP_ACHIEVEMENTS = (t: any) => [
-  { title: t('profile.achievements_list.shopkeeper'), icon: ShoppingCart, color: "text-purple-500", description: t('profile.achievements_list.shopkeeper_desc') },
+  { title: t('profile.achievements_list.shopkeeper'), icon: ShoppingCart, color: "text-blue-500", description: t('profile.achievements_list.shopkeeper_desc') },
   { title: t('profile.achievements_list.buyer'), icon: ShoppingBag, color: "text-green-500", description: t('profile.achievements_list.buyer_desc') },
   { title: t('profile.achievements_list.shopping'), icon: Zap, color: "text-yellow-500", description: t('profile.achievements_list.shopping_desc') },
   { title: t('profile.achievements_list.collector'), icon: Star, color: "text-amber-500", description: t('profile.achievements_list.collector_desc') },
@@ -97,7 +89,7 @@ const SHOP_ACHIEVEMENTS = (t: any) => [
 
 // Секретные ачивки
 const SECRET_ACHIEVEMENTS = (t: any) => [
-  { title: t('profile.achievements_list.secret_agent'), icon: Glasses, color: "text-purple-500", description: t('profile.achievements_list.secret_agent_desc') },
+  { title: t('profile.achievements_list.secret_agent'), icon: Glasses, color: "text-blue-500", description: t('profile.achievements_list.secret_agent_desc') },
 ];
 
 type Achievement = {
@@ -136,7 +128,7 @@ const PATTERNS: Record<string, string> = {
 const PET_ICONS: Record<string, any> = {
   cat: { image: 'https://mavebo-puce.vercel.app/cat.png', color: 'bg-amber-100', price: 100 },
   dog: { image: 'https://mavebo-puce.vercel.app/dog.png', color: 'bg-orange-100', price: 150 },
-  bat: { image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-purple-100', price: 300 },
+  bat: { image: 'https://mavebo-puce.vercel.app/bat.png', color: 'bg-blue-50', price: 300 },
   owl: { image: 'https://mavebo-puce.vercel.app/owl.png', color: 'bg-indigo-100', price: 500 },
 };
 
@@ -193,10 +185,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editPostContent, setEditPostContent] = useState('');
   const [deletingPost, setDeletingPost] = useState<string | null>(null);
-  
-  // Clan state
-  const [showClanPicker, setShowClanPicker] = useState(false);
-  const [clan, setClan] = useState<string | null>(null);
 
   // Attachment state
   const [postAttachments, setPostAttachments] = useState<string[]>([]);
@@ -563,20 +551,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (userPetsData) setUserPets(userPetsData);
   }
 
-  async function handleSetClan(emoji: string) {
-    if (!isOwn || !user) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ clan: emoji })
-      .eq('id', user.id);
-    
-    if (!error) {
-      setClan(emoji);
-      setShowClanPicker(false);
-      onUpdate?.(user.id);
-    }
-  }
-
   async function togglePinPost(postId: string) {
     if (!isOwn) return;
     const post = wallPosts.find(p => p.id === postId);
@@ -840,7 +814,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
 
   async function loadUserSettings() {
     if (!profile) return;
-    setClan(profile.clan);
     const { data: swipeData } = await supabase.from('user_settings').select('hide_swipe_count').eq('user_id', profile.id).maybeSingle();
     if (swipeData) setHideSwipeCount(swipeData.hide_swipe_count || false);
     const { data: hiddenData } = await supabase.from('user_settings').select('hidden_achievements').eq('user_id', profile.id).maybeSingle();
@@ -923,7 +896,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   
   if (profile.username === 'winterwastaken' && !allAvailableBadges.includes('snowflake' as any)) allAvailableBadges.push('snowflake' as any);
   if (['viscaelbarca', 'camilakiriek'].includes(profile.username) && !allAvailableBadges.includes('star' as any)) allAvailableBadges.push('star' as any);
-  if (['mavebo', 'startorigin'].includes(profile.username) && !allAvailableBadges.includes('verified' as any)) allAvailableBadges.push('verified' as any);
+  if (['mavebo', 'startorigin', 'so_status', 'shibo4ka'].includes(profile.username) && !allAvailableBadges.includes('verified' as any)) allAvailableBadges.push('verified' as any);
   if (profile.username === 'zaharques') {
     if (!allAvailableBadges.includes('computer' as any)) allAvailableBadges.push('computer' as any);
     if (!allAvailableBadges.includes('star' as any)) allAvailableBadges.push('star' as any);
@@ -985,35 +958,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                    </div>
                  )}
               </div>
-
-              {/* Clan Badge */}
-              {clan && (
-                <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 z-[60]">
-                  {isOwn ? (
-                    <button 
-                      onClick={() => setShowClanPicker(!showClanPicker)}
-                      className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:scale-110 transition-transform group"
-                    >
-                      <span className="text-xl">{clan}</span>
-                    </button>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center">
-                      <span className="text-xl">{clan}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isOwn && !clan && (
-                <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 z-[60]">
-                  <button 
-                    onClick={() => setShowClanPicker(!showClanPicker)}
-                    className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:scale-110 transition-transform group"
-                  >
-                    <PlusCircle size={20} className="text-slate-300 group-hover:text-purple-500 transition-colors" />
-                  </button>
-                </div>
-              )}
 
               {userPets.filter(p => p.is_pinned).map((up, idx) => {
               const config = PET_ICONS[up.pet_id_name || 'cat'] || PET_ICONS.cat;
@@ -1557,12 +1501,12 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                     autoFocus
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
-                    className="text-center text-xl font-bold border-b border-purple-200 focus:outline-none focus:border-purple-500 w-full"
+                    className="text-center text-xl font-bold border-b border-blue-200 focus:outline-none focus:border-blue-500 w-full"
                     placeholder="New nickname..."
                     onKeyDown={e => e.key === 'Enter' && updatePetName()}
                   />
                   <div className="flex gap-2 justify-center">
-                    <button onClick={updatePetName} className="text-[10px] font-bold uppercase text-purple-600">Save</button>
+                    <button onClick={updatePetName} className="text-[10px] font-bold uppercase text-blue-600">Save</button>
                     <button onClick={() => setEditingName(false)} className="text-[10px] font-bold uppercase text-slate-400">Cancel</button>
                   </div>
                 </div>
@@ -1747,57 +1691,11 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
+          <AnimatePresence>
             {viewer && <PhotoViewer 
               photo={viewer} 
               onClose={() => setViewer(null)} 
             />}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showClanPicker && (
-              <div className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowClanPicker(false)}>
-                <motion.div 
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-white rounded-[3rem] p-8 max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" 
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-black uppercase tracking-tight">Select your Clan</h3>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Represent your legacy</p>
-                    </div>
-                    <button onClick={() => setShowClanPicker(false)} className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 transition-all text-slate-400"><X size={20}/></button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto grid grid-cols-5 gap-3 pr-2 custom-scrollbar p-2">
-                    {CLAN_EMOJIS.map(emoji => (
-                      <button 
-                        key={emoji}
-                        onClick={() => handleSetClan(emoji)}
-                        className={cn(
-                          "aspect-square rounded-2xl flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all shadow-sm border border-slate-50",
-                          clan === emoji ? "bg-purple-50 border-purple-200" : "bg-white"
-                        )}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-
-                  {clan && (
-                    <button 
-                      onClick={() => handleSetClan('')}
-                      className="mt-6 w-full h-12 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all"
-                    >
-                      Leave Current Clan
-                    </button>
-                  )}
-                </motion.div>
-              </div>
-            )}
           </AnimatePresence>
     </div>
   );

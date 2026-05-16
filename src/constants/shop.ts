@@ -54,18 +54,18 @@ export const ACHIEVEMENT_PRICES: Record<string, number> = {
 };
 
 export const SHOP_ACHIEVEMENTS = [
-  { id: 'shopkeeper', title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-purple-500", description: "Spent 500 Origins" },
+  { id: 'shopkeeper', title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-blue-400", description: "Spent 500 Origins" },
   { id: 'buyer', title: "Buyer", icon: ShoppingBag, color: "text-green-500", description: "Made first purchase" },
   { id: 'shopping', title: "Shopping", icon: Zap, color: "text-yellow-500", description: "Bought 3 items" },
   { id: 'collector', title: "Collector", icon: Star, color: "text-amber-500", description: "Collected 5 badges" },
   { id: 'big_spender', title: "Big Spender", icon: Trophy, color: "text-red-500", description: "Spent 2000 Origins" },
   { id: 'legendary', title: "Legendary", icon: Crown, color: "text-yellow-500", description: "Bought a legendary item" },
   { id: 'completionist', title: "Completionist", icon: Award, color: "text-emerald-500", description: "Collected all badges" },
-  { id: 'daily_shopper', title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-500", description: "Bought 3 days in a row" },
+  { id: 'daily_shopper', title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-400", description: "Bought 3 days in a row" },
 ];
 
 export const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; key: string }> = {
-  verified: { icon: BadgeCheck, color: 'text-blue-500', key: 'verified' },
+  verified: { icon: BadgeCheck, color: 'text-blue-400', key: 'verified' },
   snowflake: { icon: Snowflake, color: 'text-cyan-400', key: 'snowflake' },
   computer: { icon: Hash, color: 'text-slate-500', key: 'computer' },
   star: { icon: Star, color: 'text-amber-400', key: 'star' },
@@ -102,37 +102,33 @@ export const GRADIENT_PRICES: Record<string, number> = {
 };
 
 export const GRADIENT_CONFIG: Record<string, { key: string; className: string }> = {
-  soft_blue: { key: 'soft_blue', className: 'bg-gradient-to-r from-blue-400 to-cyan-300 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
-  sunset: { key: 'sunset', className: 'bg-gradient-to-r from-orange-400 to-rose-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
-  emerald: { key: 'emerald', className: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
-  royal: { key: 'royal', className: 'bg-gradient-to-r from-purple-500 to-indigo-500 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' },
-  neon: { key: 'neon', className: 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-transparent bg-clip-text [-webkit-background-clip:text] [-webkit-text-fill-color:transparent] inline-block' }
+  soft_blue: { key: 'soft_blue', className: 'text-blue-400 inline-block' },
+  sunset: { key: 'sunset', className: 'text-orange-500 inline-block' },
+  emerald: { key: 'emerald', className: 'text-emerald-500 inline-block' },
+  royal: { key: 'royal', className: 'text-purple-500 inline-block' },
+  neon: { key: 'neon', className: 'text-fuchsia-500 inline-block' }
 };
 
 export const FONT_PRICES: Record<string, number> = {
   modern: 0,
-  serif: 2000,
   retro: 1500,
   futuristic: 2500,
   elegant: 3000,
   handwritten: 1000,
   comic: 4000,
   cute: 3500,
-  scifi: 4500,
   marker: 3000,
   sf_italic: 5000
 };
 
 export const FONT_CONFIG: Record<string, { key: string; className: string }> = {
   modern: { key: 'modern', className: 'font-sans' },
-  serif: { key: 'serif', className: 'font-serif-display' },
   retro: { key: 'retro', className: 'font-retro-mono' },
   futuristic: { key: 'futuristic', className: 'font-futuristic' },
   elegant: { key: 'elegant', className: 'font-elegant' },
   handwritten: { key: 'handwritten', className: 'font-handwritten' },
   comic: { key: 'comic', className: 'font-comic tracking-wider' },
   cute: { key: 'cute', className: 'font-cute' },
-  scifi: { key: 'scifi', className: 'font-scifi tracking-tight' },
   marker: { key: 'marker', className: 'font-marker' },
   sf_italic: { key: 'sf_italic', className: 'font-[var(--font-sf)] italic uppercase font-bold tracking-tight' }
 };

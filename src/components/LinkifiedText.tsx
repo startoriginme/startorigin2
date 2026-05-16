@@ -42,7 +42,7 @@ export default function LinkifiedText({ text, className }: LinkifiedTextProps) {
             <Link
               key={i}
               to={`/profile/${username}`}
-              className="text-purple-500 font-bold hover:underline"
+              className="text-blue-400 font-bold hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               {part}

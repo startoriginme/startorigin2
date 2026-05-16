@@ -36,7 +36,6 @@ export interface Profile {
   active_font: string | null;
   last_free_spin: string | null;
   used_secret_quest: boolean | null;
-  clan: string | null;
   // UI helpers
   following_count?: number;
   is_following?: boolean;

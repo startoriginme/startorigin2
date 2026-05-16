@@ -38,7 +38,7 @@ const resources = {
         username_placeholder: 'Username',
         bio_placeholder: 'Write something about yourself...',
         appearance: 'Appearance',
-        gradient: 'Active Gradient',
+        gradient: 'Active Color',
         typography: 'Typography Style',
         apply: 'Apply Style',
         languages: 'Language',
@@ -51,7 +51,7 @@ const resources = {
         tabs: {
           badges: 'Badges',
           pets: 'Pets',
-          gradients: 'Gradients',
+          gradients: 'Colors',
           fonts: 'Fonts',
           styles: 'Styles',
           tasks: 'Tasks'
@@ -216,7 +216,7 @@ const resources = {
       },
       landing: {
         title: "Hey, it's StartOrigin.",
-        subtitle: "Discovering new possibilities of photographing.",
+        subtitle: "Photography • Community • Customization",
         get_started: "Get Started",
         create_account: "Create Account",
         features_title: "What you can do",

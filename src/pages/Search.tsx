@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2, Hash, Shield, Flame
+  Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2, Hash, Flame
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo, Profile } from '../types';
@@ -13,18 +13,13 @@ import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 
 type SearchCategory = 'photos' | 'users' | 'hashtags';
 
-const CLAN_EMOJIS = [
-  '🐉', '🐲', '🦁', '🦅', '🐺', '🐻', '🗡️', '🛡️', '⚔️', '🏰', '🔮', '🧙', '👑', '💎', '🌋',
-  '🤖', '👾', '💻', '⌨️', '🖥️', '📡', '🛸', '🔫', '🎮', '🧬', '⚡', '🔋', '🌐', '💊', '🎛️',
-  '🎨', '🖌️', '✏️', '🎭', '🎬', '🎧', '🎵', '🎸', '🥁', '📸', '🎞️', '🖼️', '✂️', '🧵', '🪡',
-  '🏆', '🥇', '⚽', '🏀', '🎾', '🏈', '💪', '🥊', '🚴', '🏋️', '🧗', '🏊', '⛷️', '🏅',
-  '🌿', '🍃', '🌸', '🌻', '🍄', '🪶', '🐾', '🕊️', '🐝', '🦋', '🌙', '✨', '⭐', '☕', '🍜'
-];
-
 const HONOR_BOARD = [
   { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
   { username: 'pipinos', label: 'Main Developer', role: 'official' },
   { username: 'winter', label: 'Creative Director', role: 'official' },
+  { username: 'so_status', label: 'Status', role: 'official' },
+  { username: 'shibo4ka', label: 'CMO', role: 'official' },
+  { username: 'zaharques', label: 'Friend of StartOrigin', role: 'friend' },
   { username: 'startorigin', label: 'StartOrigin Official', role: 'official' },
   { username: 'camilakiriek', label: 'Friend of StartOrigin', role: 'friend' },
   { username: 'viscaelbarca', label: 'Friend of StartOrigin', role: 'friend' },
@@ -36,7 +31,6 @@ export default function Search() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SearchCategory>('photos');
   const [results, setResults] = useState<any[]>([]);
-  const [topClans, setTopClans] = useState<any[]>([]);
   const [topHashtags, setTopHashtags] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
@@ -49,18 +43,6 @@ export default function Search() {
   }, []);
 
   async function fetchTopMetadata() {
-    // Top Clans (based on member count)
-    const { data: profiles } = await supabase.from('profiles').select('clan');
-    if (profiles) {
-      const counts: Record<string, number> = {};
-      profiles.forEach(p => { if (p.clan) counts[p.clan] = (counts[p.clan] || 0) + 1; });
-      const sortedClans = Object.entries(counts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 8)
-        .map(([emoji, count]) => ({ emoji, count }));
-      setTopClans(sortedClans);
-    }
-
     // Top Hashtags (mocking top since we don't have aggregation easily without RPC/Functions)
     // We can fetch recent posts/photos with tags
     const { data: posts } = await supabase.from('posts').select('tags').not('tags', 'is', null).limit(100);
@@ -186,28 +168,6 @@ export default function Search() {
               </div>
             </div>
           )}
-
-          {category === 'users' && topClans.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500 text-white flex items-center justify-center">
-                  <Shield size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold uppercase tracking-tight">Top Clans</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mightiest legacies</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {topClans.map(({ emoji, count }) => (
-                  <div key={emoji} className="glass-card p-4 flex flex-col items-center gap-2 border border-black/5 bg-white bg-gradient-to-br from-white to-slate-50/50">
-                    <span className="text-3xl hover:scale-125 transition-transform cursor-default">{emoji}</span>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{count} members</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -276,7 +236,8 @@ export default function Search() {
                 category={category} 
                 index={i} 
                 onClick={() => {
-                  if (category === 'photos') setSelectedPhoto(item);
+                  if (category === 'hashtags' && item.type === 'post') return;
+                  if (category === 'photos' || (category === 'hashtags' && item.type === 'photo')) setSelectedPhoto(item);
                   else navigate(`/profile/${item.username}`);
                 }}
               />
@@ -322,7 +283,10 @@ function SearchResultCard({ item, category, index, onClick }: any) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
       onClick={onClick}
-      className="glass-card overflow-hidden group cursor-pointer border border-black/5 hover:scale-[1.05] transition-all duration-300 relative"
+      className={cn(
+        "glass-card overflow-hidden group border border-black/5 transition-all duration-300 relative",
+        (category === 'hashtags' && item.type === 'post') ? "cursor-default" : "cursor-pointer hover:scale-[1.05]"
+      )}
     >
       {(category === 'photos' || (category === 'hashtags' && item.type === 'photo')) && (
         <div className="aspect-square relative">

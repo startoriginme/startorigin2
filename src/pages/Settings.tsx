@@ -49,7 +49,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showMiniGames, setShowMiniGames] = useState(false);
   const [showBadgesExpanded, setShowBadgesExpanded] = useState(false);
-  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'gradients' | 'fonts'>('badges');
+  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'colors' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
 
   // Mini Games State
@@ -391,10 +391,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const allAvailableBadges = [...purchasedBadges];
   if (profile?.username === 'winterwastaken' && !allAvailableBadges.includes('snowflake')) allAvailableBadges.push('snowflake');
   if (['viscaelbarca', 'camilakiriek'].includes(profile?.username || '') && !allAvailableBadges.includes('star')) allAvailableBadges.push('star');
-  if (['mavebo', 'startorigin'].includes(profile?.username || '') && !allAvailableBadges.includes('verified')) allAvailableBadges.push('verified');
+  if (['mavebo', 'startorigin', 'so_status', 'shibo4ka'].includes(profile?.username || '') && !allAvailableBadges.includes('verified')) allAvailableBadges.push('verified');
   if (profile?.username === 'zaharques') {
     if (!allAvailableBadges.includes('computer')) allAvailableBadges.push('computer');
     if (!allAvailableBadges.includes('star')) allAvailableBadges.push('star');
+    if (!allAvailableBadges.includes('verified')) allAvailableBadges.push('verified');
   }
 
   return (
@@ -413,7 +414,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">
          <button onClick={() => setShowShop(true)} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group hover:bg-white transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={20}/></div>
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition-all shadow-inner"><ShoppingBag size={20}/></div>
             <div className="text-[10px] font-bold uppercase tracking-widest">{t('settings.shop')}</div>
          </button>
          <button onClick={() => setShowLeaderboard(true)} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group hover:bg-white transition-all shadow-sm">
@@ -487,7 +488,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
           className="w-full h-16 flex items-center justify-between px-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white transition-all shadow-sm group"
         >
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 group-hover:text-purple-500 transition-colors shadow-inner">
+             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 group-hover:text-blue-500 transition-colors shadow-inner">
                <Medal size={20} />
              </div>
              <span className="text-xs font-bold uppercase tracking-widest text-black">My Badges</span>
@@ -667,7 +668,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                       <Compass className="text-slate-300" size={20} />
                       <span className="text-sm font-bold text-black uppercase tracking-widest">Secret Quest</span>
                    </div>
-                   <button onClick={() => setShowSecretInput(!showSecretInput)} className="text-[10px] font-bold text-purple-500 uppercase tracking-widest px-4 py-2 bg-purple-50 rounded-xl">Initiate</button>
+                   <button onClick={() => setShowSecretInput(!showSecretInput)} className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-4 py-2 bg-blue-50 rounded-xl">Initiate</button>
                 </div>
                 {showSecretInput && (
                   <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
@@ -678,7 +679,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                        placeholder="Enter secret code..."
                        onKeyDown={(e) => e.key === 'Enter' && handleSecretQuest()}
                      />
-                     <button onClick={handleSecretQuest} className="w-full h-10 bg-purple-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Verify Essence</button>
+                     <button onClick={handleSecretQuest} className="w-full h-10 bg-blue-400 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Verify Essence</button>
                   </div>
                 )}
               </div>
@@ -746,7 +747,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                  <div className="flex gap-2 p-1 bg-white/5 rounded-2xl overflow-x-auto custom-scrollbar no-scrollbar">
                      <button onClick={() => setActiveShopTab('badges')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'badges' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.badges')}</button>
                     <button onClick={() => setActiveShopTab('pets')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'pets' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.pets')}</button>
-                    <button onClick={() => setActiveShopTab('gradients')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'gradients' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.gradients')}</button>
+                    <button onClick={() => setActiveShopTab('colors')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'colors' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.gradients')}</button>
                     <button onClick={() => setActiveShopTab('fonts')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'fonts' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.fonts')}</button>
                     <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.styles')}</button>
                     <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.tasks')}</button>
@@ -853,7 +854,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                     </div>
                   )}
 
-                 {activeShopTab === 'gradients' && (
+                 {activeShopTab === 'colors' && (
                     <div className="grid grid-cols-1 gap-4">
                        {Object.entries(GRADIENT_CONFIG).map(([id, cfg]) => {
                           const isOwned = profile?.purchased_gradients?.includes(id);

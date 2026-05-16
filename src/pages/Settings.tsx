@@ -47,16 +47,9 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [loading, setLoading] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showMiniGames, setShowMiniGames] = useState(false);
   const [showBadgesExpanded, setShowBadgesExpanded] = useState(false);
   const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'colors' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
-
-  // Mini Games State
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [lastSpinResult, setLastSpinResult] = useState<number | null>(null);
-  const [showSecretInput, setShowSecretInput] = useState(false);
-  const [secretCode, setSecretCode] = useState('');
 
   // Badge reordering
   const [badgesOrder, setBadgesOrder] = useState<string[]>(profile?.badges_order || []);
@@ -160,86 +153,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       : [...hiddenBadges, id];
     setHiddenBadges(newHidden);
     handleBadgeUpdate(badgesOrder, newHidden);
-  }
-
-  async function handleSecretQuest() {
-    if (secretCode === 'StartOrigin') {
-      if (!profile?.used_secret_quest) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ 
-            used_secret_quest: true,
-            received_origins: (profile?.received_origins || 0) + 100
-          })
-          .eq('id', user.id);
-        
-        if (!error) {
-          showAlert({ message: 'Secret discovered! + 100 ORG', type: 'success' });
-          onUpdate(user.id);
-          setShowSecretInput(false);
-          setSecretCode('');
-        }
-      } else {
-        showAlert({ message: 'Secret already claimed.', type: 'warning' });
-      }
-    } else {
-      showAlert({ message: 'Incorrect code.', type: 'error' });
-    }
-  }
-
-  async function handleWheelSpin() {
-    if (isSpinning) return;
-
-    const lastSpinDate = profile?.last_free_spin ? new Date(profile.last_free_spin).toDateString() : null;
-    const today = new Date().toDateString();
-    const isFree = lastSpinDate !== today;
-
-    if (!isFree && currentBalance < 20) {
-      showAlert({ message: 'Insufficient Origins for spin (20 ORG).', type: 'warning' });
-      return;
-    }
-
-    setIsSpinning(true);
-    setLastSpinResult(null);
-
-    // Simulate spin
-    setTimeout(async () => {
-      const prizes = [5, 10, 25, 50, 100];
-      const weights = [40, 30, 20, 8, 2]; // Probabilities
-      let random = Math.random() * 100;
-      let prize = 5;
-      let sum = 0;
-      for (let i = 0; i < prizes.length; i++) {
-        sum += weights[i];
-        if (random <= sum) {
-          prize = prizes[i];
-          break;
-        }
-      }
-
-      setLastSpinResult(prize);
-      
-      const updates: any = {
-        received_origins: (profile?.received_origins || 0) + prize
-      };
-
-      if (isFree) {
-        updates.last_free_spin = new Date().toISOString();
-      } else {
-        updates.spent_origins = (profile?.spent_origins || 0) + 20;
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (!error) {
-        onUpdate(user.id);
-        showAlert({ message: `Won ${prize} Origins!`, type: 'success' });
-      }
-      setIsSpinning(false);
-    }, 2000);
   }
 
   async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient' | 'font', item: string, price: number) {
@@ -591,7 +504,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   onChange={(e) => setEditProfile({ ...editProfile, active_font: e.target.value })}
                   className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl focus:ring-0 text-sm font-bold text-black shadow-inner appearance-none"
                 >
-                  {(profile?.purchased_fonts || ['modern']).map(f => (
+                  {Array.from(new Set(['modern', ...(profile?.purchased_fonts || [])])).map(f => (
                     <option key={f} value={f}>{t(`landing.items.fonts.${f}`)}</option>
                   ))}
                 </select>
@@ -599,94 +512,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
            </div>
            <button onClick={handleUpdateProfile} className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">{t('settings.apply')}</button>
         </div>
-      </section>
-
-      {/* Mini Games Section */}
-      <section className="space-y-6">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Mini Games</h2>
-        <button 
-          onClick={() => setShowMiniGames(!showMiniGames)}
-          className="w-full h-16 flex items-center justify-between px-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white transition-all shadow-sm group"
-        >
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-300 group-hover:text-amber-500 transition-colors shadow-inner">
-               <Gamepad size={20} />
-             </div>
-             <span className="text-xs font-bold uppercase tracking-widest text-black">Play & Earn</span>
-          </div>
-          {showMiniGames ? <ChevronUp size={20} className="text-slate-300" /> : <ChevronDown size={20} className="text-slate-300" />}
-        </button>
-
-        <AnimatePresence>
-          {showMiniGames && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="space-y-4 overflow-hidden mt-4"
-            >
-              {/* Wheel of Origins */}
-              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
-                <div className="flex items-center gap-3 mb-2">
-                   <Sparkles className="text-amber-500" size={20} />
-                   <span className="text-sm font-bold text-black uppercase tracking-widest">Wheel of Origins</span>
-                </div>
-                <div className="relative aspect-square max-w-[200px] mx-auto bg-white rounded-full border-4 border-slate-100 shadow-xl flex items-center justify-center overflow-hidden">
-                   <motion.div 
-                     animate={{ rotate: isSpinning ? 3600 : 0 }}
-                     transition={{ duration: 2, ease: "easeInOut" }}
-                     className="absolute inset-0 flex items-center justify-center"
-                   >
-                     {[0, 72, 144, 216, 288].map((deg, i) => (
-                       <div key={deg} style={{ transform: `rotate(${deg}deg) translateY(-60px)` }} className="absolute text-[10px] font-bold text-slate-300">
-                         {[5, 10, 25, 50, 100][i]}
-                       </div>
-                     ))}
-                   </motion.div>
-                   <div className="z-10 text-center">
-                     {lastSpinResult ? (
-                       <div className="text-3xl font-black text-amber-500 animate-bounce">+{lastSpinResult}</div>
-                     ) : (
-                       <Coins size={40} className="text-slate-100" />
-                     )}
-                   </div>
-                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-6 bg-black rounded-b-full z-20 shadow-lg" />
-                </div>
-                <button 
-                  onClick={handleWheelSpin}
-                  disabled={isSpinning}
-                  className="w-full h-12 bg-black text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50"
-                >
-                  {isSpinning ? 'Spinning...' : (new Date(profile?.last_free_spin || 0).toDateString() === new Date().toDateString() ? 'Spin (20 ORG)' : 'Free Daily Spin')}
-                </button>
-              </div>
-
-              {/* Secret Quest */}
-              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <Compass className="text-slate-300" size={20} />
-                      <span className="text-sm font-bold text-black uppercase tracking-widest">Secret Quest</span>
-                   </div>
-                   <button onClick={() => setShowSecretInput(!showSecretInput)} className="text-[10px] font-bold text-blue-400 uppercase tracking-widest px-4 py-2 bg-blue-50 rounded-xl">Initiate</button>
-                </div>
-                {showSecretInput && (
-                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                     <input 
-                       value={secretCode}
-                       onChange={(e) => setSecretCode(e.target.value)}
-                       className="w-full h-12 px-6 bg-white border border-slate-100 rounded-xl focus:ring-0 text-base font-bold text-black"
-                       placeholder="Enter secret code..."
-                       onKeyDown={(e) => e.key === 'Enter' && handleSecretQuest()}
-                     />
-                     <button onClick={handleSecretQuest} className="w-full h-10 bg-blue-400 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">Verify Essence</button>
-                  </div>
-                )}
-              </div>
-
-            </motion.div>
-          )}
-        </AnimatePresence>
       </section>
 
       {/* Info Section */}

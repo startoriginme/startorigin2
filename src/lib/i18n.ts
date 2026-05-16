@@ -256,15 +256,13 @@ const resources = {
             neon: 'Pink'
           },
           fonts: {
-            modern: 'Modern',
-            serif: 'Serif',
+            modern: 'Default',
             retro: 'Retro',
             futuristic: 'Sci-Fi',
             elegant: 'Elegant',
             handwritten: 'Handwritten',
             comic: 'Comic',
             cute: 'Cute',
-            scifi: 'Neural',
             marker: 'Wild',
             sf_italic: 'Italic'
           },

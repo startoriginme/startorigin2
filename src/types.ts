@@ -36,6 +36,7 @@ export interface Profile {
   active_font: string | null;
   last_free_spin: string | null;
   used_secret_quest: boolean | null;
+  clan: string | null;
   // UI helpers
   following_count?: number;
   is_following?: boolean;
@@ -73,6 +74,8 @@ export interface Photo {
   url: string;
   privacy: PrivacyMode;
   sort_order: number;
+  pinned_at: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   is_wall_post?: boolean;
@@ -141,6 +144,10 @@ export interface Post {
   user_id: string;
   content: string;
   likes_count: number;
+  pinned_at: string | null;
+  repost_id: string | null;
+  attachments: string[] | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   owner?: Profile;

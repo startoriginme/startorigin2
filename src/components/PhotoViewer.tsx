@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Share2, ZoomIn, Bookmark, Check, Loader2 } from 'lucide-react';
+import { X, Download, Share2, ZoomIn, Bookmark, Check, Loader2, Pin } from 'lucide-react';
 import { Photo } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import LinkifiedText from './LinkifiedText';

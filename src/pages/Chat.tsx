@@ -90,12 +90,18 @@ export default function Chat({ user }: { user: any }) {
       const senderName = senderConv?.profile?.name || senderConv?.profile?.username || "New Message";
       const icon = senderConv?.profile?.avatar_url || "/logo.png";
 
-      new Notification(senderName, {
+      const n = new Notification(senderName, {
         body: msg.content,
         icon: icon,
         badge: "/logo.png",
-        tag: msg.sender_id // Group by sender
+        tag: msg.sender_id, // Group by sender
+        requireInteraction: false
       });
+
+      n.onclick = () => {
+        window.focus();
+        if (senderConv?.profile) setSelectedChat(senderConv.profile);
+      };
     }
   };
 
@@ -326,8 +332,13 @@ export default function Chat({ user }: { user: any }) {
     setShowEmojiPicker(null);
   }
 
+  async function startEditing(msg: Message) {
+    setEditingMessageId(msg.id);
+    setEditingContent(msg.content);
+  }
+
   async function deleteMessage(messageId: string) {
-    if (!confirm('Delete this message for everyone?')) return;
+    if (!window.confirm('Delete this message?')) return;
     try {
       const { error } = await supabase
         .from('messages')
@@ -336,17 +347,14 @@ export default function Chat({ user }: { user: any }) {
         .eq('sender_id', user.id);
       
       if (error) throw error;
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: 'Deleted message', media_url: null, deleted_at: new Date().toISOString() } : m));
+      // Alternatively, actually remove it:
+      // setMessages(prev => prev.filter(m => m.id !== messageId));
       fetchConversations();
     } catch (err) {
       console.error('Error deleting message:', err);
       alert('Failed to delete message');
     }
-  }
-
-  async function startEditing(msg: Message) {
-    setEditingMessageId(msg.id);
-    setEditingContent(msg.content);
   }
 
   async function saveEdit() {
@@ -610,7 +618,7 @@ export default function Chat({ user }: { user: any }) {
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-50/30 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50/30 custom-scrollbar">
               {messages.map((msg, i) => {
                 const isMe = msg.sender_id === user.id;
                 const hasReactions = msg.reactions && Object.keys(msg.reactions).length > 0;
@@ -619,16 +627,16 @@ export default function Chat({ user }: { user: any }) {
                   <div 
                     key={msg.id} 
                     className={cn(
-                      "flex flex-col max-w-[80%] pb-2",
+                      "flex flex-col max-w-[85%] pb-2",
                       isMe ? "ml-auto items-end" : "mr-auto items-start"
                     )}
                   >
                     <motion.div 
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
                       className={cn(
-                        "p-4 rounded-[1.5rem] relative group shadow-sm",
+                        "p-5 rounded-[2rem] relative group shadow-sm transition-all hover:shadow-md",
                         isMe ? "bg-black text-white rounded-br-none" : "bg-white text-black border border-slate-100 rounded-bl-none"
                       )}
                     >

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2
+  Search as SearchIcon, User, Grid, Folder, Image as ImageIcon, Loader2, Hash, Shield, Flame
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Collection, Album, Photo, Profile } from '../types';
@@ -11,7 +11,15 @@ import { useTranslation } from 'react-i18next';
 import PhotoViewer from '../components/PhotoViewer';
 import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 
-type SearchCategory = 'photos' | 'users';
+type SearchCategory = 'photos' | 'users' | 'hashtags';
+
+const CLAN_EMOJIS = [
+  '🐉', '🐲', '🦁', '🦅', '🐺', '🐻', '🗡️', '🛡️', '⚔️', '🏰', '🔮', '🧙', '👑', '💎', '🌋',
+  '🤖', '👾', '💻', '⌨️', '🖥️', '📡', '🛸', '🔫', '🎮', '🧬', '⚡', '🔋', '🌐', '💊', '🎛️',
+  '🎨', '🖌️', '✏️', '🎭', '🎬', '🎧', '🎵', '🎸', '🥁', '📸', '🎞️', '🖼️', '✂️', '🧵', '🪡',
+  '🏆', '🥇', '⚽', '🏀', '🎾', '🏈', '💪', '🥊', '🚴', '🏋️', '🧗', '🏊', '⛷️', '🏅',
+  '🌿', '🍃', '🌸', '🌻', '🍄', '🪶', '🐾', '🕊️', '🐝', '🦋', '🌙', '✨', '⭐', '☕', '🍜'
+];
 
 const HONOR_BOARD = [
   { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
@@ -28,6 +36,8 @@ export default function Search() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SearchCategory>('photos');
   const [results, setResults] = useState<any[]>([]);
+  const [topClans, setTopClans] = useState<any[]>([]);
+  const [topHashtags, setTopHashtags] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [honorUsers, setHonorUsers] = useState<any[]>([]);
@@ -35,7 +45,38 @@ export default function Search() {
 
   useEffect(() => {
     fetchHonorBoard();
+    fetchTopMetadata();
   }, []);
+
+  async function fetchTopMetadata() {
+    // Top Clans (based on member count)
+    const { data: profiles } = await supabase.from('profiles').select('clan');
+    if (profiles) {
+      const counts: Record<string, number> = {};
+      profiles.forEach(p => { if (p.clan) counts[p.clan] = (counts[p.clan] || 0) + 1; });
+      const sortedClans = Object.entries(counts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 8)
+        .map(([emoji, count]) => ({ emoji, count }));
+      setTopClans(sortedClans);
+    }
+
+    // Top Hashtags (mocking top since we don't have aggregation easily without RPC/Functions)
+    // We can fetch recent posts/photos with tags
+    const { data: posts } = await supabase.from('posts').select('tags').not('tags', 'is', null).limit(100);
+    const { data: photos } = await supabase.from('photos').select('tags').not('tags', 'is', null).limit(100);
+    
+    const tagCounts: Record<string, number> = {};
+    [...(posts || []), ...(photos || [])].forEach(p => {
+      p.tags?.forEach((t: string) => { tagCounts[t] = (tagCounts[t] || 0) + 1; });
+    });
+    
+    const sortedTags = Object.entries(tagCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([tag, count]) => ({ tag, count }));
+    setTopHashtags(sortedTags);
+  }
 
   async function fetchHonorBoard() {
     const { data } = await supabase
@@ -70,14 +111,26 @@ export default function Search() {
         .eq('privacy', 'public')
         .ilike('name', `%${query}%`);
       if (data) setResults(data);
-    } else {
+    } else if (category === 'users') {
       // Users search
       const { data } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('username', `%${query}%`);
+        .or(`username.ilike.%${query}%,name.ilike.%${query}%`);
       
       setResults(data || []);
+    } else {
+      // Hashtags
+      const tag = query.startsWith('#') ? query.slice(1) : query;
+      const { data: photos } = await supabase.from('photos').select('*, owner:profiles(*)').contains('tags', [tag.toLowerCase()]);
+      const { data: posts } = await supabase.from('posts').select('*, owner:profiles(*)').contains('tags', [tag.toLowerCase()]);
+      
+      const combined = [
+        ...(photos || []).map(p => ({ ...p, type: 'photo' })),
+        ...(posts || []).map(p => ({ ...p, type: 'post' }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setResults(combined);
     }
     
     setLoading(false);
@@ -98,11 +151,65 @@ export default function Search() {
           {loading && <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 animate-spin text-slate-400" size={24} />}
         </div>
 
-        <div className="flex gap-2 p-1.5 glass-card rounded-[1.25rem] w-fit mx-auto border border-black/5 shadow-sm">
+        <div className="flex gap-2 p-1.5 glass-card rounded-[1.25rem] w-fit mx-auto border border-black/5 shadow-sm overflow-x-auto max-w-full no-scrollbar">
           <CategoryTab active={category === 'photos'} onClick={() => setCategory('photos')} label={t('navigation.gallery')} icon={ImageIcon} />
           <CategoryTab active={category === 'users'} onClick={() => setCategory('users')} label={t('search.users_tab')} icon={User} />
+          <CategoryTab active={category === 'hashtags'} onClick={() => setCategory('hashtags')} label="Hashtags" icon={Hash} />
         </div>
       </div>
+
+      {!query && (
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {category === 'hashtags' && topHashtags.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center">
+                  <Flame size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold uppercase tracking-tight">Trending Tags</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global popular hashtags</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {topHashtags.map(({ tag, count }) => (
+                  <button 
+                    key={tag}
+                    onClick={() => { setQuery(`#${tag}`); setCategory('hashtags'); }}
+                    className="px-6 py-3 bg-white border border-slate-100 rounded-2xl hover:border-black transition-all group flex items-center gap-2"
+                  >
+                    <span className="text-slate-300 group-hover:text-black font-bold">#</span>
+                    <span className="font-bold text-sm text-black">{tag}</span>
+                    <span className="ml-1 text-[10px] font-bold text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded-lg">{count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {category === 'users' && topClans.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500 text-white flex items-center justify-center">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold uppercase tracking-tight">Top Clans</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mightiest legacies</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {topClans.map(({ emoji, count }) => (
+                  <div key={emoji} className="glass-card p-4 flex flex-col items-center gap-2 border border-black/5 bg-white bg-gradient-to-br from-white to-slate-50/50">
+                    <span className="text-3xl hover:scale-125 transition-transform cursor-default">{emoji}</span>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{count} members</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-12 text-black">
         {!query && !loading && category === 'users' && honorUsers.length > 0 && (
@@ -215,13 +322,31 @@ function SearchResultCard({ item, category, index, onClick }: any) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
       onClick={onClick}
-      className="glass-card overflow-hidden group cursor-pointer border border-black/5 hover:scale-[1.05] transition-all duration-300"
+      className="glass-card overflow-hidden group cursor-pointer border border-black/5 hover:scale-[1.05] transition-all duration-300 relative"
     >
-      {category === 'photos' && (
+      {(category === 'photos' || (category === 'hashtags' && item.type === 'photo')) && (
         <div className="aspect-square relative">
           <img src={item.url} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
              <div className="text-[10px] uppercase font-bold tracking-widest text-white">{item.owner?.username}</div>
+          </div>
+          {category === 'hashtags' && (
+            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg text-[8px] font-bold text-white uppercase tracking-widest">Photo</div>
+          )}
+        </div>
+      )}
+
+      {category === 'hashtags' && item.type === 'post' && (
+        <div className="p-6 flex flex-col h-full justify-between space-y-4">
+          <div className="absolute top-2 right-2 bg-slate-100 px-2 py-0.5 rounded-lg text-[8px] font-bold text-slate-400 uppercase tracking-widest">Post</div>
+          <p className="text-xs font-medium text-slate-600 line-clamp-4 leading-relaxed">
+            {item.content}
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-100">
+               {item.owner?.avatar_url && <img src={item.owner.avatar_url} className="w-full h-full object-cover" />}
+            </div>
+            <span className="text-[10px] font-bold text-slate-400">@{item.owner?.username}</span>
           </div>
         </div>
       )}

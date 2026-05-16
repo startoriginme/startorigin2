@@ -7,7 +7,8 @@ import {
   Settings, Trophy, Flame, Camera, Sparkles, X, Search, Upload, Eye, 
   EyeOff, Edit2, Minus, Plus, Coins, Glasses, Crown, Diamond, Heart, 
   Award, ShoppingCart, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, 
-  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark, Trash2
+  Music, Book, Coffee, Gamepad, Gift, Smile, Loader2, User, Grid, ChevronLeft, ChevronRight, Bookmark, Trash2,
+  Paperclip, Share2, Pin, PlusCircle, MoreVertical, Link as LinkIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PhotoViewer from '../components/PhotoViewer';
@@ -16,6 +17,14 @@ import { cn, formatCount, optimizeImage } from '../lib/utils';
 import { GRADIENT_CONFIG, FONT_CONFIG, BADGE_CONFIG } from '../constants/shop';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
+
+const CLAN_EMOJIS = [
+  '🐉', '🐲', '🦁', '🦅', '🐺', '🐻', '🗡️', '🛡️', '⚔️', '🏰', '🔮', '🧙', '👑', '💎', '🌋',
+  '🤖', '👾', '💻', '⌨️', '🖥️', '📡', '🛸', '🔫', '🎮', '🧬', '⚡', '🔋', '🌐', '💊', '🎛️',
+  '🎨', '🖌️', '✏️', '🎭', '🎬', '🎧', '🎵', '🎸', '🥁', '📸', '🎞️', '🖼️', '✂️', '🧵', '🪡',
+  '🏆', '🥇', '⚽', '🏀', '🎾', '🏈', '💪', '🥊', '🚴', '🏋️', '🧗', '🏊', '⛷️', '🏅',
+  '🌿', '🍃', '🌸', '🌻', '🍄', '🪶', '🐾', '🕊️', '🐝', '🦋', '🌙', '✨', '⭐', '☕', '🍜'
+];
 
 interface Pet {
   id: string;
@@ -184,6 +193,14 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editPostContent, setEditPostContent] = useState('');
   const [deletingPost, setDeletingPost] = useState<string | null>(null);
+  
+  // Clan state
+  const [showClanPicker, setShowClanPicker] = useState(false);
+  const [clan, setClan] = useState<string | null>(null);
+
+  // Attachment state
+  const [postAttachments, setPostAttachments] = useState<string[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   // Shop/Gifting states
   const [showGiftPanel, setShowGiftPanel] = useState(false);
@@ -197,7 +214,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   // Edit Pet state
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
-
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  
   const isOwn = !username || (user && profile?.id === user.id);
 
   useEffect(() => {
@@ -243,16 +261,41 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     setLoading(false);
   }
 
+  function parseTags(content: string) {
+    const hashtagRegex = /#([a-zA-Z0-9_-]+)/g;
+    const matches = content.match(hashtagRegex);
+    return matches ? matches.map(m => m.slice(1).toLowerCase()) : [];
+  }
+
   async function fetchPhotos() {
     if (!profile) return;
-    const { data } = await supabase
-      .from('photos')
-      .select('*, owner:profiles(*), likes:likes(count)')
-      .eq('user_id', profile.id)
-      .eq('is_wall_post', false)
-      .eq('privacy', 'public')
-      .order('created_at', { ascending: false });
-    if (data) setPhotos(data as any);
+    try {
+      let query = supabase
+        .from('photos')
+        .select('*, owner:profiles(*), likes:likes(count)')
+        .eq('user_id', profile.id);
+
+      if (!isOwn) {
+        query = query.eq('privacy', 'public');
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        setPhotos(data as any);
+      }
+    } catch (err) {
+      console.error('Error fetching photos:', err);
+      // Fallback simple query
+      const { data } = await supabase
+        .from('photos')
+        .select('*, owner:profiles(*), likes:likes(count)')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+      if (data) setPhotos(data as any);
+    }
   }
 
   // Обновленная функция fetchWallPosts с загрузкой стилей пользователя
@@ -260,38 +303,49 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!profile) return;
     setLoadingWall(true);
     
-    const { data: postsData } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('user_id', profile.id)
-      .order('created_at', { ascending: false });
-    
-    if (postsData) {
-      const postsWithProfiles = await Promise.all(
-        postsData.map(async (post) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', post.user_id)
-            .single();
-          
-          return {
-            ...post,
-            name: post.content,
-            owner: profileData,
-            owner_avatar: profileData?.avatar_url,
-            owner_name: profileData?.name || profileData?.username,
-            owner_username: profileData?.username,
-            owner_gradient: profileData?.active_gradient,
-            owner_font: profileData?.active_font
-          };
-        })
-      );
-      
-      setWallPosts(postsWithProfiles);
-      await loadPostLikes(postsWithProfiles);
+    try {
+      const result = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (result.data) {
+        const postsWithProfiles = await Promise.all(
+          result.data.map(async (post) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', post.user_id)
+              .single();
+            
+            return {
+              ...post,
+              owner: profileData,
+              owner_avatar: profileData?.avatar_url,
+              owner_name: profileData?.name || profileData?.username,
+              owner_username: profileData?.username,
+              owner_gradient: profileData?.active_gradient,
+              owner_font: profileData?.active_font
+            };
+          })
+        );
+        
+        // Manual sorting to handle pinned_at
+        const sorted = postsWithProfiles.sort((a, b) => {
+          if (a.pinned_at && !b.pinned_at) return -1;
+          if (!a.pinned_at && b.pinned_at) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        setWallPosts(sorted);
+        await loadPostLikes(sorted);
+      }
+    } catch (err) {
+      console.error('Error fetching wall posts:', err);
+    } finally {
+      setLoadingWall(false);
     }
-    setLoadingWall(false);
   }
 
   // Проверка лайка поста
@@ -402,14 +456,17 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   }
 
   async function handlePostToWall() {
-    if (!user || !profile || !newWallContent.trim()) return;
+    if (!user || !profile || (!newWallContent.trim() && postAttachments.length === 0)) return;
     setPostingWall(true);
     try {
+      const tags = parseTags(newWallContent);
       const { data: postData, error: postError } = await supabase
         .from('posts')
         .insert({
-          user_id: profile.id,
-          content: newWallContent.trim()
+          user_id: user.id,
+          content: newWallContent.trim(),
+          attachments: postAttachments,
+          tags: tags
         })
         .select('*')
         .single();
@@ -419,7 +476,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', profile.id)
+        .eq('id', user.id)
         .single();
       
       if (postData) {
@@ -436,6 +493,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         };
         setWallPosts(prev => [newPost, ...prev]);
         setNewWallContent('');
+        setPostAttachments([]);
         await loadPostLikes([newPost]);
       }
     } catch (err) {
@@ -500,6 +558,69 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       .eq('user_id', profile.id)
       .order('acquired_at', { ascending: true });
     if (userPetsData) setUserPets(userPetsData);
+  }
+
+  async function handleSetClan(emoji: string) {
+    if (!isOwn || !user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ clan: emoji })
+      .eq('id', user.id);
+    
+    if (!error) {
+      setClan(emoji);
+      setShowClanPicker(false);
+      onUpdate?.(user.id);
+    }
+  }
+
+  async function togglePinPost(postId: string) {
+    if (!isOwn) return;
+    const post = wallPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const pinnedAt = post.pinned_at ? null : new Date().toISOString();
+    const { error } = await supabase
+      .from('posts')
+      .update({ pinned_at: pinnedAt })
+      .eq('id', postId);
+    
+    if (error) {
+      console.error('Error pinning post:', error);
+      alert('Failed to pin post. Please try again.');
+    } else {
+      setWallPosts(prev => prev.map(p => p.id === postId ? { ...p, pinned_at: pinnedAt } : p));
+      fetchWallPosts();
+    }
+  }
+
+  async function handleFileAttachment(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+
+    setUploadingFiles(true);
+    const newAttachments = [...postAttachments];
+
+    for (const file of Array.from(files)) {
+      const f = file as File;
+      const fileExt = f.name.split('.').pop();
+      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+      const filePath = `wall-attachments/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('photos')
+        .upload(filePath, f);
+
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('photos')
+          .getPublicUrl(filePath);
+        newAttachments.push(publicUrl);
+      }
+    }
+
+    setPostAttachments(newAttachments);
+    setUploadingFiles(false);
   }
 
   async function toggleHidePet(userPetId: string) {
@@ -716,6 +837,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
 
   async function loadUserSettings() {
     if (!profile) return;
+    setClan(profile.clan);
     const { data: swipeData } = await supabase.from('user_settings').select('hide_swipe_count').eq('user_id', profile.id).maybeSingle();
     if (swipeData) setHideSwipeCount(swipeData.hide_swipe_count || false);
     const { data: hiddenData } = await supabase.from('user_settings').select('hidden_achievements').eq('user_id', profile.id).maybeSingle();
@@ -850,18 +972,47 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         {currentPattern && <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: currentPattern }} />}
         
         <div className="relative z-10 w-full space-y-6">
-          <div className="relative w-32 h-32 mx-auto">
-            <div className="w-full h-full rounded-full overflow-hidden border-4 border-white/20 shadow-xl bg-white relative z-10">
-               {profile.avatar_url ? (
-                 <img src={profile.avatar_url} className="w-full h-full object-cover" loading="eager" />
-               ) : (
-                 <div className="w-full h-full bg-black/5 flex items-center justify-center text-3xl font-bold uppercase text-black">
-                   {profile.name?.[0] || profile.username[0]}
-                 </div>
-               )}
-            </div>
+            <div className="relative w-32 h-32 mx-auto">
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-white/20 shadow-xl bg-white relative z-10">
+                 {profile.avatar_url ? (
+                   <img src={profile.avatar_url} className="w-full h-full object-cover" loading="eager" />
+                 ) : (
+                   <div className="w-full h-full bg-black/5 flex items-center justify-center text-3xl font-bold uppercase text-black">
+                     {profile.name?.[0] || profile.username[0]}
+                   </div>
+                 )}
+              </div>
 
-            {userPets.filter(p => p.is_pinned).map((up, idx) => {
+              {/* Clan Badge */}
+              {clan && (
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 z-[60]">
+                  {isOwn ? (
+                    <button 
+                      onClick={() => setShowClanPicker(!showClanPicker)}
+                      className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:scale-110 transition-transform group"
+                    >
+                      <span className="text-xl">{clan}</span>
+                    </button>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center">
+                      <span className="text-xl">{clan}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isOwn && !clan && (
+                <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 z-[60]">
+                  <button 
+                    onClick={() => setShowClanPicker(!showClanPicker)}
+                    className="w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:scale-110 transition-transform group"
+                  >
+                    <PlusCircle size={20} className="text-slate-300 group-hover:text-purple-500 transition-colors" />
+                  </button>
+                </div>
+              )}
+
+              {userPets.filter(p => p.is_pinned).map((up, idx) => {
               const config = PET_ICONS[up.pet_id_name || 'cat'] || PET_ICONS.cat;
               const positions = [
                 "-top-4 -right-12",
@@ -1006,17 +1157,52 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
           <div className="space-y-6">
             {isOwn && (
               <div className="bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
-                <textarea 
-                  value={newWallContent}
-                  onChange={(e) => setNewWallContent(e.target.value)}
-                  placeholder="Post something to the wall..."
-                  className="w-full h-32 bg-white border border-slate-100 rounded-[1.5rem] p-6 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none text-sm font-medium"
-                />
+                <div className="space-y-4">
+                  <textarea 
+                    value={newWallContent}
+                    onChange={(e) => setNewWallContent(e.target.value)}
+                    placeholder="Post something to the wall..."
+                    className="w-full h-32 bg-white border border-slate-100 rounded-[1.5rem] p-6 focus:outline-none focus:ring-2 focus:ring-black/5 resize-none text-sm font-medium"
+                  />
+                </div>
 
-                <div className="flex justify-end">
+                {postAttachments.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {postAttachments.map((url, i) => (
+                      <div key={i} className="aspect-square rounded-xl overflow-hidden bg-slate-100 relative group">
+                        <img src={url} className="w-full h-full object-cover" alt="" />
+                        <button 
+                          onClick={() => setPostAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <label className={cn(
+                      "p-2.5 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-100 transition-all text-slate-400",
+                      uploadingFiles && "opacity-50 cursor-not-allowed"
+                    )}>
+                      <Paperclip size={16} />
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleFileAttachment}
+                        disabled={uploadingFiles}
+                      />
+                    </label>
+                  </div>
+                  
                   <button 
                     onClick={handlePostToWall}
-                    disabled={postingWall || !newWallContent.trim()}
+                    disabled={postingWall || (!newWallContent.trim() && postAttachments.length === 0)}
                     className="px-8 h-10 bg-black text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
                   >
                     {postingWall ? <Loader2 className="animate-spin" size={14} /> : 'Post'}
@@ -1029,7 +1215,17 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
               {loadingWall ? (
                 <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-slate-200" /></div>
               ) : wallPosts.map(post => (
-                <div key={post.id} className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm space-y-4">
+                <div key={post.id} className={cn(
+                  "bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-sm space-y-4 relative overflow-hidden",
+                  post.pinned_at && "ring-2 ring-amber-400 ring-offset-4 ring-offset-slate-50"
+                )}>
+                  {post.pinned_at && (
+                    <div className="absolute top-4 right-8 flex items-center gap-1.5 text-amber-500">
+                      <Pin size={12} fill="currentColor" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Pinned</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <Link to={`/profile/${post.owner_username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-slate-100">
@@ -1043,8 +1239,8 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                       </div>
                       <div>
                         <div className={cn(
-                          "text-sm font-bold",
-                          post.owner_gradient && GRADIENT_CONFIG[post.owner_gradient]?.className,
+                          "text-sm font-bold truncate max-w-[120px] transition-all",
+                          post.owner_gradient ? GRADIENT_CONFIG[post.owner_gradient]?.className : "text-black",
                           post.owner_font && FONT_CONFIG[post.owner_font]?.className
                         )}>
                           {post.owner_name}
@@ -1055,34 +1251,67 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                       </div>
                     </Link>
                     
-                    <div className="flex items-center gap-2">
-                      <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                        {formatDistanceToNow(new Date(post.created_at))} ago
-                        {post.updated_at !== post.created_at && ' (edited)'}
-                      </div>
-                      
-                      {isOwn && post.user_id === user?.id && (
-                        <div className="flex gap-1">
+                      <div className="flex items-center gap-2">
+                        {post.pinned_at && (
+                          <div className="p-2 bg-amber-50 text-amber-500 rounded-full border border-amber-100">
+                            <Pin size={14} fill="currentColor" />
+                          </div>
+                        )}
+                        <div className="relative">
                           <button 
-                            onClick={() => {
-                              setEditingPost(post.id);
-                              setEditPostContent(post.content);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(openMenuId === post.id ? null : post.id);
                             }}
-                            className="p-2 text-slate-300 hover:text-purple-500 transition-colors"
+                            className="p-2 text-slate-400 hover:text-black hover:bg-slate-50 rounded-full transition-colors"
                           >
-                            <Edit2 size={14} />
+                            <MoreVertical size={16} />
                           </button>
-                          <button 
-                            onClick={() => deletePost(post.id)}
-                            disabled={deletingPost === post.id}
-                            className="p-2 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
-                          >
-                            {deletingPost === post.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                          </button>
+                          {openMenuId === post.id && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-20 p-1 animate-in fade-in zoom-in-95 duration-100">
+                              {isOwn && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePinPost(post.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors"
+                                >
+                                  <Pin size={14} className={post.pinned_at ? "text-amber-500 fill-current" : ""} />
+                                  {post.pinned_at ? 'Unpin' : 'Pin to Wall'}
+                                </button>
+                              )}
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
+                                  alert('Link copied!');
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 rounded-xl text-xs font-bold transition-colors"
+                              >
+                                <LinkIcon size={14} />
+                                Copy Link
+                              </button>
+                              {(isOwn || post.user_id === user?.id) && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deletePost(post.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 p-3 hover:bg-rose-50 text-rose-500 rounded-xl text-xs font-bold transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
                   
                   {editingPost === post.id ? (
                     <div className="space-y-3">
@@ -1108,22 +1337,36 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                       </div>
                     </div>
                   ) : (
-                    <p className="text-black font-medium leading-relaxed">
-                      <LinkifiedText text={post.name} />
-                    </p>
+                    <div className="space-y-4">
+                      <p className="text-black font-medium leading-relaxed">
+                        <LinkifiedText text={post.content} />
+                      </p>
+                      {post.attachments && post.attachments.length > 0 && (
+                        <div className={cn(
+                          "grid gap-2",
+                          post.attachments.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                        )}>
+                          {post.attachments.map((url: string, i: number) => (
+                            <div key={i} onClick={() => setViewer({ url, user_id: post.user_id } as any)} className="aspect-square rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 cursor-zoom-in group shadow-sm transition-transform hover:scale-[1.02]">
+                              <img src={optimizeImage(url, 600)} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                   
-                  <div className="flex items-center gap-4 pt-2 border-t border-slate-50">
+                  <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
                     <button 
                       onClick={() => togglePostLike(post.id)}
-                      className="flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                      className="flex items-center gap-2 group transition-all"
                     >
                       {postLikes[post.id] ? (
                         <Heart size={18} className="text-red-500 fill-red-500" />
                       ) : (
-                        <Heart size={18} className="text-slate-400 hover:text-red-400 transition-colors" />
+                        <Heart size={18} className="text-slate-300 group-hover:text-red-400 transition-colors" />
                       )}
-                      <span className="text-xs font-bold text-slate-500">{post.likes_count || 0}</span>
+                      <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600">{post.likes_count || 0}</span>
                     </button>
                   </div>
                 </div>
@@ -1158,7 +1401,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         {activeTab === 'photos' && (
           <div className="grid grid-cols-2 gap-4">
              {photos.map(p => (
-               <div key={p.id} onClick={() => setViewer(p)} className="aspect-square rounded-[2rem] overflow-hidden bg-white border border-slate-100 cursor-zoom-in group shadow-sm relative">
+               <div key={p.id} onClick={() => setViewer(p)} className={cn(
+                 "aspect-square rounded-[2rem] overflow-hidden bg-white border border-slate-100 cursor-zoom-in group shadow-sm relative",
+                 p.pinned_at && "ring-2 ring-amber-400 ring-offset-4 ring-offset-slate-50"
+                )}>
                   <img src={optimizeImage(p.url, 400)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
                </div>
              ))}
@@ -1286,13 +1532,13 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                 <>
                   <button 
                     onClick={() => reorderPet('left')}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-0 group-hover/petimage:opacity-100"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-100 md:opacity-0 md:group-hover/petimage:opacity-100"
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button 
                     onClick={() => reorderPet('right')}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-0 group-hover/petimage:opacity-100"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white shadow-lg rounded-full text-black hover:bg-slate-50 transition-all opacity-100 md:opacity-0 md:group-hover/petimage:opacity-100"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -1497,8 +1743,57 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       </AnimatePresence>
 
       <AnimatePresence>
-        {viewer && <PhotoViewer photo={viewer} onClose={() => setViewer(null)} />}
-      </AnimatePresence>
+            {viewer && <PhotoViewer 
+              photo={viewer} 
+              onClose={() => setViewer(null)} 
+            />}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showClanPicker && (
+              <div className="fixed inset-0 z-[500] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowClanPicker(false)}>
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white rounded-[3rem] p-8 max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[80vh]" 
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-black uppercase tracking-tight">Select your Clan</h3>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Represent your legacy</p>
+                    </div>
+                    <button onClick={() => setShowClanPicker(false)} className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 transition-all text-slate-400"><X size={20}/></button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto grid grid-cols-5 gap-3 pr-2 custom-scrollbar p-2">
+                    {CLAN_EMOJIS.map(emoji => (
+                      <button 
+                        key={emoji}
+                        onClick={() => handleSetClan(emoji)}
+                        className={cn(
+                          "aspect-square rounded-2xl flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all shadow-sm border border-slate-50",
+                          clan === emoji ? "bg-purple-50 border-purple-200" : "bg-white"
+                        )}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+
+                  {clan && (
+                    <button 
+                      onClick={() => handleSetClan('')}
+                      className="mt-6 w-full h-12 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all"
+                    >
+                      Leave Current Clan
+                    </button>
+                  )}
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
     </div>
   );
 }

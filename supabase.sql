@@ -198,6 +198,23 @@ CREATE POLICY "Users can manage their own post likes" ON public.post_likes FOR A
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_free_spin TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS used_secret_quest BOOLEAN DEFAULT FALSE;
 
+-- Profiles: Add Emoji Clan
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS clan TEXT;
+
+-- Photos: Add Pinned Status
+ALTER TABLE public.photos ADD COLUMN IF NOT EXISTS pinned_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.photos ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+
+-- Wall Posts: Add Pinned, Repost, Attachments, and Tags
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS pinned_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS repost_id UUID REFERENCES public.posts(id) ON DELETE SET NULL;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS attachments TEXT[] DEFAULT '{}';
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+
+-- Index for tags searching
+CREATE INDEX IF NOT EXISTS idx_photos_tags ON public.photos USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_posts_tags ON public.posts USING GIN (tags);
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.albums ENABLE ROW LEVEL SECURITY;

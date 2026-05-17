@@ -53,7 +53,7 @@ export default function Landing() {
       title: t('landing.features.publish'),
       description: t('landing.features.publish_desc'),
       color: "text-blue-500"
-    },
+    }, ✔️
     {
       icon: Users,
       title: t('landing.features.follow'),
@@ -317,7 +317,7 @@ export default function Landing() {
                   Your Personal <br/> Photo Space
                 </h2>
                 <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                  StartOrigin is made for people who love photography. No ads, no distractions. Just your beautiful moments, saved in high quality.
+                  StartOrigin is made for people who love photography. No ads. Just your beautiful moments, saved in high quality.
                 </p>
                 <div className="flex items-center gap-4 pt-4">
                    <div className="flex -space-x-3 overflow-hidden">

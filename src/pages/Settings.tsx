@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Profile, BadgeType } from '../types';
 import { 
   User, Lock, Mail, Info, LogOut, ChevronRight, Camera, Check, 
-  AlertCircle, Loader2, ShoppingCart, Trophy, Sparkles, Eye, 
+  AlertCircle, Loader2, ShoppingCart, Sparkles, Eye, 
   EyeOff, Search, Flame, Star, Coins, Crown, Diamond, Heart, 
   Award, ShoppingBag, Zap, Rocket, Leaf, Moon, Sun, Music, 
   Book, Coffee, Gamepad, Gift, Smile, X, Medal, Target, 
@@ -33,8 +33,8 @@ import { useTranslation } from 'react-i18next';
 
 // BASE CONSTANTS
 import { 
-  BADGE_PRICES, THEME_PRICES, PATTERN_PRICES, ACHIEVEMENT_PRICES, 
-  SHOP_ACHIEVEMENTS, BADGE_CONFIG, PET_CONFIG, GRADIENT_PRICES, 
+  BADGE_PRICES, THEME_PRICES, PATTERN_PRICES, 
+  BADGE_CONFIG, PET_CONFIG, GRADIENT_PRICES, 
   GRADIENT_CONFIG, FONT_PRICES, FONT_CONFIG, calculateAliasPrice 
 } from '../constants/shop';
 
@@ -49,7 +49,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
   const [showBadgesExpanded, setShowBadgesExpanded] = useState(false);
-  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'colors' | 'fonts'>('badges');
+  const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'pets' | 'colors' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
 
   // Badge reordering
@@ -167,7 +167,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     handleBadgeUpdate(badgesOrder, newHidden);
   }
 
-  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'achievement' | 'gradient' | 'font', item: string, price: number) {
+  async function handlePurchase(type: 'badge' | 'theme' | 'pattern' | 'gradient' | 'font', item: string, price: number) {
     if (currentBalance < price) {
       showAlert({ message: 'Insufficient Origins.', type: 'warning' });
       return;
@@ -193,8 +193,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
       updates.unlocked_themes = [...(profile?.unlocked_themes || []), item];
     } else if (type === 'pattern') {
       updates.unlocked_patterns = [...(profile?.unlocked_patterns || []), item];
-    } else if (type === 'achievement') {
-      updates.purchased_achievements = [...(profile?.purchased_achievements || []), item];
     } else if (type === 'gradient') {
       updates.purchased_gradients = [...(profile?.purchased_gradients || []), item];
     } else if (type === 'font') {
@@ -382,7 +380,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
             <div className="text-[10px] font-bold uppercase tracking-widest">{t('settings.shop')}</div>
          </button>
          <button onClick={() => setShowLeaderboard(true)} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group hover:bg-white transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:scale-110 transition-all shadow-inner"><Trophy size={20}/></div>
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 group-hover:text-amber-500 group-hover:scale-110 transition-all shadow-inner"><Star size={20}/></div>
             <div className="text-[10px] font-bold uppercase tracking-widest">{t('settings.leaderboard')}</div>
          </button>
       </div>
@@ -638,7 +636,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                     <button onClick={() => setActiveShopTab('colors')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'colors' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.gradients')}</button>
                     <button onClick={() => setActiveShopTab('fonts')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'fonts' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.fonts')}</button>
                     <button onClick={() => setActiveShopTab('decorations')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'decorations' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.styles')}</button>
-                    <button onClick={() => setActiveShopTab('achievements')} className={cn("flex-1 min-w-[80px] h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeShopTab === 'achievements' ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white")}>{t('shop.tabs.tasks')}</button>
                  </div>
 
                   {activeShopTab === 'pets' && (
@@ -693,32 +690,6 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                    </div>
                  )}
 
-                 {activeShopTab === 'achievements' && (
-                   <div className="grid grid-cols-1 gap-4">
-                      {SHOP_ACHIEVEMENTS.map((ach) => {
-                         const isPurchased = profile?.purchased_achievements?.includes(ach.id);
-                         const price = ACHIEVEMENT_PRICES[ach.id] || 0;
-                         return (
-                           <div key={ach.id} className="p-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-between group">
-                              <div className="flex items-center gap-4">
-                                 <div className={cn("w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center", ach.color)}>
-                                    <ach.icon size={24} />
-                                 </div>
-                                 <div className="text-left">
-                                    <div className="text-white font-bold text-sm tracking-tight">{ach.title}</div>
-                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                                      {ach.description} • {price} ORG
-                                    </div>
-                                 </div>
-                              </div>
-                              {!isPurchased ? (
-                                <button onClick={() => handlePurchase('achievement', ach.id, price)} className="h-10 px-6 bg-white text-black rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">Buy</button>
-                              ) : <Check className="text-emerald-500" size={20} />}
-                           </div>
-                         );
-                      })}
-                   </div>
-                 )}
 
                  {activeShopTab === 'fonts' && (
                     <div className="grid grid-cols-1 gap-4">

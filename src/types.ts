@@ -20,7 +20,6 @@ export interface Profile {
   pattern_preference: string | null;
   purchased_badges: string[] | null;
   unlocked_themes: string[] | null;
-  purchased_achievements: string[] | null;
   unlocked_patterns: string[] | null;
   shop_unlocked: boolean | null;
   spent_origins: number | null;
@@ -128,14 +127,6 @@ export interface Follow {
   follower_id: string;
   following_id: string;
   created_at: string;
-}
-
-export interface Achievement {
-  id: string;
-  user_id: string | null;
-  achievement_type: string;
-  achievement_name: string;
-  achieved_at: string | null;
 }
 
 export interface Post {

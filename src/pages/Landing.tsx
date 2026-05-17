@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, ArrowRight, Heart, Menu, X, Users, Flame, Palette, Star, ShoppingBag, Image, Trophy, Sparkles, ChevronRight } from 'lucide-react';
+import { Camera, ArrowRight, Heart, Menu, X, Users, Flame, Palette, Star, ShoppingBag, Image, Sparkles, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -99,13 +99,6 @@ export default function Landing() {
       title: t('landing.features.gallery'),
       description: t('landing.features.gallery_desc'),
       color: "text-blue-500",
-      highlight: true
-    },
-    {
-      icon: Trophy,
-      title: t('landing.features.achievements'),
-      description: t('landing.features.achievements_desc'),
-      color: "text-yellow-500",
       highlight: true
     }
   ];

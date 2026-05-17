@@ -1,4 +1,4 @@
-import { BadgeCheck, Snowflake, Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Trophy, Zap, ShoppingBag, ShoppingCart, Headphones } from 'lucide-react';
+import { BadgeCheck, Snowflake, Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Zap, ShoppingBag, ShoppingCart, Headphones } from 'lucide-react';
 import React from 'react';
 
 export const BADGE_PRICES: Record<string, number> = {
@@ -42,28 +42,6 @@ export const PATTERN_PRICES: Record<string, number> = {
   hearts: 250,
   stars: 300
 };
-
-export const ACHIEVEMENT_PRICES: Record<string, number> = {
-  shopkeeper: 500,
-  buyer: 100,
-  shopping: 300,
-  collector: 1000,
-  big_spender: 2000,
-  legendary: 1500,
-  completionist: 5000,
-  daily_shopper: 800
-};
-
-export const SHOP_ACHIEVEMENTS = [
-  { id: 'shopkeeper', title: "Shopkeepers' Favorite", icon: ShoppingCart, color: "text-blue-400", description: "Spent 500 Origins" },
-  { id: 'buyer', title: "Buyer", icon: ShoppingBag, color: "text-green-500", description: "Made first purchase" },
-  { id: 'shopping', title: "Shopping", icon: Zap, color: "text-yellow-500", description: "Bought 3 items" },
-  { id: 'collector', title: "Collector", icon: Star, color: "text-amber-500", description: "Collected 5 badges" },
-  { id: 'big_spender', title: "Big Spender", icon: Trophy, color: "text-red-500", description: "Spent 2000 Origins" },
-  { id: 'legendary', title: "Legendary", icon: Crown, color: "text-yellow-500", description: "Bought a legendary item" },
-  { id: 'completionist', title: "Completionist", icon: Award, color: "text-emerald-500", description: "Collected all badges" },
-  { id: 'daily_shopper', title: "Daily Shopper", icon: ShoppingBag, color: "text-blue-400", description: "Bought 3 days in a row" },
-];
 
 export const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: string; key: string }> = {
   verified: { icon: BadgeCheck, color: 'text-blue-400', key: 'verified' },

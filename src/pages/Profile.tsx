@@ -40,66 +40,6 @@ interface UserPet {
   gifter?: { username: string; name: string };
 }
 
-// Ачивки за свайпы
-const SWIPE_ACHIEVEMENTS = (t: any) => [
-  { count: 10, title: t('profile.achievements_list.photo_explorer'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.photo_explorer_desc') },
-  { count: 30, title: t('profile.achievements_list.photo_hunter'), icon: Search, color: "text-blue-500", description: t('profile.achievements_list.photo_hunter_desc') },
-  { count: 60, title: t('profile.achievements_list.photo_master'), icon: Star, color: "text-blue-400", description: t('profile.achievements_list.photo_master_desc') },
-  { count: 120, title: t('profile.achievements_list.photo_legend'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.photo_legend_desc') },
-  { count: 250, title: t('profile.achievements_list.photo_guru'), icon: Sparkles, color: "text-yellow-500", description: t('profile.achievements_list.photo_guru_desc') },
-  { count: 500, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-cyan-500", description: t('profile.achievements_list.photo_god_desc') },
-];
-
-// Ачивки за загруженные фотки
-const UPLOAD_ACHIEVEMENTS = (t: any) => [
-  { count: 1, title: t('profile.achievements_list.first_step'), icon: Upload, color: "text-gray-500", description: t('profile.achievements_list.first_step_desc') },
-  { count: 5, title: t('profile.achievements_list.getting_started'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.getting_started_desc') },
-  { count: 10, title: t('profile.achievements_list.photo_enthusiast'), icon: Camera, color: "text-green-500", description: t('profile.achievements_list.photo_enthusiast_desc') },
-  { count: 15, title: t('profile.achievements_list.shutterbug'), icon: Camera, color: "text-emerald-500", description: t('profile.achievements_list.shutterbug_desc') },
-  { count: 20, title: t('profile.achievements_list.getting_serious'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.getting_serious_desc') },
-  { count: 25, title: t('profile.achievements_list.dedicated'), icon: Flame, color: "text-orange-500", description: t('profile.achievements_list.dedicated_desc') },
-  { count: 30, title: t('profile.achievements_list.photography_addict'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.photography_addict_desc') },
-  { count: 35, title: t('profile.achievements_list.photo_lover'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.photo_lover_desc') },
-  { count: 40, title: t('profile.achievements_list.creative_eye'), icon: Star, color: "text-blue-500", description: t('profile.achievements_list.creative_eye_desc') },
-  { count: 45, title: t('profile.achievements_list.visual_artist'), icon: Star, color: "text-indigo-500", description: t('profile.achievements_list.visual_artist_desc') },
-  { count: 50, title: t('profile.achievements_list.photography_pro'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.photography_pro_desc') },
-  { count: 55, title: t('profile.achievements_list.expert'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.expert_desc') },
-  { count: 60, title: t('profile.achievements_list.master_photographer'), icon: Trophy, color: "text-yellow-500", description: t('profile.achievements_list.master_photographer_desc') },
-  { count: 65, title: t('profile.achievements_list.visionary'), icon: Trophy, color: "text-amber-500", description: t('profile.achievements_list.visionary_desc') },
-  { count: 70, title: t('profile.achievements_list.photo_virtuoso'), icon: Trophy, color: "text-amber-500", description: t('profile.achievements_list.photo_virtuoso_desc') },
-  { count: 75, title: t('profile.achievements_list.artistic_soul'), icon: Sparkles, color: "text-pink-500", description: t('profile.achievements_list.artistic_soul_desc') },
-  { count: 80, title: t('profile.achievements_list.photo_legend'), icon: Sparkles, color: "text-pink-500", description: t('profile.achievements_list.photo_legend_desc') },
-  { count: 85, title: t('profile.achievements_list.iconic'), icon: Sparkles, color: "text-rose-500", description: t('profile.achievements_list.iconic_desc') },
-  { count: 90, title: t('profile.achievements_list.masterpiece_creator'), icon: Sparkles, color: "text-rose-500", description: t('profile.achievements_list.masterpiece_creator_desc') },
-  { count: 95, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-purple-500", description: t('profile.achievements_list.photo_god_desc') },
-  { count: 100, title: t('profile.achievements_list.photo_god'), icon: Trophy, color: "text-cyan-500", description: t('profile.achievements_list.photo_god_desc') },
-];
-
-// Ачивки из магазина
-const SHOP_ACHIEVEMENTS = (t: any) => [
-  { title: t('profile.achievements_list.shopkeeper'), icon: ShoppingCart, color: "text-blue-500", description: t('profile.achievements_list.shopkeeper_desc') },
-  { title: t('profile.achievements_list.buyer'), icon: ShoppingBag, color: "text-green-500", description: t('profile.achievements_list.buyer_desc') },
-  { title: t('profile.achievements_list.shopping'), icon: Zap, color: "text-yellow-500", description: t('profile.achievements_list.shopping_desc') },
-  { title: t('profile.achievements_list.collector'), icon: Star, color: "text-amber-500", description: t('profile.achievements_list.collector_desc') },
-  { title: t('profile.achievements_list.big_spender'), icon: Trophy, color: "text-red-500", description: t('profile.achievements_list.big_spender_desc') },
-  { title: t('profile.achievements_list.legendary'), icon: Crown, color: "text-yellow-500", description: t('profile.achievements_list.legendary_desc') },
-  { title: t('profile.achievements_list.completionist'), icon: Award, color: "text-emerald-500", description: t('profile.achievements_list.completionist_desc') },
-  { title: t('profile.achievements_list.daily_shopper'), icon: ShoppingBag, color: "text-blue-500", description: t('profile.achievements_list.daily_shopper_desc') },
-];
-
-// Секретные ачивки
-const SECRET_ACHIEVEMENTS = (t: any) => [
-  { title: t('profile.achievements_list.secret_agent'), icon: Glasses, color: "text-blue-500", description: t('profile.achievements_list.secret_agent_desc') },
-];
-
-type Achievement = {
-  id: string;
-  user_id: string;
-  achievement_type: string;
-  achievement_name: string;
-  achieved_at: string;
-};
-
 // Theme configurations
 const THEMES: Record<string, { bg: string; text: string }> = {
   default: { bg: 'bg-white dark:bg-gray-900', text: 'text-black dark:text-white' },
@@ -149,12 +89,9 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [swipeCount, setSwipeCount] = useState(0);
   const [originalSwipeCount, setOriginalSwipeCount] = useState(0);
   const [uploadCount, setUploadCount] = useState(0);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [showSwipeEditor, setShowSwipeEditor] = useState(false);
   const [tempSwipeValue, setTempSwipeValue] = useState(0);
   const [hideSwipeCount, setHideSwipeCount] = useState(false);
-  const [hiddenAchievements, setHiddenAchievements] = useState<Set<string>>(new Set());
-  const [showHiddenAchievements, setShowHiddenAchievements] = useState(false);
   const [originsBalance, setOriginsBalance] = useState(0);
   const [maxOriginsBalance, setMaxOriginsBalance] = useState(0);
   const [spentOrigins, setSpentOrigins] = useState(0);
@@ -174,7 +111,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
   const [selectedPet, setSelectedPet] = useState<UserPet | null>(null);
   const [savedPhotos, setSavedPhotos] = useState<Photo[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'photos' | 'wall' | 'pets' | 'achievements' | 'saved'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'wall' | 'pets' | 'saved'>('photos');
   const [wallPosts, setWallPosts] = useState<any[]>([]);
   const [loadingWall, setLoadingWall] = useState(false);
   const [newWallContent, setNewWallContent] = useState('');
@@ -214,7 +151,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (profile) {
       Promise.all([
         loadUserStats(),
-        loadAchievements(),
         loadUserSettings(),
         loadDecorations(),
         loadBadgeSettings(),
@@ -225,12 +161,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
       ]);
     }
   }, [profile]);
-
-  useEffect(() => {
-    if (uploadCount > 0 && isOwn) {
-      checkAndAddUploadAchievements();
-    }
-  }, [uploadCount]);
 
   useEffect(() => {
     if (profile) calculateOriginsBalance();
@@ -826,28 +756,12 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!profile) return;
     const { data: swipeData } = await supabase.from('user_settings').select('hide_swipe_count').eq('user_id', profile.id).maybeSingle();
     if (swipeData) setHideSwipeCount(swipeData.hide_swipe_count || false);
-    const { data: hiddenData } = await supabase.from('user_settings').select('hidden_achievements').eq('user_id', profile.id).maybeSingle();
-    if (hiddenData?.hidden_achievements) setHiddenAchievements(new Set(hiddenData.hidden_achievements));
-  }
-
-  async function loadAchievements() {
-    if (!profile) return;
-    const { data } = await supabase.from('achievements').select('*').eq('user_id', profile.id).order('achieved_at', { ascending: false });
-    if (data) setAchievements(data);
   }
 
   async function toggleHideSwipeCount() {
     const newValue = !hideSwipeCount;
     setHideSwipeCount(newValue);
     await supabase.from('user_settings').upsert({ user_id: profile!.id, hide_swipe_count: newValue }, { onConflict: 'user_id' });
-  }
-
-  async function toggleHideAchievement(achievementId: string) {
-    const newHiddenSet = new Set(hiddenAchievements);
-    if (newHiddenSet.has(achievementId)) newHiddenSet.delete(achievementId);
-    else newHiddenSet.add(achievementId);
-    setHiddenAchievements(newHiddenSet);
-    await supabase.from('user_settings').upsert({ user_id: profile!.id, hidden_achievements: Array.from(newHiddenSet) }, { onConflict: 'user_id' });
   }
 
   async function updateSwipeCount(newCount: number) {
@@ -859,29 +773,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!error) {
       setSwipeCount(newCount);
       setShowSwipeEditor(false);
-      await checkAndAddSwipeAchievements(newCount);
-    }
-  }
-
-  async function checkAndAddSwipeAchievements(currentCount: number) {
-    for (const ach of SWIPE_ACHIEVEMENTS(t)) {
-      if (currentCount >= ach.count) {
-        if (!achievements.some(a => a.achievement_name === ach.title)) {
-          await supabase.from('achievements').insert({ user_id: profile!.id, achievement_type: 'swipe', achievement_name: ach.title });
-          loadAchievements();
-        }
-      }
-    }
-  }
-
-  async function checkAndAddUploadAchievements() {
-    for (const ach of UPLOAD_ACHIEVEMENTS(t)) {
-      if (uploadCount >= ach.count) {
-        if (!achievements.some(a => a.achievement_name === ach.title)) {
-          await supabase.from('achievements').insert({ user_id: profile!.id, achievement_type: 'upload', achievement_name: ach.title });
-          loadAchievements();
-        }
-      }
     }
   }
 
@@ -916,39 +807,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     ...badgesOrder.filter(bid => allAvailableBadges.includes(bid as any) && !hiddenBadges.includes(bid)),
     ...allAvailableBadges.filter(bid => !badgesOrder.includes(bid as string) && !hiddenBadges.includes(bid as string))
   ];
-  const purchasedAch = profile.purchased_achievements || [];
-  const allAchievements = [...achievements];
-  purchasedAch.forEach(aid => {
-    let name = '';
-    if (aid === 'shopkeeper') name = t('profile.achievements_list.shopkeeper');
-    else if (aid === 'buyer') name = t('profile.achievements_list.buyer');
-    else if (aid === 'shopping') name = t('profile.achievements_list.shopping');
-    else if (aid === 'collector') name = t('profile.achievements_list.collector');
-    else if (aid === 'big_spender') name = t('profile.achievements_list.big_spender');
-    else if (aid === 'legendary') name = t('profile.achievements_list.legendary');
-    else if (aid === 'completionist') name = t('profile.achievements_list.completionist');
-    else if (aid === 'daily_shopper') name = t('profile.achievements_list.daily_shopper');
-
-    if (name && !allAchievements.some(a => a.achievement_name === name)) {
-      allAchievements.push({ 
-        id: `shop_${aid}`, 
-        user_id: profile.id, 
-        achievement_type: 'shop', 
-        achievement_name: name, 
-        achieved_at: new Date().toISOString() 
-      });
-    }
-  });
-
-  const visibleAchievements = allAchievements.filter(ach => !hiddenAchievements.has(ach.id));
-  const hiddenAchievementsList = allAchievements.filter(ach => hiddenAchievements.has(ach.id));
-
-  const getAchievementConfig = (name: string) => {
-    return SECRET_ACHIEVEMENTS(t).find(a => a.title === name) || 
-           SHOP_ACHIEVEMENTS(t).find(a => a.title === name) || 
-           SWIPE_ACHIEVEMENTS(t).find(a => a.title === name) || 
-           UPLOAD_ACHIEVEMENTS(t).find(a => a.title === name);
-  };
 
   const currentTheme = THEMES[themePreference] || THEMES.default;
   const currentPattern = PATTERNS[patternPreference] || '';
@@ -1108,7 +966,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
         <div className="flex gap-2 p-1.5 bg-white border border-slate-100 rounded-2xl overflow-x-auto whitespace-nowrap scrollbar-hide">
            <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.moments')}</button>
            <button onClick={() => setActiveTab('wall')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'wall' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Wall</button>
-           <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.achievements')}</button>
            {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Pets</button>}
            {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.saved')}</button>}
         </div>
@@ -1371,61 +1228,6 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                </div>
              ))}
              {photos.length === 0 && <div className="col-span-full py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">{t('profile.empty_photos')}</div>}
-          </div>
-        )}
-
-        {activeTab === 'achievements' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-3">
-              {visibleAchievements.map(ach => {
-                const cfg = getAchievementConfig(ach.achievement_name);
-                return cfg ? (
-                  <div key={ach.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-[1.5rem] group hover:bg-slate-50 transition-all shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-inner">
-                        <cfg.icon className={cn("w-6 h-6", cfg.color)} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm text-black">{ach.achievement_name}</div>
-                        <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{cfg.description}</div>
-                      </div>
-                    </div>
-                    {isOwn && (
-                      <button onClick={() => toggleHideAchievement(ach.id)} className="p-2 text-slate-200 hover:text-slate-400 transition-all">
-                        <EyeOff size={16} />
-                      </button>
-                    )}
-                  </div>
-                ) : null;
-              })}
-              {visibleAchievements.length === 0 && <div className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-[10px]">No achievements discovered yet.</div>}
-            </div>
-
-            {isOwn && hiddenAchievementsList.length > 0 && (
-              <div className="pt-4 border-t border-slate-100">
-                <button onClick={() => setShowHiddenAchievements(!showHiddenAchievements)} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-500 transition-all px-2 mb-4">
-                  {showHiddenAchievements ? 'Hide' : 'Show'} ({hiddenAchievementsList.length})
-                </button>
-                {showHiddenAchievements && (
-                  <div className="grid grid-cols-1 gap-3 opacity-50">
-                    {hiddenAchievementsList.map(ach => {
-                      const cfg = getAchievementConfig(ach.achievement_name);
-                      return cfg ? (
-                        <div key={ach.id} className="flex items-center justify-between p-4 border border-dashed border-slate-200 rounded-[1.5rem]">
-                          <div className="flex items-center gap-4">
-                            <cfg.icon className={cn("w-5 h-5", cfg.color)} />
-                            <div className="font-bold text-xs">{ach.achievement_name}</div>
-                          </div>
-                          <button onClick={() => toggleHideAchievement(ach.id)} className="p-2 text-slate-400 hover:text-black transition-all">
-                            <Eye size={16} />
-                          </button>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 

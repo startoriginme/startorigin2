@@ -77,7 +77,18 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
   useEffect(() => {
     if (profile) {
-      setBadgesOrder(profile.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
+      const dbOrder = profile.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles'];
+      const purchased = profile.purchased_badges || [];
+      
+      // Merge purchased badges into order if missing
+      const fullOrder = [...dbOrder];
+      purchased.forEach(id => {
+        if (!fullOrder.includes(id)) {
+          fullOrder.push(id);
+        }
+      });
+      
+      setBadgesOrder(fullOrder);
       setHiddenBadges(profile.hidden_badges || []);
     }
   }, [profile]);
@@ -177,6 +188,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
     if (type === 'badge') {
       updates.purchased_badges = [...(profile?.purchased_badges || []), item];
+      updates.badges_order = [...(profile?.badges_order || badgesOrder), item];
     } else if (type === 'theme') {
       updates.unlocked_themes = [...(profile?.unlocked_themes || []), item];
     } else if (type === 'pattern') {
@@ -344,6 +356,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
     if (!allAvailableBadges.includes('star')) allAvailableBadges.push('star');
     if (!allAvailableBadges.includes('verified')) allAvailableBadges.push('verified');
   }
+  
+  const managedBadges = [
+    ...badgesOrder.filter(id => allAvailableBadges.includes(id)),
+    ...allAvailableBadges.filter(id => !badgesOrder.includes(id))
+  ];
 
   return (
     <div className="max-w-xl mx-auto p-4 md:p-8 space-y-12 min-h-screen">
@@ -458,11 +475,11 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext 
-                    items={badgesOrder.filter(id => allAvailableBadges.includes(id))}
+                    items={managedBadges}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-2">
-                      {badgesOrder.filter(id => allAvailableBadges.includes(id)).map((id) => (
+                      {managedBadges.map((id) => (
                         <SortableBadgeItem 
                           key={id} 
                           id={id} 

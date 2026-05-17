@@ -1,4 +1,4 @@
-import { BadgeCheck, Snowflake, Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Trophy, Zap, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { BadgeCheck, Snowflake, Shield, Sparkles, Hash, Star, Crown, Diamond, Heart, Award, Rocket, Leaf, Moon, Sun, Music, Book, Coffee, Gamepad, Gift, Smile, Trophy, Zap, ShoppingBag, ShoppingCart, Headphones } from 'lucide-react';
 import React from 'react';
 
 export const BADGE_PRICES: Record<string, number> = {
@@ -19,7 +19,8 @@ export const BADGE_PRICES: Record<string, number> = {
   gamepad: 350,
   gift: 200,
   smile: 100,
-  sparkles: 300
+  sparkles: 300,
+  headphones: 3000
 };
 
 export const THEME_PRICES: Record<string, number> = {
@@ -84,6 +85,7 @@ export const BADGE_CONFIG: Record<string, { icon: React.ElementType; color: stri
   gift: { icon: Gift, color: 'text-red-500', key: 'gift' },
   smile: { icon: Smile, color: 'text-yellow-500', key: 'smile' },
   sparkles: { icon: Sparkles, color: 'text-purple-400', key: 'sparkles' },
+  headphones: { icon: Headphones, color: 'text-indigo-500', key: 'headphones' },
 };
 
 export const PET_CONFIG = [

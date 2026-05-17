@@ -267,9 +267,9 @@ export default function Feed({ user }: { user: any }) {
           </button>
           <button 
             onClick={() => handleSwipe('right')}
-            className="w-16 h-16 rounded-full border border-slate-100 bg-white flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-500 transition-all text-slate-300 shadow-sm"
+            className="w-16 h-16 rounded-full border border-slate-100 bg-white flex items-center justify-center hover:bg-orange-50 hover:text-orange-500 transition-all text-slate-300 shadow-sm"
           >
-            <Heart size={28} />
+            <Flame size={28} />
           </button>
         </div>
       </div>

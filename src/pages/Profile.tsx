@@ -525,10 +525,20 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
 
   async function loadBadgeSettings() {
     if (!profile) return;
-    const { data } = await supabase.from('profiles').select('hidden_badges, badges_order').eq('id', profile.id).single();
+    const { data } = await supabase.from('profiles').select('hidden_badges, badges_order, purchased_badges').eq('id', profile.id).single();
     if (data) {
       setHiddenBadges(data.hidden_badges || []);
-      setBadgesOrder(data.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles']);
+      const dbOrder = data.badges_order || ['verified', 'star', 'computer', 'snowflake', 'crown', 'diamond', 'heart', 'award', 'rocket', 'leaf', 'moon', 'sun', 'music', 'book', 'coffee', 'gamepad', 'gift', 'smile', 'sparkles'];
+      const purchased = data.purchased_badges || [];
+      
+      const fullOrder = [...dbOrder];
+      purchased.forEach(id => {
+        if (!fullOrder.includes(id)) {
+          fullOrder.push(id);
+        }
+      });
+      
+      setBadgesOrder(fullOrder);
     }
   }
 
@@ -902,7 +912,10 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
     if (!allAvailableBadges.includes('star' as any)) allAvailableBadges.push('star' as any);
   }
 
-  const visibleBadges = badgesOrder.filter(bid => allAvailableBadges.includes(bid as any) && !hiddenBadges.includes(bid));
+  const visibleBadges = [
+    ...badgesOrder.filter(bid => allAvailableBadges.includes(bid as any) && !hiddenBadges.includes(bid)),
+    ...allAvailableBadges.filter(bid => !badgesOrder.includes(bid as string) && !hiddenBadges.includes(bid as string))
+  ];
   const purchasedAch = profile.purchased_achievements || [];
   const allAchievements = [...achievements];
   purchasedAch.forEach(aid => {
@@ -1096,7 +1109,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
            <button onClick={() => setActiveTab('photos')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'photos' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.moments')}</button>
            <button onClick={() => setActiveTab('wall')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'wall' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Wall</button>
            <button onClick={() => setActiveTab('achievements')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'achievements' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.achievements')}</button>
-           {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.companions')}</button>}
+           {hasPetsTab && <button onClick={() => setActiveTab('pets')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'pets' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>Pets</button>}
            {isOwn && <button onClick={() => setActiveTab('saved')} className={cn("flex-1 px-6 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", activeTab === 'saved' ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-black")}>{t('profile.tabs.saved')}</button>}
         </div>
 
@@ -1441,7 +1454,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                     </div>
                     <div className="text-center">
                        <div className="font-bold text-black text-lg truncate w-full max-w-[120px]">{displayName}</div>
-                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Companion</div>
+                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pet</div>
                        {up.gifter && <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest mt-1">Gift from {up.gifter.name || up.gifter.username}</div>}
                     </div>
                   </div>
@@ -1588,7 +1601,7 @@ export default function Profile({ user, onUpdate }: { user: any, onUpdate?: (id:
                   disabled={selling}
                   className="w-full h-12 bg-red-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-red-600 disabled:opacity-50"
                 >
-                  {selling ? 'Selling...' : 'Yes, Sell Companion'}
+                  {selling ? 'Selling...' : 'Yes, Sell Pet'}
                 </button>
                 <button 
                   onClick={() => setShowSellConfirm(false)}

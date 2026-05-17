@@ -246,7 +246,8 @@ const resources = {
             gamepad: 'Gamepad',
             gift: 'Gift',
             smile: 'Smile',
-            sparkles: 'Sparkles'
+            sparkles: 'Sparkles',
+            headphones: 'Headphones'
           },
           gradients: {
             soft_blue: 'Blue',

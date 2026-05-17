@@ -16,15 +16,15 @@ import PhotoViewer from '../components/PhotoViewer';
 import LinkifiedText from '../components/LinkifiedText';
 import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
-// Swipe Achievement thresholds
-const SWIPE_ACHIEVEMENTS = [
-  { count: 10, title: "Photo Explorer", icon: Camera, color: "text-green-500", description: "Swiped 10 photos" },
-  { count: 30, title: "Photo Hunter", icon: Search, color: "text-blue-500", description: "Swiped 30 photos" },
-  { count: 60, title: "Photo Master", icon: Star, color: "text-purple-500", description: "Swiped 60 photos" },
-  { count: 120, title: "Photo Legend", icon: Flame, color: "text-orange-500", description: "Swiped 120 photos" },
-  { count: 250, title: "Photo Guru", icon: Sparkles, color: "text-yellow-500", description: "Swiped 250 photos" },
-  { count: 500, title: "Photo God", icon: Trophy, color: "text-cyan-500", description: "Swiped 500 photos" },
-];
+// Activity Progress thresholds
+const ACTIVITY_PROGRESS = [
+    { count: 10, title: "Beginner", icon: Camera, color: "text-green-500", description: "Liked 10 photos" },
+    { count: 30, title: "Enthusiast", icon: Search, color: "text-blue-500", description: "Liked 30 photos" },
+    { count: 60, title: "Star", icon: Star, color: "text-purple-500", description: "Liked 60 photos" },
+    { count: 120, title: "Elite Member", icon: Layout, color: "text-orange-500", description: "Liked 120 photos" },
+    { count: 250, title: "Photo Legend", icon: Sparkles, color: "text-yellow-500", description: "Liked 250 photos" },
+    { count: 500, title: "Community Icon", icon: Trophy, color: "text-cyan-500", description: "Liked 500 photos" },
+  ];
 
 export default function Feed({ user }: { user: any }) {
   const { t } = useTranslation();
@@ -41,11 +41,11 @@ export default function Feed({ user }: { user: any }) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const lastPhotoRef = useRef<HTMLDivElement | null>(null);
   
-  // Tinder Mode states
-  const [tinderMode, setTinderMode] = useState(false);
+  // Focus Mode states
+  const [focusMode, setFocusMode] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [swipeCount, setSwipeCount] = useState(0);
-  const [showAchievement, setShowAchievement] = useState<any>(null);
+  const [showProgress, setShowProgress] = useState<any>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -161,7 +161,7 @@ export default function Feed({ user }: { user: any }) {
   }, [page, source, loadingMore, hasMore]);
 
   useEffect(() => {
-    if (!lastPhotoRef.current || tinderMode) return;
+    if (!lastPhotoRef.current || focusMode) return;
     if (observerRef.current) observerRef.current.disconnect();
 
     observerRef.current = new IntersectionObserver(entries => {
@@ -170,15 +170,15 @@ export default function Feed({ user }: { user: any }) {
 
     observerRef.current.observe(lastPhotoRef.current);
     return () => observerRef.current?.disconnect();
-  }, [items, loadMore, tinderMode]);
+  }, [items, loadMore, focusMode]);
 
   async function updateSwipeCount(newCount: number) {
     // Attempting update - if column doesn't exist it fails silently
     await supabase.from('profiles').update({ swipe_count: newCount }).eq('id', user.id);
-    const achievement = SWIPE_ACHIEVEMENTS.find(a => a.count === newCount);
-    if (achievement) {
-      setShowAchievement(achievement);
-      setTimeout(() => setShowAchievement(null), 3500);
+    const progress = ACTIVITY_PROGRESS.find(a => a.count === newCount);
+    if (progress) {
+      setShowProgress(progress);
+      setTimeout(() => setShowProgress(null), 3500);
     }
   }
 
@@ -191,36 +191,36 @@ export default function Feed({ user }: { user: any }) {
     setDragOffset({ x: 0, y: 0 });
   };
 
-  if (tinderMode) {
+  if (focusMode) {
     const photosOnly = items.filter(i => i.type === 'photo');
     const currentPhoto = photosOnly[currentPhotoIndex];
     
     return (
       <div className="fixed inset-0 z-[500] bg-white flex flex-col items-center justify-center p-4">
         <button 
-          onClick={() => setTinderMode(false)} 
+          onClick={() => setFocusMode(false)} 
           className="absolute top-6 right-6 z-[600] p-4 bg-white shadow-xl hover:bg-slate-50 rounded-2xl transition-all text-slate-400 border border-slate-100"
         >
           <X size={24} />
         </button>
 
         <div className="absolute top-16 md:top-20 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white px-6 py-3 rounded-full border border-slate-100 shadow-2xl z-[550]">
-          <Flame className="text-orange-500" size={24} />
+          <Layout className="text-black" size={24} />
           <span className="font-bold text-xl text-black">{swipeCount}</span>
         </div>
 
         <AnimatePresence>
-          {showAchievement && (
+          {showProgress && (
             <motion.div 
               initial={{ y: -50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -50, opacity: 0 }}
               className="absolute top-24 glass-card p-4 flex items-center gap-4 z-50 shadow-2xl border-emerald-100 bg-emerald-50/50"
             >
-              <showAchievement.icon className={showAchievement.color} size={24} />
+              <showProgress.icon className={showProgress.color} size={24} />
               <div>
-                <div className="font-bold text-black">{showAchievement.title}</div>
-                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{showAchievement.description}</div>
+                <div className="font-bold text-black">{showProgress.title}</div>
+                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{showProgress.description}</div>
               </div>
             </motion.div>
           )}
@@ -297,11 +297,11 @@ export default function Feed({ user }: { user: any }) {
             )}
           </Link>
           <button 
-            onClick={() => setTinderMode(true)}
-            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all font-bold text-xs flex items-center justify-center"
-            title="Tinder Mode"
+            onClick={() => setFocusMode(true)}
+            className="p-3 bg-slate-50 rounded-2xl text-black border border-slate-100 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center"
+            title="Focus Mode"
           >
-            <Flame size={20} />
+            <Layout size={20} />
           </button>
           
                   <div className="relative">

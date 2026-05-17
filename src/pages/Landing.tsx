@@ -306,8 +306,45 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Professional Archiving Highlight */}
+        <section className="py-24 px-6 border-y border-slate-50">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-12">
+             <div className="flex-1 space-y-6">
+                <div className="inline-flex p-3 rounded-2xl bg-black text-white">
+                  <Image size={32} />
+                </div>
+                <h2 className="text-4xl font-bold text-black tracking-tight leading-tight">
+                  Your Personal <br/> Photo Space
+                </h2>
+                <p className="text-slate-500 font-medium text-lg leading-relaxed">
+                  StartOrigin is made for people who love photography. No ads, no distractions. Just your beautiful moments, saved in high quality.
+                </p>
+                <div className="flex items-center gap-4 pt-4">
+                   <div className="flex -space-x-3 overflow-hidden">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-300 border border-slate-50">
+                           {i}
+                        </div>
+                      ))}
+                   </div>
+                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Join 500+ Photographers</p>
+                </div>
+             </div>
+             <div className="flex-1 w-full aspect-square bg-slate-50 rounded-[3rem] border border-slate-100 flex items-center justify-center p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-black/[0.02] to-transparent" />
+                <div className="grid grid-cols-2 gap-4 w-full">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="aspect-square bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-100">
+                        <ArrowRight size={40} strokeWidth={1} />
+                     </div>
+                   ))}
+                </div>
+             </div>
+          </div>
+        </section>
+
         {/* Features Section */}
-        <section className="py-24 px-6 bg-slate-50">
+        <section className="py-24 px-6">
           <div className="max-w-6xl mx-auto space-y-16">
             <div className="text-center space-y-4">
               <h2 className="text-4xl font-bold text-black tracking-tight">{t('landing.features_title')}</h2>
@@ -315,13 +352,13 @@ export default function Landing() {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature, index) => (
+              {features.filter(f => f.title !== t('landing.features.swipe')).map((feature, index) => (
                 <motion.div 
                   key={index}
                   whileHover={{ y: -8 }}
                   className={cn(
                     "p-8 rounded-[2.5rem] bg-white border border-slate-100 space-y-4 shadow-sm transition-all",
-                    feature.highlight && "ring-2 ring-black/5"
+                    feature.highlight && "ring-1 ring-black/5"
                   )}
                 >
                   <div className={cn("inline-flex p-3 rounded-2xl bg-slate-50", feature.color)}>
@@ -329,57 +366,16 @@ export default function Landing() {
                   </div>
                   <h3 className="text-xl font-bold text-black">{feature.title}</h3>
                   <p className="text-slate-500 font-medium leading-relaxed">{feature.description}</p>
-                  {feature.highlight && feature.title !== t('landing.features.swipe') && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 text-black text-[10px] font-bold uppercase tracking-widest">
-                      <Sparkles size={10} />
-                      <span>New Era</span>
-                    </div>
-                  )}
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Tinder Mode Highlight */}
-        <section className="py-32 px-6 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-pink-50 opacity-50" />
-          <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8">
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto"
-            >
-              <Flame size={40} className="text-orange-500" />
-            </motion.div>
-            
-            <div className="space-y-4">
-              <h2 className="text-5xl font-bold text-black tracking-tighter">
-                {t('landing.tinder_title')}
-              </h2>
-              <p className="text-xl text-slate-500 font-medium max-w-2xl mx-auto">
-                {t('landing.tinder_sub')}
-              </p>
-            </div>
-
-            <div className="flex justify-center gap-10">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-emerald-500">
-                  <Heart size={24} fill="currentColor" />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-widest opacity-40">Like</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center text-rose-500">
-                  <X size={24} />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-widest opacity-40">Pass</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Removed Tinder Mode Highlight */}
 
         {/* Call to Action */}
-        <section className="py-24 px-6">
+        <section className="py-24 px-6 bg-slate-50">
           <div className="max-w-4xl mx-auto rounded-[4rem] bg-black p-12 md:p-20 text-center space-y-8 shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
             <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
@@ -416,7 +412,7 @@ export default function Landing() {
             <p className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
               © {currentYear} StartOrigin — {t('landing.footer', { heart: '' })}
               <Heart size={12} className="text-rose-500 fill-rose-500" /> 
-              for creators
+              made for you
             </p>
           </div>
         </footer>

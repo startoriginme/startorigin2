@@ -119,14 +119,17 @@ export default function Navigation() {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 h-screen glass-panel sticky top-0 z-50 p-6 shadow-[4px_0_24px_rgba(0,0,0,0.01)]">
-        <div className="mb-10 px-2 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-black">StartOrigin</h1>
-          <button 
-            onClick={() => setShowRoadmap(true)}
-            className="px-2 py-0.5 bg-slate-100 hover:bg-black hover:text-white transition-all rounded-md text-[10px] font-bold text-slate-400"
-          >
-            v1.02
-          </button>
+        <div className="mb-10 px-2">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-black">StartOrigin</h1>
+            <button 
+              onClick={() => setShowRoadmap(true)}
+              className="px-1.5 py-0.5 bg-slate-50 hover:bg-black hover:text-white transition-all rounded text-[8px] font-black text-slate-300 uppercase tracking-tighter"
+            >
+              v1.02
+            </button>
+          </div>
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1">Your Photo Collection</p>
         </div>
         <nav className="flex-1 space-y-1">
           {navItems.map((item) => (
@@ -198,8 +201,8 @@ export default function Navigation() {
             >
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-black tracking-tight">Roadmap</h2>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Evolution of StartOrigin</p>
+                  <h2 className="text-xl font-bold text-black tracking-tight">What's New</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Recent app updates</p>
                 </div>
                 <button 
                   onClick={() => setShowRoadmap(false)}
@@ -241,7 +244,7 @@ export default function Navigation() {
                   onClick={() => setShowRoadmap(false)}
                   className="w-full h-12 bg-black text-white rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] hover:opacity-90 transition-all shadow-lg shadow-black/10"
                 >
-                  Close Roadmap
+                  Close
                 </button>
               </div>
             </motion.div>

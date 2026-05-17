@@ -15,6 +15,7 @@ type SearchCategory = 'photos' | 'users' | 'hashtags';
 
 const HONOR_BOARD = [
   { username: 'mavebo', label: 'Founder & CEO', role: 'official' },
+  { username: 'kode', label: 'CTO', role: 'official' },
   { username: 'pipinos', label: 'Main Developer', role: 'official' },
   { username: 'winter', label: 'Creative Director', role: 'official' },
   { username: 'so_status', label: 'Status', role: 'official' },

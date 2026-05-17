@@ -550,16 +550,16 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
       {/* Info Section */}
       <section className="space-y-4">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Nexus Information</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">About StartOrigin</h2>
         <div className="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden divide-y divide-slate-100 shadow-sm">
-           <ExternalLink icon={Mail} label="Echo (Support)" href="mailto:gerxog04@gmail.com" value="Contact" />
+           <ExternalLink icon={Mail} label="Support" href="mailto:gerxog04@gmail.com" value="Contact" />
            <div 
              onClick={() => setShowRoadmap(true)}
              className="p-6 flex items-center justify-between group hover:bg-black/[0.02] transition-colors cursor-pointer"
            >
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/10 rounded-xl text-slate-300 group-hover:text-black group-hover:bg-white group-hover:scale-110 transition-all border border-white/5"><Info size={18} /></div>
-                <div className="text-sm font-bold text-black">Architecture</div>
+                <div className="text-sm font-bold text-black">App Version</div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-300 font-bold">v1.02</span>
@@ -571,10 +571,10 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
 
       {/* Resources Section */}
       <section className="space-y-4">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Resources</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Help & Guides</h2>
         <div className="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden divide-y divide-slate-100 shadow-sm">
-           <ExternalLink icon={Book} label="Documentation" href="https://startorigin.gitbook.io/startorigin" value="View" />
-           <ExternalLink icon={Shield} label="Rules" href="https://startorigin.gitbook.io/startorigin/rules" value="Read" />
+           <ExternalLink icon={Book} label="User Guide" href="https://startorigin.gitbook.io/startorigin" value="View" />
+           <ExternalLink icon={Shield} label="App Rules" href="https://startorigin.gitbook.io/startorigin/rules" value="Read" />
            <div 
              onClick={() => navigate('/help')}
              className="w-full p-4 flex items-center justify-between hover:bg-white transition-all cursor-pointer group"
@@ -606,7 +606,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
              <div className="max-w-xl mx-auto space-y-8">
                 <div className="flex justify-between items-center text-white">
                    <div>
-                      <h2 className="text-3xl font-bold tracking-tight">Origin Shop</h2>
+                      <h2 className="text-3xl font-bold tracking-tight">Asset Library</h2>
                       <div className="flex items-center gap-2 mt-1">
                          <Coins size={16} className="text-amber-500" />
                          <span className="font-bold text-amber-500">{currentBalance.toFixed(0)} {t('shop.available')}</span>
@@ -799,8 +799,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
              <div className="max-w-xl mx-auto space-y-8">
                 <div className="flex justify-between items-center text-white">
                    <div>
-                      <h2 className="text-3xl font-bold tracking-tight">Ancient Beings</h2>
-                      <p className="text-white/40 text-sm">Most origins accumulated</p>
+                      <h2 className="text-3xl font-bold tracking-tight">Top Members</h2>
+                      <p className="text-white/40 text-sm">Most active photographers</p>
                    </div>
                    <button onClick={() => setShowLeaderboard(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all"><X size={24}/></button>
                 </div>
@@ -846,8 +846,8 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
             >
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-black tracking-tight">Roadmap</h2>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Evolution of StartOrigin</p>
+                  <h2 className="text-xl font-bold text-black tracking-tight">What's New</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Recent app updates</p>
                 </div>
                 <button 
                   onClick={() => setShowRoadmap(false)}
@@ -889,7 +889,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                   onClick={() => setShowRoadmap(false)}
                   className="w-full h-12 bg-black text-white rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] hover:opacity-90 transition-all shadow-lg shadow-black/10"
                 >
-                  Close Roadmap
+                  Close
                 </button>
               </div>
             </motion.div>

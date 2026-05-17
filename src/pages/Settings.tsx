@@ -47,6 +47,7 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
   const [loading, setLoading] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showRoadmap, setShowRoadmap] = useState(false);
   const [showBadgesExpanded, setShowBadgesExpanded] = useState(false);
   const [activeShopTab, setActiveShopTab] = useState<'badges' | 'decorations' | 'achievements' | 'pets' | 'colors' | 'fonts'>('badges');
   const [leaderboardData, setLeaderboardData] = useState<Profile[]>([]);
@@ -301,6 +302,39 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                          (profile?.spent_origins || 0);
 
   const purchasedBadges = profile?.purchased_badges || [];
+
+  const roadmapData = [
+    {
+      version: 'v1.02',
+      changes: [
+        'Attachments in Wall Posts',
+        'Pin Functionality in The Wall',
+        'Minor Improvements'
+      ]
+    },
+    {
+      version: 'v1.01',
+      changes: [
+        'Design updates',
+        'Minor improvements'
+      ]
+    },
+    {
+      version: 'v1.0',
+      changes: [
+        'Chat added!',
+        'Wall posts',
+        'Updated shop descriptions',
+        'Display Name styles added',
+        'Pets added',
+        'Pet Showcase on Profile',
+        'Design Update',
+        'Minor bug fixes',
+        'And more!'
+      ]
+    }
+  ];
+
   const allAvailableBadges = [...purchasedBadges];
   if (profile?.username === 'winterwastaken' && !allAvailableBadges.includes('snowflake')) allAvailableBadges.push('snowflake');
   if (['viscaelbarca', 'camilakiriek'].includes(profile?.username || '') && !allAvailableBadges.includes('star')) allAvailableBadges.push('star');
@@ -519,7 +553,19 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
         <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 px-2">Nexus Information</h2>
         <div className="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden divide-y divide-slate-100 shadow-sm">
            <ExternalLink icon={Mail} label="Echo (Support)" href="mailto:gerxog04@gmail.com" value="Contact" />
-           <ExternalLink icon={Info} label="Architecture" href="#" value="v1.4.2" />
+           <div 
+             onClick={() => setShowRoadmap(true)}
+             className="p-6 flex items-center justify-between group hover:bg-black/[0.02] transition-colors cursor-pointer"
+           >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/10 rounded-xl text-slate-300 group-hover:text-black group-hover:bg-white group-hover:scale-110 transition-all border border-white/5"><Info size={18} /></div>
+                <div className="text-sm font-bold text-black">Architecture</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-300 font-bold">v1.02</span>
+                <ChevronRight size={16} className="text-slate-200 group-hover:text-black transition-colors" />
+              </div>
+           </div>
         </div>
       </section>
 
@@ -781,6 +827,73 @@ export default function Settings({ user, profile, onUpdate }: { user: any, profi
                 </div>
              </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ROADMAP MODAL */}
+      <AnimatePresence>
+        {showRoadmap && (
+          <div 
+            className="fixed inset-0 z-[400] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowRoadmap(false)}
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-black tracking-tight">Roadmap</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Evolution of StartOrigin</p>
+                </div>
+                <button 
+                  onClick={() => setShowRoadmap(false)}
+                  className="p-2 hover:bg-slate-50 transition-colors rounded-full text-slate-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                {roadmapData.map((release, idx) => (
+                  <div key={release.version} className="relative pl-6">
+                    {/* Progress line */}
+                    {idx !== roadmapData.length - 1 && (
+                      <div className="absolute left-[7px] top-6 bottom-[-32px] w-0.5 bg-slate-100" />
+                    )}
+                    
+                    <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white bg-black shadow-sm" />
+                    
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-sm font-black text-black">{release.version}</span>
+                      <div className="h-0.5 flex-1 bg-slate-50" />
+                    </div>
+
+                    <ul className="space-y-2">
+                      {release.changes.map((change, i) => (
+                        <li key={i} className="flex items-start gap-2 text-slate-500 text-sm">
+                          <ChevronRight size={14} className="mt-1 flex-shrink-0 text-slate-300" />
+                          <span>{change}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 bg-slate-50/50">
+                <button 
+                  onClick={() => setShowRoadmap(false)}
+                  className="w-full h-12 bg-black text-white rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] hover:opacity-90 transition-all shadow-lg shadow-black/10"
+                >
+                  Close Roadmap
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -7,10 +7,12 @@ import {
   User, 
   Settings,
   Grid,
-  MessageSquare
+  MessageSquare,
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -20,6 +22,39 @@ export default function Navigation() {
   const { t } = useTranslation();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showRoadmap, setShowRoadmap] = useState(false);
+
+  const roadmapData = [
+    {
+      version: 'v1.02',
+      changes: [
+        'Attachments in Wall Posts',
+        'Pin Functionality in The Wall',
+        'Minor Improvements'
+      ]
+    },
+    {
+      version: 'v1.01',
+      changes: [
+        'Design updates',
+        'Minor improvements'
+      ]
+    },
+    {
+      version: 'v1.0',
+      changes: [
+        'Chat added!',
+        'Wall posts',
+        'Updated shop descriptions',
+        'Display Name styles added',
+        'Pets added',
+        'Pet Showcase on Profile',
+        'Design Update',
+        'Minor bug fixes',
+        'And more!'
+      ]
+    }
+  ];
 
   useEffect(() => {
     let userId: string | null = null;
@@ -84,8 +119,14 @@ export default function Navigation() {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 h-screen glass-panel sticky top-0 z-50 p-6 shadow-[4px_0_24px_rgba(0,0,0,0.01)]">
-        <div className="mb-10 px-2">
+        <div className="mb-10 px-2 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight text-black">StartOrigin</h1>
+          <button 
+            onClick={() => setShowRoadmap(true)}
+            className="px-2 py-0.5 bg-slate-100 hover:bg-black hover:text-white transition-all rounded-md text-[10px] font-bold text-slate-400"
+          >
+            v1.02
+          </button>
         </div>
         <nav className="flex-1 space-y-1">
           {navItems.map((item) => (
@@ -141,6 +182,72 @@ export default function Navigation() {
           ))}
         </div>
       </nav>
+
+      <AnimatePresence>
+        {showRoadmap && (
+          <div 
+            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowRoadmap(false)}
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-black tracking-tight">Roadmap</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Evolution of StartOrigin</p>
+                </div>
+                <button 
+                  onClick={() => setShowRoadmap(false)}
+                  className="p-2 hover:bg-slate-50 transition-colors rounded-full text-slate-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                {roadmapData.map((release, idx) => (
+                  <div key={release.version} className="relative pl-6">
+                    {/* Progress line */}
+                    {idx !== roadmapData.length - 1 && (
+                      <div className="absolute left-[7px] top-6 bottom-[-32px] w-0.5 bg-slate-100" />
+                    )}
+                    
+                    <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white bg-black shadow-sm" />
+                    
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-sm font-black text-black">{release.version}</span>
+                      <div className="h-0.5 flex-1 bg-slate-50" />
+                    </div>
+
+                    <ul className="space-y-2">
+                      {release.changes.map((change, i) => (
+                        <li key={i} className="flex items-start gap-2 text-slate-500 text-sm">
+                          <ChevronRight size={14} className="mt-1 flex-shrink-0 text-slate-300" />
+                          <span>{change}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 bg-slate-50/50">
+                <button 
+                  onClick={() => setShowRoadmap(false)}
+                  className="w-full h-12 bg-black text-white rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] hover:opacity-90 transition-all shadow-lg shadow-black/10"
+                >
+                  Close Roadmap
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

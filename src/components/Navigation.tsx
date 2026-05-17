@@ -129,7 +129,6 @@ export default function Navigation() {
               v1.02
             </button>
           </div>
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1">Your Photo Collection</p>
         </div>
         <nav className="flex-1 space-y-1">
           {navItems.map((item) => (

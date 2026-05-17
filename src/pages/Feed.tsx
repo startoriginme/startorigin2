@@ -18,12 +18,12 @@ import { GRADIENT_CONFIG, FONT_CONFIG } from '../constants/shop';
 
 // Activity Progress thresholds
 const ACTIVITY_PROGRESS = [
-    { count: 10, title: "Beginner", icon: Camera, color: "text-green-500", description: "Liked 10 photos" },
-    { count: 30, title: "Enthusiast", icon: Search, color: "text-blue-500", description: "Liked 30 photos" },
-    { count: 60, title: "Star", icon: Star, color: "text-purple-500", description: "Liked 60 photos" },
-    { count: 120, title: "Elite Member", icon: Layout, color: "text-orange-500", description: "Liked 120 photos" },
-    { count: 250, title: "Photo Legend", icon: Sparkles, color: "text-yellow-500", description: "Liked 250 photos" },
-    { count: 500, title: "Community Icon", icon: Trophy, color: "text-cyan-500", description: "Liked 500 photos" },
+    { count: 10, title: "Beginner", icon: Camera, color: "text-green-500", description: "Swiped 10 photos" },
+    { count: 30, title: "Enthusiast", icon: Search, color: "text-blue-500", description: "Swiped 30 photos" },
+    { count: 60, title: "Star", icon: Star, color: "text-purple-500", description: "Swiped 60 photos" },
+    { count: 120, title: "Elite Member", icon: Layout, color: "text-orange-500", description: "Swiped 120 photos" },
+    { count: 250, title: "Photo Legend", icon: Sparkles, color: "text-yellow-500", description: "Swiped 250 photos" },
+    { count: 500, title: "Community Icon", icon: Trophy, color: "text-cyan-500", description: "Swiped 500 photos" },
   ];
 
 export default function Feed({ user }: { user: any }) {
@@ -205,7 +205,7 @@ export default function Feed({ user }: { user: any }) {
         </button>
 
         <div className="absolute top-16 md:top-20 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white px-6 py-3 rounded-full border border-slate-100 shadow-2xl z-[550]">
-          <Layout className="text-black" size={24} />
+          <Flame className="text-orange-500" size={24} />
           <span className="font-bold text-xl text-black">{swipeCount}</span>
         </div>
 
@@ -298,10 +298,10 @@ export default function Feed({ user }: { user: any }) {
           </Link>
           <button 
             onClick={() => setFocusMode(true)}
-            className="p-3 bg-slate-50 rounded-2xl text-black border border-slate-100 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center"
+            className="p-3 bg-slate-50 rounded-2xl text-orange-500 border border-slate-100 hover:bg-orange-50 transition-all font-bold text-xs flex items-center justify-center"
             title="Focus Mode"
           >
-            <Layout size={20} />
+            <Flame size={20} />
           </button>
           
                   <div className="relative">

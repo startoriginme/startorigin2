@@ -26,32 +26,36 @@ export default function Navigation() {
 
   const roadmapData = [
     {
+      version: 'v1.03',
+      changes: [
+        'Added Docs',
+        'Added Rules',
+        'Updated Design',
+        'Minor improvements'
+      ]
+    },
+    {
       version: 'v1.02',
       changes: [
-        'Attachments in Wall Posts',
-        'Pin Functionality in The Wall',
-        'Minor Improvements'
+        'Text posts on the wall',
+        'Profile customization (gradients, fonts)',
+        'Minor improvements'
       ]
     },
     {
       version: 'v1.01',
       changes: [
+        'Chat added',
         'Design updates',
-        'Minor improvements'
+        'Bug fixes'
       ]
     },
     {
       version: 'v1.0',
       changes: [
-        'Chat added!',
-        'Wall posts',
-        'Updated shop descriptions',
-        'Display Name styles added',
-        'Pets added',
-        'Pet Showcase on Profile',
-        'Design Update',
-        'Minor bug fixes',
-        'And more!'
+        'Photo gallery',
+        'Public feed',
+        'Simple profile'
       ]
     }
   ];
@@ -126,7 +130,7 @@ export default function Navigation() {
               onClick={() => setShowRoadmap(true)}
               className="px-1.5 py-0.5 bg-slate-50 hover:bg-black hover:text-white transition-all rounded text-[8px] font-black text-slate-300 uppercase tracking-tighter"
             >
-              v1.02
+              v1.03
             </button>
           </div>
         </div>

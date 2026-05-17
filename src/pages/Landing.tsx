@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, ArrowRight, Menu, X, Image, Lock, Palette, MessageCircle, FileText, Globe, ChevronRight } from 'lucide-react';
+import { Camera, ArrowRight, Menu, X, Image, Lock, Palette, MessageCircle, FileText, Globe, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +11,15 @@ export default function Landing() {
   const [showRoadmap, setShowRoadmap] = useState(false);
 
   const roadmapData = [
+    {
+      version: 'v1.03',
+      changes: [
+        'Added Docs',
+        'Added Rules',
+        'Updated Design',
+        'Minor improvements'
+      ]
+    },
     {
       version: 'v1.02',
       changes: [
@@ -96,7 +105,7 @@ export default function Landing() {
               onClick={() => setShowRoadmap(true)}
               className="hidden md:block px-2 py-0.5 bg-slate-50 hover:bg-slate-100 transition-colors rounded text-[10px] text-slate-400"
             >
-              v1.02
+              v1.03
             </button>
           </div>
 
@@ -133,7 +142,7 @@ export default function Landing() {
                   }}
                   className="px-5 py-2 bg-slate-50 text-slate-500 rounded-lg text-center text-sm"
                 >
-                  v1.02 — What's new
+                  v1.03 — What's new
                 </button>
                 <Link
                   to="/auth"
@@ -210,9 +219,15 @@ export default function Landing() {
         {/* Hero Section */}
         <section className="px-6 py-20 md:py-28">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <p className="text-xs text-slate-400 uppercase tracking-wider">
-              StartOrigin v1.02
-            </p>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-widest rounded-full cursor-pointer hover:bg-slate-100 transition-all mx-auto"
+              onClick={() => setShowRoadmap(true)}
+            >
+              <Sparkles size={12} className="text-amber-500" />
+              <span>Version 1.03 is out</span>
+            </motion.div>
             
             <h1 className="text-4xl md:text-5xl font-medium text-black leading-tight">
               Your photos shouldn't get lost.
@@ -300,9 +315,9 @@ export default function Landing() {
             </div>
             
             <div className="flex items-center gap-4 text-xs text-slate-400">
-              <a href="#" className="hover:text-black transition-colors">Documentation</a>
+              <a href="https://startorigin.gitbook.io/startorigin" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">Documentation</a>
               <span>•</span>
-              <a href="#" className="hover:text-black transition-colors">Rules</a>
+              <a href="https://startorigin.gitbook.io/startorigin/rules" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">Rules</a>
               <span>•</span>
               <a href="#" className="hover:text-black transition-colors">Privacy</a>
             </div>
@@ -311,7 +326,7 @@ export default function Landing() {
               © {currentYear} StartOrigin — save your photos
             </p>
           </div>
-        </section>
+        </footer>
       </main>
     </div>
   );

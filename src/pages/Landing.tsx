@@ -53,7 +53,7 @@ export default function Landing() {
       title: t('landing.features.publish'),
       description: t('landing.features.publish_desc'),
       color: "text-blue-500"
-    }, ✔️
+    },
     {
       icon: Users,
       title: t('landing.features.follow'),
